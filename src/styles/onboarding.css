@@ -1,0 +1,514 @@
+/* Nocta — first-run onboarding flow */
+
+.ob-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- top nav: back + progress ---- */
+.ob-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 20px 8px;
+  flex-shrink: 0;
+}
+.ob-back,
+.ob-back-spacer {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.ob-back {
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hairline);
+  color: var(--text-secondary);
+}
+.ob-back:active {
+  transform: scale(0.94);
+}
+.ob-progress {
+  flex: 1;
+  display: flex;
+  gap: 5px;
+}
+.ob-progress span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease;
+}
+.ob-progress span.on {
+  background: var(--accent);
+}
+
+/* ---- body ---- */
+.ob-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: none;
+}
+.ob-body::-webkit-scrollbar {
+  display: none;
+}
+.ob-content {
+  margin: auto 0;
+  padding: 14px 26px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  animation: obIn 0.32s ease-out both;
+}
+/* brand / status screens stay centred */
+.ob-content.center {
+  align-items: center;
+  text-align: center;
+}
+@keyframes obIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.ob-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  padding-left: 0.32em;
+}
+
+.ob-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.ob-copy {
+  margin: 0;
+  max-width: 330px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.ob-note {
+  margin: 14px 0 0;
+  max-width: 320px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+/* ---- labelled chip groups ---- */
+.ob-field {
+  width: 100%;
+  margin-top: 22px;
+}
+.ob-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 11px;
+}
+.ob-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin-top: 18px;
+}
+.ob-field .ob-chips {
+  margin-top: 0;
+}
+.ob-chips .chip {
+  width: 100%;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 15px 18px;
+  font-size: 15px;
+}
+.ob-chips .chip > span {
+  text-align: left;
+}
+
+/* ---- option with an info tip (sleep conditions) ---- */
+.ob-info-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ob-info-chip-row {
+  display: flex;
+  gap: 8px;
+}
+.ob-info-chip-row .chip {
+  flex: 1;
+  width: auto;
+}
+.ob-info-btn {
+  flex-shrink: 0;
+  width: 56px;
+  align-self: stretch;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline-strong);
+  color: var(--text-tertiary);
+  display: grid;
+  place-items: center;
+}
+.ob-info-btn:active {
+  transform: scale(0.95);
+}
+.ob-info-btn.open {
+  color: var(--accent);
+  border-color: rgba(240, 164, 122, 0.4);
+  background: rgba(240, 164, 122, 0.08);
+}
+.ob-info-tip {
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  background: rgba(123, 149, 216, 0.07);
+  border: 1px solid var(--hairline);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  animation: obIn 0.2s ease-out both;
+}
+
+/* ---- text / select inputs ---- */
+.ob-input,
+.ob-select {
+  width: 100%;
+  height: 56px;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline-strong);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 0 16px;
+  outline: none;
+}
+.ob-input::placeholder {
+  color: var(--text-tertiary);
+}
+.ob-input:focus,
+.ob-select:focus {
+  border-color: rgba(240, 164, 122, 0.45);
+}
+.ob-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 42px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7396' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px;
+}
+.ob-select.empty {
+  color: var(--text-tertiary);
+}
+.ob-select option {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+.ob-input-wrap {
+  position: relative;
+}
+.ob-input-suffix {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+.ob-row {
+  display: flex;
+  gap: 10px;
+}
+.ob-row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- mask picker results ---- */
+.ob-mask-results {
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.02);
+  max-height: 296px;
+  overflow-y: auto;
+}
+.ob-mask-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: none;
+}
+.ob-mask-row:last-child {
+  border-bottom: 0;
+}
+.ob-mask-row.selected {
+  background: rgba(240, 164, 122, 0.1);
+}
+.ob-mask-row svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.ob-mask-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.ob-mask-row.selected .ob-mask-name {
+  color: var(--accent-soft);
+}
+.ob-mask-type {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+}
+.ob-mask-empty {
+  padding: 26px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* ---- health: wearable connect simulation ---- */
+.ob-spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid rgba(240, 164, 122, 0.18);
+  border-top-color: var(--accent);
+  animation: obSpin 0.9s linear infinite;
+  margin-bottom: 24px;
+}
+@keyframes obSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ob-connect-mark {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--good);
+  background: radial-gradient(circle, rgba(125, 201, 154, 0.2), transparent 70%);
+  border: 1px solid rgba(125, 201, 154, 0.32);
+  margin-bottom: 24px;
+}
+
+/* ---- footer buttons ---- */
+.ob-foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 22px calc(16px + env(safe-area-inset-bottom));
+}
+
+/* ---- "tomorrow" mini why-card preview ---- */
+.ob-mini {
+  width: 100%;
+  margin-top: 24px;
+  text-align: left;
+  border-radius: var(--r-lg);
+  padding: 17px 17px 15px;
+  background:
+    radial-gradient(140% 100% at 0% 0%, rgba(240, 164, 122, 0.14), transparent 58%),
+    linear-gradient(180deg, #1c1e35 0%, #161a30 100%);
+  border: 1px solid rgba(240, 164, 122, 0.18);
+}
+.ob-mini-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.ob-mini-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.3;
+  margin-bottom: 7px;
+}
+.ob-mini-title em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent-soft);
+}
+.ob-mini-text {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.ob-mini-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 11px;
+  border-radius: var(--r-md);
+  background: rgba(240, 164, 122, 0.07);
+  border: 1px solid rgba(240, 164, 122, 0.16);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+.ob-mini-action svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--accent);
+}
+
+/* ---- medical disclaimer (closing modal) ---- */
+.ob-disclaimer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: linear-gradient(180deg, var(--bg-grad-top), var(--bg-grad-bottom));
+  animation: fade 0.3s ease-out both;
+}
+.ob-disc-card {
+  max-width: 320px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: obIn 0.4s ease-out both;
+}
+.ob-disc-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: radial-gradient(circle, rgba(240, 164, 122, 0.18), transparent 70%);
+  border: 1px solid rgba(240, 164, 122, 0.2);
+  margin-bottom: 18px;
+}
+.ob-disc-card h2 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 23px;
+}
+.ob-disc-card p {
+  margin: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.ob-disc-card .btn {
+  width: 100%;
+}
+
+/* ---- intro: a splash that morphs into the welcome screen ---- */
+.ob-intro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--bg-grad-top), var(--bg-grad-bottom));
+}
+.ob-intro-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.ob-intro-logo {
+  object-fit: contain;
+  filter: drop-shadow(0 14px 44px rgba(240, 164, 122, 0.42));
+  transition:
+    width 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-bottom 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ob-intro-logo.lg {
+  width: 220px;
+  height: 220px;
+  margin-bottom: 24px;
+  animation: splashLogo 0.95s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.ob-intro-logo.sm {
+  width: 108px;
+  height: 108px;
+  margin-bottom: 14px;
+}
+@keyframes splashLogo {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.ob-intro-tag {
+  max-width: 250px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  animation: obIn 0.5s ease-out both;
+}
+.ob-intro-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: obIn 0.45s ease-out both;
+}
+.ob-intro-foot {
+  flex-shrink: 0;
+  padding: 14px 22px calc(20px + env(safe-area-inset-bottom));
+}

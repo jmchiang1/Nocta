@@ -1,0 +1,70 @@
+/* Nocta — design tokens. See docs/DESIGN_SYSTEM.md. Never hardcode hex in components. */
+
+:root {
+  /* surfaces */
+  --bg-base: #0b1020;
+  --bg-grad-top: #121830;
+  --bg-grad-bottom: #080d1c;
+  --surface-1: #141a2e;
+  --surface-2: #1c233e;
+  --surface-3: #242c4d;
+  --hairline: rgba(255, 255, 255, 0.06);
+  --hairline-strong: rgba(255, 255, 255, 0.1);
+
+  /* text */
+  --text-primary: #ecf0fb;
+  --text-secondary: #9aa3c0;
+  --text-tertiary: #6b7396;
+  --text-on-accent: #1a1424;
+
+  /* brand — AI/Coach moments only */
+  --accent: #f0a47a;
+  --accent-soft: #f4b896;
+  --accent-deep: #d97f4f;
+  --accent-glow: rgba(240, 164, 122, 0.18);
+
+  /* semantic state */
+  --good: #7dc99a;
+  --watch: #e6b85c;
+  --alert: #e07a6a;
+
+  /* data viz */
+  --data-1: #7b95d8;
+  --data-2: #5f7bc4;
+  --data-faint: rgba(123, 149, 216, 0.25);
+
+  /* sleep stages */
+  --stage-awake: #e07a6a;
+  --stage-rem: #b587d9;
+  --stage-light: #7c95c8;
+  --stage-deep: #2e4180;
+
+  /* fonts */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+
+  /* spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 56px;
+  --space-10: 72px;
+
+  /* radius */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* shadows */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -20px rgba(0, 0, 0, 0.7);
+  --shadow-fab: 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 18px 36px -10px rgba(240, 164, 122, 0.45), 0 6px 14px -4px rgba(0, 0, 0, 0.4);
+  --shadow-sheet: 0 -30px 60px -20px rgba(0, 0, 0, 0.7);
+}
