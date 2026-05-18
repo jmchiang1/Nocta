@@ -34,5 +34,6 @@ export const PROJECTION = {
   headline: 'On track to clear compliance around *day 22*.',
   body: 'Insurance asks for 4+ hours on 21 of any 30 nights. You have hit it 11 of 11 so far — staying on this pace clears the bar with room to spare.',
   progressPct: 52,
+  targetPct: 72, // day 22 of 30
   scale: ['Day 1', 'Day 22 · target', 'Day 30'],
 };

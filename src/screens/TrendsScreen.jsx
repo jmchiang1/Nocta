@@ -1,6 +1,7 @@
 /* Nocta — Trends tab. Range selector, trend charts, journal patterns, best/worst night. */
 import { useState } from 'react';
-import { TRENDS, RANGES, BEST_WORST, PATTERNS } from '../data/trends.js';
+import { getTrends, RANGES, RANGE_WINDOW } from '../data/trends.js';
+import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Rich } from '../components/Rich.jsx';
@@ -22,8 +23,9 @@ function tileTone(key, dir) {
 }
 
 export function TrendsScreen() {
+  const { fixtureId } = useStore();
   const [range, setRange] = useState('7d');
-  const t = TRENDS[range];
+  const t = getTrends(fixtureId, range);
   const ahiTotals = t.ahiSeries.map((d) => d.csa + d.osa + d.hyp);
   const sparks = {
     ahi: norm(ahiTotals),
@@ -65,7 +67,7 @@ export function TrendsScreen() {
                   {tile.dir !== 'flat' && (
                     <Icon name={tile.dir === 'down' ? 'triDown' : 'triUp'} size={9} />
                   )}
-                  {tile.dir === 'flat' ? 'steady' : tile.delta}
+                  {tile.dir === 'flat' ? tile.note ?? 'steady' : tile.delta}
                 </span>
                 <MetricSpark values={sparks[tile.key]} />
               </div>
@@ -141,31 +143,39 @@ export function TrendsScreen() {
           </div>
         </div>
 
-        <div className="section-head">
-          <h3>Best &amp; worst night</h3>
-        </div>
-        <div className="compare">
-          <div className="cmp-card best">
-            <div className="cmp-tag">Best</div>
-            <div className="cmp-date">{BEST_WORST.best.date}</div>
-            <div className="cmp-ahi tnum">{BEST_WORST.best.ahi}</div>
-            <div className="cmp-sub">{BEST_WORST.best.note}</div>
-          </div>
-          <div className="cmp-card worst">
-            <div className="cmp-tag">Worst</div>
-            <div className="cmp-date">{BEST_WORST.worst.date}</div>
-            <div className="cmp-ahi tnum">{BEST_WORST.worst.ahi}</div>
-            <div className="cmp-sub">{BEST_WORST.worst.note}</div>
-          </div>
-        </div>
+        {t.bestWorst && (
+          <>
+            <div className="section-head">
+              <h3>Best &amp; worst night</h3>
+            </div>
+            <div className="compare">
+              <div className="cmp-card best">
+                <div className="cmp-tag">Best</div>
+                <div className="cmp-date">{t.bestWorst.best.date}</div>
+                <div className="cmp-ahi tnum">{t.bestWorst.best.ahi}</div>
+                <div className="cmp-sub">{t.bestWorst.best.note}</div>
+              </div>
+              <div className="cmp-card worst">
+                <div className="cmp-tag">Worst</div>
+                <div className="cmp-date">{t.bestWorst.worst.date}</div>
+                <div className="cmp-ahi tnum">{t.bestWorst.worst.ahi}</div>
+                <div className="cmp-sub">{t.bestWorst.worst.note}</div>
+              </div>
+            </div>
+          </>
+        )}
 
-        <div className="section-head">
-          <h3>Patterns</h3>
-          <span className="meta">from your journal</span>
-        </div>
-        {PATTERNS.map((p, i) => (
-          <PatternCard key={i} pattern={p} window="30 nights" />
-        ))}
+        {t.patterns.length > 0 && (
+          <>
+            <div className="section-head">
+              <h3>Patterns</h3>
+              <span className="meta">from your journal</span>
+            </div>
+            {t.patterns.map((p, i) => (
+              <PatternCard key={i} pattern={p} window={RANGE_WINDOW[range]} />
+            ))}
+          </>
+        )}
 
         <p className="disclaimer">Trends describe your data. They are not a diagnosis.</p>
       </div>

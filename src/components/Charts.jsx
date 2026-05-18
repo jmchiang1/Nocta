@@ -33,11 +33,17 @@ ChartJS.register(
 const HEX = {
   data: '#7b95d8',
   accent: '#f0a47a',
+  accentDeep: '#d97f4f',
   watch: '#e6b85c',
   good: '#7dc99a',
   alert: '#e07a6a',
 };
 const FAINT = 'rgba(123,149,216,0.28)';
+
+/* sleep-stage hexes mirrored from styles/tokens.css; level = wakefulness, so
+ * the hypnogram bars step taller from deep sleep up to awake */
+const STAGE_HEX = { deep: '#2e4180', light: '#7c95c8', rem: '#b587d9', awake: '#e07a6a' };
+const STAGE_LEVEL = { deep: 0.3, light: 0.56, rem: 0.8, awake: 1 };
 
 function rgba(hex, a) {
   const n = parseInt(hex.slice(1), 16);
@@ -105,6 +111,36 @@ export function Sparkline({ values, kinds = [], height = 38 }) {
     responsive: true,
     maintainAspectRatio: false,
     animation: stagger(34),
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: { x: HIDDEN_AXES.x, y: { ...HIDDEN_AXES.y, min: 0, max: 1 } },
+  };
+  return (
+    <ChartBox height={height}>
+      <Chart type="bar" data={data} options={options} />
+    </ChartBox>
+  );
+}
+
+/* ---- Overnight hypnogram: one bar per time sample, height = wakefulness,
+ * colour = sleep stage. Many touching bars read as a stepped stage chart. ---- */
+export function Hypnogram({ samples, height = 96 }) {
+  const data = {
+    labels: emptyLabels(samples.length),
+    datasets: [
+      {
+        data: samples.map((s) => STAGE_LEVEL[s] ?? 0.5),
+        backgroundColor: samples.map((s) => STAGE_HEX[s] ?? FAINT),
+        borderRadius: 0,
+        borderSkipped: false,
+        barPercentage: 1,
+        categoryPercentage: 1,
+      },
+    ],
+  };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 650, easing: 'easeOutQuart' },
     plugins: { legend: { display: false }, tooltip: { enabled: false } },
     scales: { x: HIDDEN_AXES.x, y: { ...HIDDEN_AXES.y, min: 0, max: 1 } },
   };
@@ -221,8 +257,9 @@ export function EventWave({ seed, color = 'good', height = 52 }) {
   );
 }
 
-/* ---- Line chart with soft area fill + optional threshold line ---- */
-export function LineChart({ values, color = 'data', height = 110, threshold }) {
+/* ---- Line chart with soft area fill + optional threshold line ----
+ * `yMin` lifts the baseline off zero (e.g. heart rate never nears 0). */
+export function LineChart({ values, color = 'data', height = 110, threshold, yMin = 0 }) {
   const c = HEX[color] || HEX.data;
   const max = Math.max(...values, threshold || 0) * 1.15 || 1;
   const datasets = [
@@ -273,7 +310,7 @@ export function LineChart({ values, color = 'data', height = 110, threshold }) {
         callbacks: { label: (ctx) => Number(ctx.raw).toFixed(1) },
       },
     },
-    scales: { x: HIDDEN_AXES.x, y: { ...HIDDEN_AXES.y, min: 0, max } },
+    scales: { x: HIDDEN_AXES.x, y: { ...HIDDEN_AXES.y, min: yMin, max } },
   };
   return (
     <ChartBox height={height}>
@@ -372,6 +409,144 @@ export function Bars({ values, color = 'data', height = 110, target }) {
   return (
     <ChartBox height={height}>
       <Chart type="bar" data={{ labels: emptyLabels(values.length), datasets }} options={options} />
+    </ChartBox>
+  );
+}
+
+/* ---- Horizontal progress / lifecycle bar on a faint rounded track ----
+ * pct 0..100. `gradient` paints the accent-deep→accent fill used on the
+ * compliance projection; `marker` (0..100) draws a dashed target tick. */
+export function ProgressBar({ pct, color = 'accent', gradient = false, marker, height = 8 }) {
+  const c = HEX[color] || HEX.accent;
+  const val = Math.max(0, Math.min(100, pct));
+  const trackPlugin = {
+    id: 'progressTrack',
+    beforeDatasetsDraw(chart) {
+      const { ctx, chartArea: a } = chart;
+      if (!a) return;
+      const r = (a.bottom - a.top) / 2;
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath();
+      ctx.roundRect(a.left, a.top, a.right - a.left, a.bottom - a.top, r);
+      ctx.fill();
+      ctx.restore();
+    },
+    afterDatasetsDraw(chart) {
+      if (marker == null) return;
+      const a = chart.chartArea;
+      const x = chart.scales.x.getPixelForValue(marker);
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, a.top - 2);
+      ctx.lineTo(x, a.bottom + 2);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+  const data = {
+    labels: [''],
+    datasets: [
+      {
+        data: [val],
+        backgroundColor: gradient
+          ? (ctx) => {
+              const { chart } = ctx;
+              const { ctx: cv, chartArea } = chart;
+              if (!chartArea) return c;
+              const g = cv.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+              g.addColorStop(0, HEX.accentDeep);
+              g.addColorStop(1, HEX.accent);
+              return g;
+            }
+          : c,
+        borderRadius: height / 2,
+        borderSkipped: false,
+        barPercentage: 1,
+        categoryPercentage: 1,
+      },
+    ],
+  };
+  const options = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 800, easing: 'easeOutQuart' },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: {
+      x: { display: false, min: 0, max: 100 },
+      y: { display: false },
+    },
+  };
+  return (
+    <ChartBox height={height}>
+      <Chart type="bar" data={data} options={options} plugins={[trackPlugin]} />
+    </ChartBox>
+  );
+}
+
+/* ---- AHI baseline: horizontal bar on a 0..max scale with a 14-day-avg marker ---- */
+export function BaselineBar({ value, avg, max = 32, height = 18 }) {
+  const trackPlugin = {
+    id: 'baselineTrack',
+    beforeDatasetsDraw(chart) {
+      const { ctx, chartArea: a } = chart;
+      if (!a) return;
+      const r = (a.bottom - a.top) / 2;
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath();
+      ctx.roundRect(a.left, a.top, a.right - a.left, a.bottom - a.top, r);
+      ctx.fill();
+      ctx.restore();
+    },
+    afterDatasetsDraw(chart) {
+      if (avg == null) return;
+      const a = chart.chartArea;
+      const x = chart.scales.x.getPixelForValue(avg);
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = '#9aa3c0';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, a.top - 3);
+      ctx.lineTo(x, a.bottom + 3);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+  const data = {
+    labels: [''],
+    datasets: [
+      {
+        data: [Math.min(value, max)],
+        backgroundColor: HEX.accent,
+        borderRadius: height / 2,
+        borderSkipped: false,
+        barPercentage: 1,
+        categoryPercentage: 1,
+      },
+    ],
+  };
+  const options = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 800, easing: 'easeOutQuart' },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: {
+      x: { display: false, min: 0, max },
+      y: { display: false },
+    },
+  };
+  return (
+    <ChartBox height={height}>
+      <Chart type="bar" data={data} options={options} plugins={[trackPlugin]} />
     </ChartBox>
   );
 }

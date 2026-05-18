@@ -13,8 +13,6 @@ const STATE_CLASS = {
   insufficient_data: 'state-insufficient',
 };
 
-const CONFIDENCE_BARS = { high: 3, medium: 2, low: 1 };
-
 // steady & insufficient-data states carry no action box
 const NO_ACTION = new Set(['steady', 'insufficient_data']);
 
@@ -22,9 +20,7 @@ export function WhyCard({ insight, spark, sparkKind }) {
   const [open, setOpen] = useState(false);
   const state = insight.card_state;
   const cls = STATE_CLASS[state] || 'state-insufficient';
-  const bars = CONFIDENCE_BARS[insight.confidence] || 1;
   const showAction = !NO_ACTION.has(state) && insight.recommended_action;
-  const confidence = insight.confidence[0].toUpperCase() + insight.confidence.slice(1);
 
   return (
     <article
@@ -32,11 +28,6 @@ export function WhyCard({ insight, spark, sparkKind }) {
       role="region"
       aria-label="Last night's insight"
     >
-      <div className="eyebrow">
-        <Icon name="star" size={12} />
-        Nocta Coach · Last night
-      </div>
-
       <h2 className="headline">
         <Rich text={insight.headline} />
       </h2>
@@ -68,10 +59,13 @@ export function WhyCard({ insight, spark, sparkKind }) {
         </span>
         <Icon name="chevronDown" size={14} className="chev" />
       </button>
-      <div id="why-receipts-detail" className="receipts-detail" hidden={!open}>
-        <Rich text={insight.observation} />
+      <div className={`receipts-collapse${open ? ' open' : ''}`}>
+        <div className="receipts-detail">
+          <div id="why-receipts-detail" className="receipts-detail-inner">
+            <Rich text={insight.observation} />
+          </div>
+        </div>
       </div>
-      
     </article>
   );
 }

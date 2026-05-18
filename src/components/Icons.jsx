@@ -105,6 +105,7 @@ const PATHS = {
 /* solid-fill glyphs */
 const SOLID = {
   star: <path d="M12 2l2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6z" />,
+  moon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />,
   triUp: <path d="M12 5l7 12H5z" />,
   triDown: <path d="M12 19L5 7h14z" />,
   dotRing: (

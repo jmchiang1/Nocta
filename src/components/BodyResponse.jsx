@@ -1,0 +1,138 @@
+/* Nocta — Apple Watch "body response" card. Optional: rendered on Tonight only
+ * when the night fixture carries a `bodyResponse` block (future HealthKit
+ * integration; mock data in v1). Four collapsible sections — heart rate, blood
+ * oxygen, sleep stages, awakenings — each collapsed by default, showing a key
+ * stat on its summary row. Data display only — no scoring, no diagnosis. */
+import { LineChart, ProgressBar, Hypnogram } from './Charts.jsx';
+import { Icon } from './Icons.jsx';
+import { genHypnogram, fmtDur } from '../lib/format.js';
+
+function avgOf(series) {
+  return Math.round(series.reduce((s, v) => s + v, 0) / series.length);
+}
+
+/* legend / hypnogram order: awake at the top of the chart, deep at the bottom */
+const STAGE_ORDER = [
+  { key: 'awake', label: 'Awake' },
+  { key: 'rem', label: 'REM' },
+  { key: 'light', label: 'Light' },
+  { key: 'deep', label: 'Deep' },
+];
+
+function Stat({ label, value, unit }) {
+  return (
+    <div className="bc-stat">
+      <span className="bc-k">{label}</span>
+      <span className="bc-v tnum">
+        {value}
+        {unit && value !== '—' && <i>{unit}</i>}
+      </span>
+    </div>
+  );
+}
+
+/* one collapsible section — collapsed by default (no `open` attribute) */
+function Section({ title, summary, children }) {
+  return (
+    <details className="bc-section">
+      <summary className="bc-summary">
+        <span className="bc-summary-title">{title}</span>
+        <span className="bc-summary-val tnum">{summary}</span>
+        <Icon name="chevronDown" size={16} className="bc-chev" />
+      </summary>
+      <div className="bc-section-body">{children}</div>
+    </details>
+  );
+}
+
+export function BodyResponse({ data, session }) {
+  const { note, hr, hrv, respRate, sleep, spo2, stages, awakenings, latencyMin } = data;
+  const avgHr = avgOf(hr.series);
+  const lowHr = Math.round(Math.min(...hr.series));
+  const asleepPct = (sleep.asleepHours / sleep.maskOnHours) * 100;
+
+  // sleep stages — totals are authored; the hypnogram is generated from them
+  const asleepH = stages ? stages.deep + stages.rem + stages.light : 0;
+  const hypnogram = stages
+    ? genHypnogram(`hyp-${stages.deep}-${stages.rem}-${stages.light}-${stages.awake}`, stages)
+    : null;
+  const stagePct = (h) => (asleepH > 0 ? Math.round((h / asleepH) * 100) : 0);
+
+  const hasSpo2 = spo2 && spo2.avg !== '—';
+
+  return (
+    <section className="body-card" aria-label="Body response from your Apple Watch">
+      <Section title="Heart rate" summary={`${avgHr} bpm avg`}>
+        <LineChart values={hr.series} color="data" height={94} yMin={40} />
+        <p className="bc-note">{note}</p>
+        <div className="bc-stats">
+          <Stat label="Avg HR" value={avgHr} unit="bpm" />
+          <Stat label="Low HR" value={lowHr} unit="bpm" />
+          <Stat label="HRV" value={hrv.value} unit={hrv.unit} />
+          <Stat label="Resp" value={respRate.value} unit={respRate.unit} />
+        </div>
+      </Section>
+
+      <Section title="Blood oxygen" summary={hasSpo2 ? `${spo2.avg}% avg` : '—'}>
+        {spo2 ? (
+          <>
+            <div className="bc-stats">
+              <Stat label="Avg O₂" value={spo2.avg} unit={spo2.unit} />
+              <Stat label="Low O₂" value={spo2.low} unit={spo2.unit} />
+            </div>
+            {spo2.flag && (
+              <p className="bc-flag">
+                <Icon name="info" size={14} />
+                <span>{spo2.flag}</span>
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="bc-empty">No blood-oxygen readings for this night.</p>
+        )}
+      </Section>
+
+      <Section title="Sleep stages" summary={stages ? `${fmtDur(asleepH)} asleep` : '—'}>
+        {stages ? (
+          <>
+            <Hypnogram samples={hypnogram} />
+            {session && (
+              <div className="bc-hyp-axis">
+                <span>{session.start}</span>
+                <span>{session.end}</span>
+              </div>
+            )}
+            <div className="bc-stage-legend">
+              {STAGE_ORDER.map(({ key, label }) => (
+                <div key={key} className="bc-stage-row">
+                  <i className={`bc-stage-dot stage-${key}`} />
+                  <span className="bc-stage-name">{label}</span>
+                  <span className="bc-stage-dur tnum">{fmtDur(stages[key])}</span>
+                  <span className="bc-stage-pct tnum">
+                    {key === 'awake' ? '' : `${stagePct(stages[key])}%`}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="bc-sleep">
+              <div className="bc-sleep-label">
+                Asleep <strong>{sleep.asleepHours}h</strong> of <strong>{sleep.maskOnHours}h</strong>{' '}
+                with the mask on
+              </div>
+              <ProgressBar pct={asleepPct} color="good" height={8} />
+            </div>
+          </>
+        ) : (
+          <p className="bc-empty">Not enough sleep was recorded to chart stages.</p>
+        )}
+      </Section>
+
+      <Section title="Awakenings" summary={awakenings !== '—' ? `${awakenings}×` : '—'}>
+        <div className="bc-stats">
+          <Stat label="Wake-ups" value={awakenings} />
+          <Stat label="Fell asleep" value={latencyMin} unit="min" />
+        </div>
+      </Section>
+    </section>
+  );
+}

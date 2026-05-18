@@ -37,9 +37,6 @@ export function YouScreen() {
         <div className="list">
           {JOURNAL_HISTORY.map((j) => (
             <div className="list-row" key={j.date}>
-              <div className="lr-icon">
-                <Icon name="bed" size={17} />
-              </div>
               <div className="lr-main">
                 <div className="lr-title">{j.date}</div>
                 <div className="lr-sub">
@@ -57,7 +54,7 @@ export function YouScreen() {
         <div className="list">
           {SETTINGS.map((s) => (
             <button className="list-row" key={s.title}>
-              <div className="lr-icon">
+              <div className="lr-icon bare">
                 <Icon name={s.icon} size={17} />
               </div>
               <div className="lr-main">
@@ -68,7 +65,7 @@ export function YouScreen() {
             </button>
           ))}
           <button className="list-row">
-            <div className="lr-icon">
+            <div className="lr-icon bare">
               <Icon name="logout" size={17} />
             </div>
             <div className="lr-main">
@@ -83,7 +80,7 @@ export function YouScreen() {
         </div>
         <div className="list">
           <button className="list-row" onClick={resetCheckin} disabled={!checkin.done}>
-            <div className="lr-icon accent">
+            <div className="lr-icon bare accent">
               <Icon name="refresh" size={17} />
             </div>
             <div className="lr-main">
@@ -94,7 +91,7 @@ export function YouScreen() {
             </div>
           </button>
           <button className="list-row" onClick={resetOnboarding}>
-            <div className="lr-icon accent">
+            <div className="lr-icon bare accent">
               <Icon name="sparkles" size={17} />
             </div>
             <div className="lr-main">

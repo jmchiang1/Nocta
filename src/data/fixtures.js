@@ -1,16 +1,35 @@
 /* Nocta — mock night fixtures.
  * Each `insight` object matches the AI insight JSON schema in docs/FEATURES.md exactly.
- * The five fixtures exercise every why-card state. Switchable via the Tonight dev toggle. */
+ * The five fixtures exercise every why-card state. Switchable via the Tonight dev toggle.
+ *
+ * `bodyResponse` is OPTIONAL — it stands in for data a connected Apple Watch
+ * would supply via HealthKit (future integration; out of v1 scope). Shape:
+ *   source     — device label
+ *   note       — one honest, non-diagnostic line about the body's response
+ *   hr         — { series: overnight bpm trace, dir: vs the user's baseline }
+ *   hrv        — { value, unit, dir } overnight heart-rate variability
+ *   respRate   — { value, unit } sleeping respiratory rate
+ *   sleep      — { asleepHours (watch), maskOnHours (= session.durationHours) }
+ *   spo2       — { avg, low, unit, flag? } overnight blood oxygen; `flag` is an
+ *                optional non-diagnostic line that escalates desats to a doctor
+ *   stages     — { deep, rem, light, awake } watch-measured hours, or null
+ *   awakenings — count of times woken; latencyMin — minutes to fall asleep
+ * Any numeric field may be '—' when the watch lacked enough data to report.
+ * UI reads it only when present; remove the block and the card disappears. */
+import { genHeartRate } from '../lib/format.js';
 
-/* week strip is shared; the final day (Sat / "last night") state is set per fixture */
-export const WEEK_BASE = [
-  { day: 'Sun', state: 'good' },
-  { day: 'Mon', state: 'good' },
-  { day: 'Tue', state: 'watch' },
-  { day: 'Wed', state: 'missed' },
-  { day: 'Thu', state: 'good' },
-  { day: 'Fri', state: 'good' },
-  { day: 'Sat', state: 'good' }, // overridden by fixture.dayState
+/* Week strip — last 7 nights. Each slot maps to a night fixture; tapping a day
+ * opens that night. Days with a fixture take their moon state from the fixture's
+ * `dayState`. Thu/Fri have no authored fixture yet, so they render muted and
+ * non-interactive (their `state` is a static placeholder). */
+export const WEEK = [
+  { day: 'Sun', fixtureId: 'steady' },
+  { day: 'Mon', fixtureId: 'win' },
+  { day: 'Tue', fixtureId: 'escalation' },
+  { day: 'Wed', fixtureId: 'insufficient' },
+  { day: 'Thu', fixtureId: null, state: 'missed' },
+  { day: 'Fri', fixtureId: null, state: 'missed' },
+  { day: 'Sat', fixtureId: 'anomaly' },
 ];
 
 const anomaly = {
@@ -86,6 +105,31 @@ const anomaly = {
       { v: '14d', k: 'data window' },
     ],
   },
+  bodyResponse: {
+    source: 'Apple Watch',
+    note: 'Your heart rate climbed during the 2–5 a.m. event cluster, then settled afterward.',
+    hr: {
+      dir: 'up',
+      series: genHeartRate('anomaly-hr', {
+        base: 57, n: 44, drift: 6,
+        arousals: [
+          { at: 0.36, width: 0.13, mag: 17 },
+          { at: 0.5, width: 0.1, mag: 13 },
+          { at: 0.64, width: 0.08, mag: 9 },
+        ],
+      }),
+    },
+    hrv: { value: 38, unit: 'ms', dir: 'down' },
+    respRate: { value: 15.8, unit: 'br/min' },
+    sleep: { asleepHours: 5.4, maskOnHours: 6.2 },
+    spo2: {
+      avg: 93, low: 86, unit: '%',
+      flag: 'Your blood oxygen dipped to 86% a few times during the 2–5 a.m. cluster — worth mentioning to your doctor.',
+    },
+    stages: { deep: 0.7, rem: 0.9, light: 3.8, awake: 0.8 },
+    awakenings: 6,
+    latencyMin: 24,
+  },
 };
 
 const steady = {
@@ -150,6 +194,27 @@ const steady = {
       { v: '−0.8', k: 'vs last week' },
       { v: '14d', k: 'data window' },
     ],
+  },
+  bodyResponse: {
+    source: 'Apple Watch',
+    note: 'Your heart rate stayed low and even — a calm night for your body.',
+    hr: {
+      dir: 'flat',
+      series: genHeartRate('steady-hr', {
+        base: 53, n: 46, drift: 4,
+        arousals: [
+          { at: 0.3, width: 0.07, mag: 6 },
+          { at: 0.72, width: 0.06, mag: 5 },
+        ],
+      }),
+    },
+    hrv: { value: 54, unit: 'ms', dir: 'flat' },
+    respRate: { value: 14.1, unit: 'br/min' },
+    sleep: { asleepHours: 6.6, maskOnHours: 7.1 },
+    spo2: { avg: 96, low: 92, unit: '%' },
+    stages: { deep: 1.2, rem: 1.5, light: 3.9, awake: 0.5 },
+    awakenings: 2,
+    latencyMin: 13,
   },
 };
 
@@ -217,6 +282,24 @@ const win = {
       { v: '30d', k: 'data window' },
     ],
   },
+  bodyResponse: {
+    source: 'Apple Watch',
+    note: 'Your lowest overnight heart rate in two weeks, with strong heart-rate variability.',
+    hr: {
+      dir: 'down',
+      series: genHeartRate('win-hr', {
+        base: 50, n: 48, drift: 3,
+        arousals: [{ at: 0.55, width: 0.06, mag: 4 }],
+      }),
+    },
+    hrv: { value: 61, unit: 'ms', dir: 'up' },
+    respRate: { value: 13.6, unit: 'br/min' },
+    sleep: { asleepHours: 7.2, maskOnHours: 7.6 },
+    spo2: { avg: 97, low: 94, unit: '%' },
+    stages: { deep: 1.6, rem: 1.8, light: 3.8, awake: 0.4 },
+    awakenings: 1,
+    latencyMin: 9,
+  },
 };
 
 const escalation = {
@@ -278,6 +361,32 @@ const escalation = {
     journal: [],
   },
   pattern: null,
+  bodyResponse: {
+    source: 'Apple Watch',
+    note: 'Your heart rate ran elevated through the night, in step with the rising events.',
+    hr: {
+      dir: 'up',
+      series: genHeartRate('escalation-hr', {
+        base: 60, n: 44, drift: 5,
+        arousals: [
+          { at: 0.18, width: 0.1, mag: 11 },
+          { at: 0.34, width: 0.1, mag: 13 },
+          { at: 0.5, width: 0.1, mag: 14 },
+          { at: 0.66, width: 0.1, mag: 12 },
+        ],
+      }),
+    },
+    hrv: { value: 34, unit: 'ms', dir: 'down' },
+    respRate: { value: 15.2, unit: 'br/min' },
+    sleep: { asleepHours: 5.3, maskOnHours: 6.4 },
+    spo2: {
+      avg: 94, low: 87, unit: '%',
+      flag: 'Your blood oxygen dipped to 87% several times overnight. Bring this to your doctor alongside the rising central events.',
+    },
+    stages: { deep: 0.6, rem: 0.8, light: 3.9, awake: 1.1 },
+    awakenings: 5,
+    latencyMin: 17,
+  },
 };
 
 const insufficient = {
@@ -328,6 +437,24 @@ const insufficient = {
     journal: [],
   },
   pattern: null,
+  bodyResponse: {
+    source: 'Apple Watch',
+    note: 'Only 1.7 hours on your wrist last night — not enough for a reliable read.',
+    hr: {
+      dir: 'flat',
+      series: genHeartRate('insufficient-hr', {
+        base: 64, n: 16, drift: 2,
+        arousals: [{ at: 0.5, width: 0.2, mag: 7 }],
+      }),
+    },
+    hrv: { value: '—', unit: 'ms', dir: 'flat' },
+    respRate: { value: 16, unit: 'br/min' },
+    sleep: { asleepHours: 1.3, maskOnHours: 1.7 },
+    spo2: { avg: '—', low: '—', unit: '%' },
+    stages: null,
+    awakenings: '—',
+    latencyMin: '—',
+  },
 };
 
 export const FIXTURES = { anomaly, steady, win, escalation, insufficient };

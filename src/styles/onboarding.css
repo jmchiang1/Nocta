@@ -150,48 +150,62 @@
   text-align: left;
 }
 
-/* ---- option with an info tip (sleep conditions) ---- */
-.ob-info-chip {
+/* ---- sleep-condition option with an inline info icon ---- */
+.ob-cond-chip {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.ob-info-chip-row {
-  display: flex;
-  gap: 8px;
-}
-.ob-info-chip-row .chip {
-  flex: 1;
-  width: auto;
-}
-.ob-info-btn {
-  flex-shrink: 0;
-  width: 56px;
-  align-self: stretch;
-  border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.04);
+  align-items: stretch;
+  width: 100%;
+  min-height: 56px;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--hairline-strong);
-  color: var(--text-tertiary);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  transition: transform 0.12s ease;
+}
+.ob-cond-chip:active {
+  transform: scale(0.99);
+}
+.ob-cond-chip.selected {
+  background: var(--accent);
+  border-color: transparent;
+}
+.ob-cond-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 6px 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-primary);
+  background: none;
+}
+.ob-cond-chip.selected .ob-cond-main {
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+.ob-info-inline {
+  flex-shrink: 0;
   display: grid;
   place-items: center;
+  padding: 0 16px 0 4px;
+  background: none;
+  color: var(--text-tertiary);
 }
-.ob-info-btn:active {
-  transform: scale(0.95);
+.ob-cond-chip.selected .ob-info-inline {
+  color: var(--text-on-accent);
+  opacity: 0.65;
 }
-.ob-info-btn.open {
-  color: var(--accent);
-  border-color: rgba(240, 164, 122, 0.4);
-  background: rgba(240, 164, 122, 0.08);
-}
-.ob-info-tip {
-  padding: 11px 14px;
-  border-radius: var(--r-md);
-  background: rgba(123, 149, 216, 0.07);
-  border: 1px solid var(--hairline);
-  font-size: 12.5px;
-  line-height: 1.5;
+/* condition explanation — body text inside the slide-up sheet */
+.ob-tip-body {
+  margin: 0;
+  padding-bottom: 8px;
+  font-size: 14.5px;
+  line-height: 1.6;
   color: var(--text-secondary);
-  animation: obIn 0.2s ease-out both;
 }
 
 /* ---- text / select inputs ---- */
@@ -470,9 +484,9 @@
   object-fit: contain;
   filter: drop-shadow(0 14px 44px rgba(240, 164, 122, 0.42));
   transition:
-    width 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    margin-bottom 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    width 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-bottom 0.9s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ob-intro-logo.lg {
   width: 220px;

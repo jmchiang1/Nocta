@@ -19,7 +19,9 @@ export function CoachSheet() {
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // scroll only the sheet body — scrollIntoView would also scroll the page behind
+    const scroller = bottomRef.current?.closest('.sheet-body');
+    if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
   }, [messages, typing]);
 
   function send(text) {

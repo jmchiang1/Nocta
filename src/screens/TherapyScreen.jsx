@@ -4,6 +4,7 @@ import { DEVICE, EQUIPMENT, SETTINGS_VIEW, PROJECTION } from '../data/therapy.js
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Rich } from '../components/Rich.jsx';
+import { ProgressBar } from '../components/Charts.jsx';
 
 function lifeTone(pct) {
   if (pct >= 1) return 'alert';
@@ -53,9 +54,12 @@ export function TherapyScreen() {
             <Rich text={PROJECTION.headline} />
           </h4>
           <p>{PROJECTION.body}</p>
-          <div className="pj-track">
-            <span style={{ width: `${PROJECTION.progressPct}%` }} />
-          </div>
+          <ProgressBar
+            pct={PROJECTION.progressPct}
+            marker={PROJECTION.targetPct}
+            gradient
+            height={8}
+          />
           <div className="pj-scale">
             {PROJECTION.scale.map((s, i) => (
               <span key={i}>{s}</span>
@@ -79,9 +83,7 @@ export function TherapyScreen() {
                     {e.ageDays} / {e.lifespanDays} days · {lifeWord(pct)}
                   </span>
                 </div>
-                <div className="lifebar">
-                  <span className={tone} style={{ width: `${Math.min(100, pct * 100)}%` }} />
-                </div>
+                <ProgressBar pct={pct * 100} color={tone || 'good'} height={6} />
               </div>
             );
           })}
@@ -94,9 +96,6 @@ export function TherapyScreen() {
         <div className="list">
           {SETTINGS_VIEW.map((s) => (
             <div className="list-row" key={s.k}>
-              <div className="lr-icon">
-                <Icon name="wind" size={17} />
-              </div>
               <div className="lr-main">
                 <div className="lr-title">{s.k}</div>
               </div>
@@ -113,9 +112,6 @@ export function TherapyScreen() {
         </div>
         <div className="list">
           <button className="list-row" onClick={() => setExported(true)}>
-            <div className="lr-icon accent">
-              <Icon name="doc" size={17} />
-            </div>
             <div className="lr-main">
               <div className="lr-title">Export 30-night summary</div>
               <div className="lr-sub">

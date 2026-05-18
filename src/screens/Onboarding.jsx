@@ -5,6 +5,7 @@ import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Rich } from '../components/Rich.jsx';
+import { Sheet } from '../components/Sheet.jsx';
 import {
   GOALS,
   BIRTH_YEARS,
@@ -107,7 +108,6 @@ function ChipGroup({ options, value, onChange, multi }) {
             onClick={() => toggle(o)}
           >
             <span>{o.label}</span>
-            {sel && <Icon name="check" size={15} />}
           </button>
         );
       })}
@@ -116,8 +116,7 @@ function ChipGroup({ options, value, onChange, multi }) {
 }
 
 /* multi-select list where each option has a tappable info tip */
-function InfoChipGroup({ options, value, onChange }) {
-  const [tip, setTip] = useState(null);
+function InfoChipGroup({ options, value, onChange, onInfo }) {
   const toggle = (o) => {
     if (value.includes(o.id)) {
       onChange(value.filter((x) => x !== o.id));
@@ -134,29 +133,20 @@ function InfoChipGroup({ options, value, onChange }) {
     <div className="ob-chips">
       {options.map((o) => {
         const sel = value.includes(o.id);
-        const open = tip === o.id;
         return (
-          <div key={o.id} className="ob-info-chip">
-            <div className="ob-info-chip-row">
+          <div key={o.id} className={`ob-cond-chip${sel ? ' selected' : ''}`}>
+            <button className="ob-cond-main" onClick={() => toggle(o)}>
+              <span>{o.label}</span>
+            </button>
+            {o.info && (
               <button
-                className={`chip${sel ? ' selected' : ''}`}
-                onClick={() => toggle(o)}
+                className="ob-info-inline"
+                aria-label={`About ${o.label}`}
+                onClick={() => onInfo(o)}
               >
-                <span>{o.label}</span>
-                {sel && <Icon name="check" size={15} />}
+                <Icon name="info" size={17} />
               </button>
-              {o.info && (
-                <button
-                  className={`ob-info-btn${open ? ' open' : ''}`}
-                  aria-label={`About ${o.label}`}
-                  aria-expanded={open}
-                  onClick={() => setTip(open ? null : o.id)}
-                >
-                  <Icon name="info" size={18} />
-                </button>
-              )}
-            </div>
-            {open && o.info && <div className="ob-info-tip">{o.info}</div>}
+            )}
           </div>
         );
       })}
@@ -305,7 +295,7 @@ function SleepingPosition({ data, update, next }) {
   );
 }
 
-function SleepConditions({ data, update, next }) {
+function SleepConditions({ data, update, next, onInfo }) {
   return (
     <Step foot={<SkipFoot next={next} />}>
       <h1 className="ob-title">Anything else affecting your sleep?</h1>
@@ -317,6 +307,7 @@ function SleepConditions({ data, update, next }) {
         options={SLEEP_CONDITIONS}
         value={data.sleepConditions}
         onChange={(v) => update({ sleepConditions: v })}
+        onInfo={onInfo}
       />
     </Step>
   );
@@ -655,6 +646,7 @@ export function Onboarding() {
   const [intro, setIntro] = useState(true);
   const [step, setStep] = useState(0);
   const [disclaimer, setDisclaimer] = useState(false);
+  const [infoTip, setInfoTip] = useState(null);
   const [data, setData] = useState({
     goals: [],
     birthYear: null,
@@ -705,7 +697,16 @@ export function Onboarding() {
         </div>
         <span className="ob-back-spacer" />
       </div>
-      <Current key={step} data={data} update={update} next={next} />
+      <Current key={step} data={data} update={update} next={next} onInfo={setInfoTip} />
+      {infoTip && (
+        <Sheet
+          eyebrow="Sleep condition"
+          title={infoTip.label}
+          onClose={() => setInfoTip(null)}
+        >
+          <p className="ob-tip-body">{infoTip.info}</p>
+        </Sheet>
+      )}
     </div>
   );
 }

@@ -41,7 +41,9 @@ export function CheckinSheet() {
   if (done) {
     return (
       <Sheet eyebrow="Morning check-in" title="All set" onClose={closeSheet}
-        footer={<button className="btn primary" onClick={closeSheet}>Back to Tonight</button>}>
+        footer={(close) => (
+          <button className="btn primary" onClick={close}>Back to Tonight</button>
+        )}>
         <div className="ci-done">
           <div className="cd-mark">
             <Icon name="check" size={32} />
@@ -90,7 +92,6 @@ export function CheckinSheet() {
               className={`chip${on ? ' selected' : ''}`}
               onClick={() => toggle(opt)}
             >
-              {on && <Icon name="check" size={13} />}
               {opt.label}
             </button>
           );

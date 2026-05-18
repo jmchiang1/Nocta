@@ -1,10 +1,10 @@
-/* Nocta — AHI primary metric card with the baseline strip (replaces donut gauges). */
+/* Nocta — AHI primary metric card with a Chart.js baseline bar (replaces donut gauges). */
 import { Icon } from './Icons.jsx';
+import { BaselineBar } from './Charts.jsx';
 
 export function MetricPrimary({ ahi }) {
   const hasValue = ahi.value != null;
   const dirClass = ahi.dir === 'down' ? 'good' : ahi.dir === 'flat' ? 'flat' : '';
-  const [rLo, rHi] = ahi.rangePct;
 
   return (
     <section className="ahi-card card-enter" aria-label="AHI for last night">
@@ -13,7 +13,9 @@ export function MetricPrimary({ ahi }) {
           <div className="label">AHI · Events per hour</div>
           <div className="ahi-value tnum">{hasValue ? ahi.value.toFixed(1) : '—'}</div>
           <div className="ahi-unit">
-            {hasValue ? `vs. 14-day average ${ahi.avg14.toFixed(1)}` : 'Last night was too short to score'}
+            {hasValue
+              ? `vs. 14-day average ${ahi.avg14.toFixed(1)}`
+              : 'Last night was too short to score'}
           </div>
         </div>
         {hasValue && ahi.delta != null && (
@@ -24,12 +26,11 @@ export function MetricPrimary({ ahi }) {
         )}
       </div>
 
-      <div className="baseline" aria-hidden="true">
-        <div className="range" style={{ left: `${rLo}%`, width: `${rHi - rLo}%` }} />
-        {hasValue && ahi.markerPct != null && (
-          <div className="marker" style={{ left: `${ahi.markerPct}%` }} />
-        )}
-      </div>
+      {hasValue && (
+        <div className="ahi-baseline">
+          <BaselineBar value={ahi.value} avg={ahi.avg14} />
+        </div>
+      )}
       <div className="baseline-labels">
         <span>0</span>
         <span className="you">{hasValue ? `You · ${ahi.value.toFixed(1)}` : 'Not scored'}</span>

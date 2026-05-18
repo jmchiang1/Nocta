@@ -86,6 +86,8 @@
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   padding: 14px 14px 12px;
+  /* let grid tracks shrink so the Chart.js spark canvas can't push the row wide */
+  min-width: 0;
 }
 .trend-tile .tt-label {
   font-size: 10px;
@@ -235,12 +237,8 @@
   grid-template-columns: 1fr 1fr;
   gap: 1px;
   margin-top: 16px;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  background: var(--hairline);
 }
 .device-card .dc-cell {
-  background: var(--surface-1);
   padding: 12px 14px;
 }
 .dc-cell .dc-k {
@@ -292,24 +290,8 @@
 .equip-row .er-age.alert {
   color: var(--alert);
 }
-.lifebar {
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-.lifebar > span {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  background: var(--good);
-}
-.lifebar > span.watch {
-  background: var(--watch);
-}
-.lifebar > span.alert {
-  background: var(--alert);
-}
+/* equipment + projection progress bars are rendered with Chart.js — see
+ * <ProgressBar> in components/Charts.jsx */
 
 /* generic list rows (settings, journal, projection) */
 .list {
@@ -344,6 +326,13 @@
 .list-row .lr-icon.accent {
   background: var(--accent-glow);
   color: var(--accent);
+}
+/* bare — just the glyph, no background box */
+.list-row .lr-icon.bare {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
 }
 .list-row .lr-main {
   flex: 1;
@@ -398,21 +387,6 @@
   font-size: 12.5px;
   color: var(--text-secondary);
   line-height: 1.5;
-}
-.pj-track {
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  position: relative;
-  overflow: hidden;
-}
-.pj-track > span {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-radius: 4px;
-  background: linear-gradient(90deg, var(--accent-deep), var(--accent));
 }
 .pj-scale {
   display: flex;
@@ -563,6 +537,23 @@
   margin: 0 0 12px;
 }
 
+/* morning check-in summary inside the full-night sheet */
+.fn-checkin {
+  border-radius: var(--r-md);
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.fn-checkin .ci-tags {
+  margin-top: 0;
+}
+.fn-checkin-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
 /* episodes list */
 .episode {
   border-radius: var(--r-md);
@@ -610,7 +601,19 @@
   color: var(--text-tertiary);
   font-weight: 600;
 }
+.episode-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.episode-collapse.open {
+  grid-template-rows: 1fr;
+}
 .episode-body {
+  overflow: hidden;
+  min-height: 0;
+}
+.episode-body-inner {
   padding: 4px 14px 14px;
   border-top: 1px solid var(--hairline);
 }
@@ -793,11 +796,9 @@
 /* empty / placeholder */
 .empty {
   text-align: center;
-  padding: 50px 24px;
   color: var(--text-tertiary);
 }
 .empty svg {
-  margin-bottom: 14px;
   opacity: 0.5;
 }
 .empty p {

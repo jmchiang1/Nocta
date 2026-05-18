@@ -1,52 +1,38 @@
-/* Nocta — the night timeline: stage bands + shape-coded event flags + journal icons. */
+/* Nocta — the night card: events through the night as a Chart.js stacked bar. */
 import { Icon } from './Icons.jsx';
+import { StackedBars } from './Charts.jsx';
 
-const STAGE_BG = {
-  rem: 'rgba(181,135,217,0.32)',
-  light: 'rgba(124,149,200,0.35)',
-  deep: 'rgba(46,65,128,0.55)',
-  awake: 'rgba(224,122,106,0.3)',
-};
+/* bin the night's events into time buckets for the bar chart */
+function binEvents(events, buckets = 9) {
+  const bins = Array.from({ length: buckets }, () => ({ csa: 0, osa: 0, hyp: 0 }));
+  events.forEach((e) => {
+    const i = Math.min(buckets - 1, Math.max(0, Math.floor((e.l / 100) * buckets)));
+    if (e.type === 'csa') bins[i].csa += 1;
+    else if (e.type === 'osa') bins[i].osa += 1;
+    else bins[i].hyp += 1; // leak
+  });
+  return bins;
+}
+
+const SWATCH = (color) => ({
+  width: 8,
+  height: 8,
+  borderRadius: 2,
+  background: `var(--${color})`,
+});
 
 export function NightTimeline({ timeline, session, onOpen }) {
-  const { stages, events, journal, eventCount } = timeline;
+  const bins = binEvents(timeline.events);
+
   return (
     <section className="night-card card-enter" aria-label="Overnight timeline">
       <div className="night-meta">
         <span>{session.start}</span>
-        <span className="mid">{eventCount} events</span>
+        <span className="mid">{timeline.eventCount} events</span>
         <span>{session.end}</span>
       </div>
 
-      {journal.length > 0 && (
-        <div className="night-journal">
-          <span className="nj-label">You logged</span>
-          {journal.map((j, i) => (
-            <span key={i} className="nj-chip">
-              <span className="nj-emoji">{j.emoji}</span>
-              {j.label}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <button className="timeline" onClick={onOpen} aria-label="Open full-night view">
-        {stages.map((s, i) => (
-          <div
-            key={i}
-            className="stage"
-            style={{ left: `${s.l}%`, width: `${s.w}%`, background: STAGE_BG[s.stage] }}
-          />
-        ))}
-        {events.map((e, i) => (
-          <span
-            key={i}
-            className={`ev ${e.type}`}
-            style={{ left: `${e.l}%`, top: e.top != null ? `${e.top}%` : undefined }}
-          />
-        ))}
-      </button>
-
+      <StackedBars series={bins} height={104} />
       <div className="axis">
         <span>11PM</span>
         <span>1AM</span>
@@ -57,22 +43,13 @@ export function NightTimeline({ timeline, session, onOpen }) {
 
       <div className="legend">
         <span>
-          <span className="swatch csa" /> CSA
+          <span className="swatch" style={SWATCH('alert')} /> Central
         </span>
         <span>
-          <span className="swatch osa" /> OSA
+          <span className="swatch" style={SWATCH('watch')} /> Obstructive
         </span>
         <span>
-          <span className="swatch leak" /> Leak
-        </span>
-        <span>
-          <span className="swatch deep" /> Deep
-        </span>
-        <span>
-          <span className="swatch light" /> Light
-        </span>
-        <span>
-          <span className="swatch rem" /> REM
+          <span className="swatch" style={SWATCH('data-1')} /> Leak
         </span>
       </div>
 

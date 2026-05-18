@@ -88,68 +88,86 @@
   }
 }
 
-/* ============ WEEK STRIP ============ */
+/* ============ WEEK STRIP — last 7 nights, as moons ============ */
 .week {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  /* gap: 7px; */
   margin-bottom: 22px;
 }
 .day {
+  height: min-content;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 10px 0 11px;
-  border-radius: 14px;
-  border: 1px solid transparent;
-  transition: transform 0.12s ease;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: transparent;
+  /* border: 1px solid var(--hairline); */
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
 }
 .day:active {
   transform: scale(0.95);
 }
-.day .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--data-faint);
+.day:hover:not(.selected):not(.empty) {
+  background: rgba(255, 255, 255, 0.05);
+}
+.day:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+/* Nights with no CPAP data — gray moon, not tappable */
+.day.empty {
+  cursor: default;
+}
+.day-moon {
+  display: block;
+  color: var(--data-faint);
+}
+.day.good .day-moon {
+  color: var(--good);
+  filter: drop-shadow(0 0 5px rgba(125, 201, 154, 0.55));
+}
+.day.watch .day-moon {
+  color: var(--watch);
+  filter: drop-shadow(0 0 5px rgba(230, 184, 92, 0.55));
+}
+.day.alert .day-moon {
+  color: var(--alert);
+  filter: drop-shadow(0 0 5px rgba(224, 122, 106, 0.55));
+}
+.day.missed .day-moon {
+  color: rgba(255, 255, 255, 0.14);
 }
 .day .d-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-tertiary);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-weight: 600;
-}
-.day.good .dot {
-  background: var(--good);
-  box-shadow: 0 0 8px rgba(125, 201, 154, 0.4);
-}
-.day.watch .dot {
-  background: var(--watch);
-  box-shadow: 0 0 8px rgba(230, 184, 92, 0.4);
-}
-.day.alert .dot {
-  background: var(--alert);
-  box-shadow: 0 0 8px rgba(224, 122, 106, 0.4);
-}
-.day.missed .dot {
-  background: rgba(255, 255, 255, 0.1);
+  font-weight: 700;
 }
 .day.selected {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--hairline-strong);
+  background: rgba(240, 164, 122, 0.1);
+  border-color: rgba(240, 164, 122, 0.32);
 }
 .day.selected .d-label {
-  color: var(--text-primary);
+  color: var(--accent-soft);
 }
-.day.selected .dot {
-  width: 10px;
-  height: 10px;
+.day.selected .day-moon {
+  filter: drop-shadow(0 0 8px currentColor);
 }
 
 /* ============ WHY-CARD ============
- * Pattern: eyebrow -> headline (verdict) -> sparkline -> action -> receipts -> trust.
+ * Pattern: headline (verdict) -> sparkline -> action -> receipts -> trust.
  * Forensic detail collapses into the tappable receipts row. No chip row. */
 .why-card {
   position: relative;
@@ -201,29 +219,6 @@
 .why-card.state-insufficient::before {
   background: linear-gradient(180deg, var(--text-tertiary) 0%, transparent 100%);
   opacity: 0.5;
-}
-
-/* eyebrow — who / when */
-.why-card .eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  margin-bottom: 14px;
-}
-.why-card.state-steady .eyebrow,
-.why-card.state-win .eyebrow {
-  color: var(--good);
-}
-.why-card.state-escalation .eyebrow {
-  color: var(--alert);
-}
-.why-card.state-insufficient .eyebrow {
-  color: var(--text-tertiary);
 }
 
 /* headline — one verdict, Fraunces serif */
@@ -337,20 +332,28 @@
 .why-card .receipts[aria-expanded='true'] {
   border-bottom-color: transparent;
 }
+/* receipts detail — smooth height collapse via grid-template-rows */
+.why-card .receipts-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.why-card .receipts-collapse.open {
+  grid-template-rows: 1fr;
+}
 .why-card .receipts-detail {
-  /* padding: 0 0 14px; */
+  overflow: hidden;
+  min-height: 0;
+}
+.why-card .receipts-detail-inner {
+  padding: 2px 0 4px;
   font-size: 13px;
   line-height: 1.55;
   color: var(--text-secondary);
-  /* border-bottom: 1px solid var(--hairline); */
-  /* margin-bottom: 12px; */
 }
-.why-card .receipts-detail strong {
+.why-card .receipts-detail-inner strong {
   color: var(--text-primary);
   font-weight: 600;
-}
-.why-card .receipts-detail[hidden] {
-  display: none;
 }
 
 /* trust footer — confidence + disclaimer, one line */
@@ -388,7 +391,7 @@
   padding: 22px 22px 20px;
   background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
   border: 1px solid var(--hairline);
-  /* margin-bottom: 12px; */
+  margin-bottom: 22px;
   box-shadow: var(--shadow-card);
 }
 .ahi-top {
@@ -437,30 +440,9 @@
   display: block;
 }
 
-/* baseline strip */
-.baseline {
+/* baseline bar (Chart.js) */
+.ahi-baseline {
   margin-top: 8px;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
-  position: relative;
-}
-.baseline .range {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, rgba(125, 201, 154, 0.25), rgba(125, 201, 154, 0.45));
-  border-radius: 3px;
-}
-.baseline .marker {
-  position: absolute;
-  top: -5px;
-  bottom: -5px;
-  width: 3px;
-  background: var(--accent);
-  border-radius: 2px;
-  box-shadow: 0 0 12px rgba(240, 164, 122, 0.6);
-  transform: translateX(-50%);
 }
 .baseline-labels {
   display: flex;
@@ -474,14 +456,233 @@
   font-weight: 600;
 }
 
-/* ============ SECONDARY METRICS ROW ============ */
-.metrics-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+/* ============ APPLE WATCH — BODY RESPONSE CARD ============
+ * Optional: renders only when a fixture carries `bodyResponse` (future
+ * HealthKit integration; mock data in v1). See data/fixtures.js. */
+.body-card {
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+  border: 1px solid var(--hairline);
+  padding: 18px;
+  margin-bottom: 14px;
+  /* lets the section content transition to/from height:auto on modern browsers */
+  interpolate-size: allow-keywords;
+}
+/* collapsible section — collapsed by default; native <details>/<summary> */
+.body-card .bc-section {
+  border-top: 1px solid var(--hairline);
+}
+.body-card .bc-section:first-of-type {
+  border-top: 0;
+}
+.body-card .bc-summary {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  margin-bottom: 6px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.body-card .bc-summary::-webkit-details-marker {
+  display: none;
+}
+.body-card .bc-section:first-of-type .bc-summary {
+  padding-top: 0;
+}
+.body-card .bc-summary-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.body-card .bc-summary-val {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-feature-settings: 'tnum' 1;
+}
+.body-card .bc-chev {
+  color: var(--text-tertiary);
+  transition: transform 0.18s ease;
+}
+.body-card .bc-section[open] .bc-chev {
+  transform: rotate(180deg);
+}
+.body-card .bc-section-body {
+  padding-bottom: 16px;
+}
+/* smooth expand / collapse — modern browsers animate height; older ones snap */
+.body-card .bc-section::details-content {
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    height 0.28s ease,
+    opacity 0.2s ease,
+    content-visibility 0.28s allow-discrete;
+}
+.body-card .bc-section[open]::details-content {
+  height: auto;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .body-card .bc-section::details-content {
+    transition: none;
+  }
+}
+.body-card .bc-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.body-card .bc-empty {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+.body-card .bc-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 8px;
+  margin-top: 14px;
+}
+.body-card .bc-stat {
+  min-width: 0;
+}
+.body-card .bc-k {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.body-card .bc-v {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  font-feature-settings: 'tnum' 1;
+}
+.body-card .bc-v i {
+  font-style: normal;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: 2px;
+}
+/* SpO₂ escalation line — honest, non-diagnostic, points back to a doctor */
+.body-card .bc-flag {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(224, 122, 106, 0.08);
+  border: 1px solid rgba(224, 122, 106, 0.2);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.body-card .bc-flag svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--alert);
+}
+/* hypnogram time axis */
+.body-card .bc-hyp-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  font-feature-settings: 'tnum' 1;
+}
+/* sleep-stage legend — one row per stage, duration + % of time asleep */
+.body-card .bc-stage-legend {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.body-card .bc-stage-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+}
+.body-card .bc-stage-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.body-card .bc-stage-name {
+  flex: 1;
+  color: var(--text-secondary);
+}
+.body-card .bc-stage-dur {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-feature-settings: 'tnum' 1;
+}
+.body-card .bc-stage-pct {
+  width: 38px;
+  text-align: right;
+  color: var(--text-tertiary);
+  font-feature-settings: 'tnum' 1;
+}
+.body-card .stage-deep {
+  background: var(--stage-deep);
+}
+.body-card .stage-rem {
+  background: var(--stage-rem);
+}
+.body-card .stage-light {
+  background: var(--stage-light);
+}
+.body-card .stage-awake {
+  background: var(--stage-awake);
+}
+.body-card .bc-sleep {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+.body-card .bc-sleep-label {
+  margin-bottom: 9px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.body-card .bc-sleep-label strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ============ SECONDARY METRICS ROW ============ */
+/* horizontal scroll carousel — bleeds to the phone edges (negative margin
+ * cancels the .scroll body padding) so cards scroll edge to edge */
+.metrics-row {
+  display: flex;
+  gap: 10px;
+  margin: 0 -20px 6px;
+  padding: 0 20px;
+  overflow-x: auto;
+  /* scroll-snap-type: x proximity; */
+  /* -webkit-overflow-scrolling: touch; */
+  /* scrollbar-width: none; */
+}
+.metrics-row::-webkit-scrollbar {
+  display: none;
 }
 .metric {
+  flex: 0 0 152px;
+  scroll-snap-align: start;
   background: var(--surface-1);
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
@@ -524,6 +725,9 @@
   padding: 20px 20px 16px;
   margin-bottom: 22px;
   box-shadow: var(--shadow-card);
+}
+.night-card .chart {
+  margin-top: 12px;
 }
 .night-meta {
   display: flex;
@@ -818,8 +1022,8 @@
   height: 70px;
   border-radius: var(--r-xl);
   background: rgba(20, 26, 46, 0.82);
-  backdrop-filter: blur(28px) saturate(140%);
-  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  backdrop-filter: blur(8px) saturate(140%);
+  /* -webkit-backdrop-filter: blur(28px) saturate(140%); */
   border: 1px solid var(--hairline-strong);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -874,10 +1078,18 @@
   z-index: 50;
   background: rgba(5, 7, 14, 0.6);
   backdrop-filter: blur(2px);
-  animation: fade 0.25s ease-out both;
+  animation: fade 0.3s ease both;
+}
+.sheet-scrim.closing {
+  animation: fadeOut 0.3s ease both;
 }
 @keyframes fade {
   from {
+    opacity: 0;
+  }
+}
+@keyframes fadeOut {
+  to {
     opacity: 0;
   }
 }
@@ -894,7 +1106,10 @@
   background: linear-gradient(180deg, var(--surface-3) 0%, var(--bg-base) 22%);
   border-top: 1px solid var(--hairline-strong);
   box-shadow: var(--shadow-sheet);
-  animation: slideUp 0.3s ease-out both;
+  animation: slideUp 0.34s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.sheet.closing {
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 1, 1) both;
 }
 .sheet.full {
   top: 0;
@@ -903,6 +1118,11 @@
 }
 @keyframes slideUp {
   from {
+    transform: translateY(100%);
+  }
+}
+@keyframes slideDown {
+  to {
     transform: translateY(100%);
   }
 }
