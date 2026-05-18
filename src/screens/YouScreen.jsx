@@ -1,4 +1,5 @@
-/* Nocta — You tab. Profile, journal history, settings, account. */
+/* Nocta — You tab. Profile, journal history, connected devices, settings, account. */
+import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { JOURNAL_HISTORY, TAG_LABELS } from '../data/journal.js';
 import { StatusBar } from '../components/StatusBar.jsx';
@@ -11,8 +12,32 @@ const SETTINGS = [
   { icon: 'download', title: 'Export my data', sub: 'Download everything Nocta holds' },
 ];
 
+/* third-party body-data sources Nocta can pull from, beyond the CPAP machine */
+const CONNECT_DEVICES = [
+  { key: 'health', icon: 'heart', title: 'Apple Health', sub: 'Steps, workouts, and body metrics' },
+  { key: 'oura', icon: 'dotRing', title: 'Oura Ring', sub: 'Sleep and recovery from your ring' },
+  { key: 'whoop', icon: 'exercise', title: 'Whoop', sub: 'Strain and recovery tracking' },
+];
+
+/* accessible on/off switch */
+function Switch({ on, onChange, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      className={`switch${on ? ' on' : ''}`}
+      onClick={() => onChange(!on)}
+    >
+      <span className="switch-knob" />
+    </button>
+  );
+}
+
 export function YouScreen() {
   const { checkin, resetCheckin, resetOnboarding } = useStore();
+  const [watchSync, setWatchSync] = useState(true);
 
   return (
     <div className="screen">
@@ -72,6 +97,38 @@ export function YouScreen() {
               <div className="lr-title">Sign out</div>
             </div>
           </button>
+        </div>
+
+        <div className="section-head">
+          <h3>Connected devices</h3>
+        </div>
+        <div className="list">
+          <div className="list-row">
+            <div className="lr-icon">
+              <Icon name="clock" size={17} />
+            </div>
+            <div className="lr-main">
+              <div className="lr-title">Apple Watch</div>
+              <div className="lr-sub">
+                {watchSync
+                  ? 'Synced · heart rate, blood oxygen, sleep stages'
+                  : 'Sync paused'}
+              </div>
+            </div>
+            <Switch on={watchSync} onChange={setWatchSync} label="Apple Watch sync" />
+          </div>
+          {CONNECT_DEVICES.map((d) => (
+            <div className="list-row" key={d.key}>
+              <div className="lr-icon">
+                <Icon name={d.icon} size={17} />
+              </div>
+              <div className="lr-main">
+                <div className="lr-title">{d.title}</div>
+                <div className="lr-sub">{d.sub}</div>
+              </div>
+              <button className="connect-btn">Connect</button>
+            </div>
+          ))}
         </div>
 
         <div className="section-head">

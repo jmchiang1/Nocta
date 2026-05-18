@@ -1,6 +1,6 @@
 /* Nocta — Trends tab. Range selector, trend charts, journal patterns, best/worst night. */
 import { useState } from 'react';
-import { getTrends, RANGES, RANGE_WINDOW } from '../data/trends.js';
+import { getTrends } from '../data/trends.js';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -8,7 +8,8 @@ import { Rich } from '../components/Rich.jsx';
 import { PatternCard } from '../components/PatternCard.jsx';
 import { LineChart, StackedBars, Bars, MetricSpark } from '../components/Charts.jsx';
 
-const RANGE_LABEL = { '7d': '7 days', '30d': '30 days', '90d': '90 days' };
+const RANGE_LABEL = { '7d': '7 days', '30d': '30 days', '90d': '90 days', custom: 'Custom' };
+const RANGE_TABS = ['7d', '30d', '90d', 'custom'];
 const GOOD_WHEN_DOWN = ['ahi', 'leak'];
 
 function norm(arr) {
@@ -22,10 +23,31 @@ function tileTone(key, dir) {
   return (dir === 'down') === goodDown ? 'good' : '';
 }
 
+/* 'YYYY-MM-DD' → 'Jun 7' (parsed as local time so the day doesn't shift) */
+function fmtDate(iso) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+/* inclusive night count between two ISO dates */
+function nightCount(start, end) {
+  return Math.round((new Date(end) - new Date(start)) / 86400000) + 1;
+}
+
 export function TrendsScreen() {
   const { fixtureId } = useStore();
   const [range, setRange] = useState('7d');
-  const t = getTrends(fixtureId, range);
+  const [customStart, setCustomStart] = useState('2026-05-25');
+  const [customEnd, setCustomEnd] = useState('2026-06-07');
+
+  const custom =
+    range === 'custom'
+      ? {
+          nights: Math.max(2, nightCount(customStart, customEnd)),
+          startLabel: fmtDate(customStart),
+          endLabel: fmtDate(customEnd),
+        }
+      : null;
+
+  const t = getTrends(fixtureId, range, custom);
   const ahiTotals = t.ahiSeries.map((d) => d.csa + d.osa + d.hyp);
   const sparks = {
     ahi: norm(ahiTotals),
@@ -46,12 +68,35 @@ export function TrendsScreen() {
         </header>
 
         <div className="segmented" role="tablist">
-          {RANGES.map((r) => (
+          {RANGE_TABS.map((r) => (
             <button key={r} className={r === range ? 'on' : ''} onClick={() => setRange(r)}>
               {RANGE_LABEL[r]}
             </button>
           ))}
         </div>
+
+        {range === 'custom' && (
+          <div className="date-range">
+            <label className="dr-field">
+              <span>From</span>
+              <input
+                type="date"
+                value={customStart}
+                max={customEnd}
+                onChange={(e) => setCustomStart(e.target.value)}
+              />
+            </label>
+            <label className="dr-field">
+              <span>To</span>
+              <input
+                type="date"
+                value={customEnd}
+                min={customStart}
+                onChange={(e) => setCustomEnd(e.target.value)}
+              />
+            </label>
+          </div>
+        )}
 
         <div className="trend-grid">
           {t.tiles.map((tile) => {
@@ -172,7 +217,7 @@ export function TrendsScreen() {
               <span className="meta">from your journal</span>
             </div>
             {t.patterns.map((p, i) => (
-              <PatternCard key={i} pattern={p} window={RANGE_WINDOW[range]} />
+              <PatternCard key={i} pattern={p} window={t.window} />
             ))}
           </>
         )}

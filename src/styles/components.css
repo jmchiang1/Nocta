@@ -178,7 +178,7 @@
   box-shadow: var(--shadow-card);
   background:
     radial-gradient(140% 100% at 0% 0%, rgba(240, 164, 122, 0.14) 0%, rgba(240, 164, 122, 0) 55%),
-    linear-gradient(180deg, #1c1e35 0%, #161a30 100%);
+    #191c33;
   border: 1px solid rgba(240, 164, 122, 0.18);
 }
 .why-card::before {
@@ -196,30 +196,30 @@
 .why-card.state-win {
   background:
     radial-gradient(140% 100% at 0% 0%, rgba(125, 201, 154, 0.1) 0%, rgba(125, 201, 154, 0) 55%),
-    linear-gradient(180deg, #1a2237 0%, #151c30 100%);
+    #181f34;
   border-color: rgba(125, 201, 154, 0.22);
 }
-.why-card.state-steady::before,
+/* .why-card.state-steady::before,
 .why-card.state-win::before {
   background: linear-gradient(180deg, var(--good) 0%, rgba(125, 201, 154, 0) 100%);
-}
+} */
 .why-card.state-escalation {
   background:
     radial-gradient(140% 100% at 0% 0%, rgba(224, 122, 106, 0.14) 0%, rgba(224, 122, 106, 0) 55%),
-    linear-gradient(180deg, #1f1d2e 0%, #181530 100%);
+    #1c192f;
   border-color: rgba(224, 122, 106, 0.28);
 }
-.why-card.state-escalation::before {
+/* .why-card.state-escalation::before {
   background: linear-gradient(180deg, var(--alert) 0%, rgba(224, 122, 106, 0) 100%);
-}
+} */
 .why-card.state-insufficient {
-  background: linear-gradient(180deg, #161b2d 0%, #121728 100%);
+  background: #141929;
   border-color: var(--hairline-strong);
 }
-.why-card.state-insufficient::before {
+/* .why-card.state-insufficient::before {
   background: linear-gradient(180deg, var(--text-tertiary) 0%, transparent 100%);
   opacity: 0.5;
-}
+} */
 
 /* headline — one verdict, Fraunces serif */
 .why-card .headline {
@@ -591,8 +591,10 @@
   margin-top: 1px;
   color: var(--alert);
 }
-/* hypnogram time axis */
-.body-card .bc-hyp-axis {
+/* ============ SLEEP STAGES — hypnogram + legend ============
+ * Standalone (not body-card scoped) so the body-response card and the
+ * full-night sheet can both render it. */
+.ss-axis {
   display: flex;
   justify-content: space-between;
   margin-top: 6px;
@@ -602,50 +604,50 @@
   color: var(--text-tertiary);
   font-feature-settings: 'tnum' 1;
 }
-/* sleep-stage legend — one row per stage, duration + % of time asleep */
-.body-card .bc-stage-legend {
+/* one row per stage — duration + % of time asleep */
+.ss-legend {
   margin-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 9px;
 }
-.body-card .bc-stage-row {
+.ss-row {
   display: flex;
   align-items: center;
   gap: 9px;
   font-size: 13px;
 }
-.body-card .bc-stage-dot {
+.ss-dot {
   width: 9px;
   height: 9px;
   border-radius: 3px;
   flex-shrink: 0;
 }
-.body-card .bc-stage-name {
+.ss-name {
   flex: 1;
   color: var(--text-secondary);
 }
-.body-card .bc-stage-dur {
+.ss-dur {
   color: var(--text-primary);
   font-weight: 600;
   font-feature-settings: 'tnum' 1;
 }
-.body-card .bc-stage-pct {
+.ss-pct {
   width: 38px;
   text-align: right;
   color: var(--text-tertiary);
   font-feature-settings: 'tnum' 1;
 }
-.body-card .stage-deep {
+.ss-dot.stage-deep {
   background: var(--stage-deep);
 }
-.body-card .stage-rem {
+.ss-dot.stage-rem {
   background: var(--stage-rem);
 }
-.body-card .stage-light {
+.ss-dot.stage-light {
   background: var(--stage-light);
 }
-.body-card .stage-awake {
+.ss-dot.stage-awake {
   background: var(--stage-awake);
 }
 .body-card .bc-sleep {

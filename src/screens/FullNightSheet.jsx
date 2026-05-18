@@ -6,6 +6,7 @@ import { TAG_LABELS } from '../data/journal.js';
 import { genBreathing, genSeries } from '../lib/format.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
+import { SleepStages } from '../components/SleepStages.jsx';
 import { LineChart, Waveform, Bars, EventWave } from '../components/Charts.jsx';
 
 const WAVE_COLOR = { CSA: 'alert', OSA: 'watch', Hypopnea: 'data' };
@@ -67,7 +68,7 @@ export function FullNightSheet() {
       title="The full night"
       onClose={closeSheet}
     >
-      {(close) => (
+      {() => (
         <>
           <div className="fn-summary">
             <div className="fn-stat">
@@ -118,17 +119,17 @@ export function FullNightSheet() {
 
           <div className="section-head">
             <h3>Sleep stages</h3>
-            <span className="meta">needs a wearable</span>
+            <span className="meta">Apple Watch</span>
           </div>
-          <div className="connect-cta">
-            <p>
-              Connect a watch or ring and Nocta can line your sleep stages up against your
-              events.
-            </p>
-            <button className="btn ghost" onClick={close}>
-              Connect a wearable
-            </button>
-          </div>
+          {fx.bodyResponse?.stages ? (
+            <div className="chart-card">
+              <SleepStages stages={fx.bodyResponse.stages} session={fx.session} />
+            </div>
+          ) : (
+            <div className="connect-cta">
+              <p>Last night was too short for your watch to chart sleep stages.</p>
+            </div>
+          )}
 
           <div className="section-head">
             <h3>Flow rate</h3>

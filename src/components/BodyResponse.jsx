@@ -3,21 +3,14 @@
  * integration; mock data in v1). Four collapsible sections — heart rate, blood
  * oxygen, sleep stages, awakenings — each collapsed by default, showing a key
  * stat on its summary row. Data display only — no scoring, no diagnosis. */
-import { LineChart, ProgressBar, Hypnogram } from './Charts.jsx';
+import { LineChart, ProgressBar } from './Charts.jsx';
+import { SleepStages } from './SleepStages.jsx';
 import { Icon } from './Icons.jsx';
-import { genHypnogram, fmtDur } from '../lib/format.js';
+import { fmtDur } from '../lib/format.js';
 
 function avgOf(series) {
   return Math.round(series.reduce((s, v) => s + v, 0) / series.length);
 }
-
-/* legend / hypnogram order: awake at the top of the chart, deep at the bottom */
-const STAGE_ORDER = [
-  { key: 'awake', label: 'Awake' },
-  { key: 'rem', label: 'REM' },
-  { key: 'light', label: 'Light' },
-  { key: 'deep', label: 'Deep' },
-];
 
 function Stat({ label, value, unit }) {
   return (
@@ -50,14 +43,7 @@ export function BodyResponse({ data, session }) {
   const avgHr = avgOf(hr.series);
   const lowHr = Math.round(Math.min(...hr.series));
   const asleepPct = (sleep.asleepHours / sleep.maskOnHours) * 100;
-
-  // sleep stages — totals are authored; the hypnogram is generated from them
   const asleepH = stages ? stages.deep + stages.rem + stages.light : 0;
-  const hypnogram = stages
-    ? genHypnogram(`hyp-${stages.deep}-${stages.rem}-${stages.light}-${stages.awake}`, stages)
-    : null;
-  const stagePct = (h) => (asleepH > 0 ? Math.round((h / asleepH) * 100) : 0);
-
   const hasSpo2 = spo2 && spo2.avg !== '—';
 
   return (
@@ -95,25 +81,7 @@ export function BodyResponse({ data, session }) {
       <Section title="Sleep stages" summary={stages ? `${fmtDur(asleepH)} asleep` : '—'}>
         {stages ? (
           <>
-            <Hypnogram samples={hypnogram} />
-            {session && (
-              <div className="bc-hyp-axis">
-                <span>{session.start}</span>
-                <span>{session.end}</span>
-              </div>
-            )}
-            <div className="bc-stage-legend">
-              {STAGE_ORDER.map(({ key, label }) => (
-                <div key={key} className="bc-stage-row">
-                  <i className={`bc-stage-dot stage-${key}`} />
-                  <span className="bc-stage-name">{label}</span>
-                  <span className="bc-stage-dur tnum">{fmtDur(stages[key])}</span>
-                  <span className="bc-stage-pct tnum">
-                    {key === 'awake' ? '' : `${stagePct(stages[key])}%`}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <SleepStages stages={stages} session={session} />
             <div className="bc-sleep">
               <div className="bc-sleep-label">
                 Asleep <strong>{sleep.asleepHours}h</strong> of <strong>{sleep.maskOnHours}h</strong>{' '}

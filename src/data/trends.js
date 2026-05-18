@@ -96,9 +96,8 @@ const PROFILES = {
   },
 };
 
-function build(id, range) {
+function build(id, range, n = RANGE_N[range]) {
   const p = PROFILES[id];
-  const n = RANGE_N[range];
   let csa = shape(id + 'csa', n, p.csa[0], p.csa[1], p.j);
   let osa = shape(id + 'osa', n, p.osa[0], p.osa[1], p.j);
   let hyp = shape(id + 'hyp', n, p.hyp[0], p.hyp[1], p.j);
@@ -542,13 +541,36 @@ const FIXTURE_DATA = {
   },
 };
 
-export function getTrends(fixtureId, range) {
+/* A custom window has no hand-authored copy of its own, so it borrows the
+ * nearest preset's tiles + insights — the story is the same, just a different
+ * zoom. The charts below it are generated for the exact span requested. */
+const customBucket = (n) => (n <= 14 ? '7d' : n <= 50 ? '30d' : '90d');
+
+export function getTrends(fixtureId, range, custom) {
   const id = FIXTURE_DATA[fixtureId] ? fixtureId : 'anomaly';
+
+  if (range === 'custom' && custom) {
+    const nights = Math.max(2, Math.min(365, Math.round(custom.nights)));
+    const d = FIXTURE_DATA[id][customBucket(nights)];
+    return {
+      rangeLabel: `${custom.startLabel} – ${custom.endLabel}`,
+      xLabels: [custom.startLabel, '', '', '', '', '', custom.endLabel],
+      window: `${nights} nights`,
+      ahiAvg: d.ahiAvg,
+      tiles: d.tiles,
+      insights: d.insights,
+      bestWorst: d.bestWorst,
+      patterns: d.patterns,
+      ...build(id, 'custom', nights),
+    };
+  }
+
   const r = FIXTURE_DATA[id][range] ? range : '7d';
   const d = FIXTURE_DATA[id][r];
   return {
     rangeLabel: RANGE_LABEL[r],
     xLabels: X_LABELS[r],
+    window: RANGE_WINDOW[r],
     ahiAvg: d.ahiAvg,
     tiles: d.tiles,
     insights: d.insights,

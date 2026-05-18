@@ -74,6 +74,50 @@
   color: var(--text-primary);
 }
 
+/* ============ CUSTOM DATE RANGE ============ */
+/* shown under the segmented control when the Custom tab is active */
+.date-range {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.dr-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dr-field > span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.dr-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 13px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  font-feature-settings: 'tnum' 1;
+}
+.dr-field input:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 1px;
+}
+.dr-field input::-webkit-calendar-picker-indicator {
+  filter: invert(0.65);
+  cursor: pointer;
+}
+
 /* ============ TREND SUMMARY GRID ============ */
 .trend-grid {
   display: grid;
@@ -351,6 +395,45 @@
   font-size: 13px;
   color: var(--text-secondary);
   font-weight: 600;
+}
+/* on/off switch — connected-device sync */
+.switch {
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  padding: 3px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.18s ease;
+}
+.switch.on {
+  background: var(--accent);
+}
+.switch-knob {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s ease;
+}
+.switch.on .switch-knob {
+  transform: translateX(18px);
+}
+/* "Connect" pill — add a not-yet-linked data source */
+.connect-btn {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--accent-glow);
+  color: var(--accent);
+  transition: transform 0.12s ease;
+}
+.connect-btn:active {
+  transform: scale(0.96);
 }
 
 /* compliance projection */
