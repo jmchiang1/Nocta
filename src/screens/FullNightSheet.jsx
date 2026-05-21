@@ -9,7 +9,9 @@ import { Icon } from '../components/Icons.jsx';
 import { SleepStages } from '../components/SleepStages.jsx';
 import { LineChart, Waveform, Bars, EventWave } from '../components/Charts.jsx';
 
-const WAVE_COLOR = { CSA: 'alert', OSA: 'watch', Hypopnea: 'data' };
+/* Episode mini-waveform colour: central apneas are the escalation signal per
+ * the safety rails, so they get coral. Everything else is the metric blue. */
+const WAVE_COLOR = { CSA: 'alert', OSA: 'data', Hypopnea: 'data' };
 
 function Episode({ ep }) {
   const [open, setOpen] = useState(false);
@@ -158,7 +160,7 @@ export function FullNightSheet() {
             <span className="meta">L/min · 24 threshold</span>
           </div>
           <div className="chart-card">
-            <LineChart values={leak} color="accent" threshold={24} />
+            <LineChart values={leak} color="data" threshold={24} />
             <div className="chart-axis">
               <span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span>
             </div>
@@ -169,7 +171,7 @@ export function FullNightSheet() {
             <span className="meta">0 – 10</span>
           </div>
           <div className="chart-card">
-            <Bars values={snore} color="watch" />
+            <Bars values={snore} color="data" />
             <div className="chart-axis">
               <span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span>
             </div>

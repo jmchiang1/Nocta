@@ -328,9 +328,6 @@
   color: var(--text-tertiary);
   font-weight: 600;
 }
-.equip-row .er-age.watch {
-  color: var(--watch);
-}
 .equip-row .er-age.alert {
   color: var(--alert);
 }
@@ -378,6 +375,24 @@
   border-radius: 0;
   background: none;
 }
+/* app-icon variant — holds a real product photo (Oura, Whoop, Apple Health
+ * on the Add device picker). Bigger than the line-icon slot so the photos
+ * read like real app launchers, with iOS-style rounding. */
+.list-row .lr-icon.app {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: none;
+  overflow: hidden;
+  padding: 0;
+}
+.list-row .lr-icon.app img {
+  display: block;
+  width: 80%;
+  height: 80%;
+  object-fit: cover;
+  border-radius: 4px;
+}
 .list-row .lr-main {
   flex: 1;
   min-width: 0;
@@ -395,6 +410,29 @@
   font-size: 13px;
   color: var(--text-secondary);
   font-weight: 600;
+}
+/* "Add a device" row — peach plus-icon, mild accent tint on the title so
+ * it reads as a call-to-action sitting at the bottom of the device list */
+.list-row.add .lr-title {
+  color: var(--accent-soft);
+}
+/* empty-state row — no device connected yet */
+.list-row.empty {
+  cursor: default;
+}
+.list-row.empty .lr-title {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+/* generic empty-state copy used inside sheets (Add device picker, etc.) */
+.empty-state {
+  margin: 18px 0;
+  padding: 18px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--hairline-strong);
 }
 /* on/off switch — connected-device sync */
 .switch {
@@ -478,6 +516,34 @@
   font-size: 10.5px;
   color: var(--text-tertiary);
   font-weight: 600;
+}
+
+/* ============ COMPLIANCE NIGHTLY DOTS ============
+ * 30-night status under the compliance progress bar — purely informational.
+ * Compliance is a regulatory bar; we add visibility, never playability. */
+.compliance-dots {
+  display: grid;
+  grid-template-columns: repeat(30, 1fr);
+  gap: 3px;
+  align-items: center;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+}
+.compliance-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.10); /* future */
+}
+.compliance-dot.met {
+  background: var(--good);
+  box-shadow: 0 0 4px rgba(125, 201, 154, 0.45);
+}
+.compliance-dot.missed {
+  background: var(--alert);
+  opacity: 0.85;
 }
 
 /* ============ PROFILE (You) ============ */

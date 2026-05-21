@@ -1,43 +1,16 @@
-/* Nocta — You tab. Profile, journal history, connected devices, settings, account. */
-import { useState } from 'react';
+/* Nocta — You tab. Profile, account, settings, connected devices.
+ * Account and Settings push full-screen subpages. Each connected device row
+ * opens a device-detail sheet (with disconnect), not a flat toggle.
+ * Journal history lives on Trends — it's data, not app config. */
 import { useStore } from '../lib/store.jsx';
-import { JOURNAL_HISTORY, TAG_LABELS } from '../data/journal.js';
+import { USER, CONNECTED_DEVICES, DEVICE_PHOTO } from '../data/account.js';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 
-const SETTINGS = [
-  { icon: 'bell', title: 'Notifications', sub: 'Morning check-in reminder · 7:00 AM' },
-  { icon: 'shield', title: 'Medical disclaimer', sub: 'Nocta is a wellness companion, not a device' },
-  { icon: 'lock', title: 'Privacy & data', sub: 'How your SleepHQ data is stored and used' },
-  { icon: 'download', title: 'Export my data', sub: 'Download everything Nocta holds' },
-];
-
-/* third-party body-data sources Nocta can pull from, beyond the CPAP machine */
-const CONNECT_DEVICES = [
-  { key: 'health', icon: 'heart', title: 'Apple Health', sub: 'Steps, workouts, and body metrics' },
-  { key: 'oura', icon: 'dotRing', title: 'Oura Ring', sub: 'Sleep and recovery from your ring' },
-  { key: 'whoop', icon: 'exercise', title: 'Whoop', sub: 'Strain and recovery tracking' },
-];
-
-/* accessible on/off switch */
-function Switch({ on, onChange, label }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      className={`switch${on ? ' on' : ''}`}
-      onClick={() => onChange(!on)}
-    >
-      <span className="switch-knob" />
-    </button>
-  );
-}
-
 export function YouScreen() {
-  const { checkin, resetCheckin, resetOnboarding } = useStore();
-  const [watchSync, setWatchSync] = useState(true);
+  const { checkin, resetCheckin, resetOnboarding, openSheet, deviceConnections } = useStore();
+  const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
+  const availableCount = CONNECTED_DEVICES.length - connectedDevices.length;
 
   return (
     <div className="screen">
@@ -48,87 +21,94 @@ export function YouScreen() {
         </header>
 
         <div className="profile-head">
-          <div className="avatar">J</div>
+          <div className="avatar">{USER.initials}</div>
           <div>
-            <div className="ph-name">Jonathan Chiang</div>
-            <div className="ph-sub">OSA · therapy day 11 of 30 · AirSense 11</div>
-          </div>
-        </div>
-
-        <div className="section-head">
-          <h3>Journal history</h3>
-          <span className="meta">{JOURNAL_HISTORY.length} nights</span>
-        </div>
-        <div className="list">
-          {JOURNAL_HISTORY.map((j) => (
-            <div className="list-row" key={j.date}>
-              <div className="lr-main">
-                <div className="lr-title">{j.date}</div>
-                <div className="lr-sub">
-                  {j.tags.map((t) => TAG_LABELS[t] || t).join(' · ')}
-                </div>
-              </div>
-              <div className="lr-right tnum">AHI {j.ahi}</div>
+            <div className="ph-name">{USER.name}</div>
+            <div className="ph-sub">
+              {USER.condition} · therapy day {USER.daysOnTherapy} of 30 · AirSense 11
             </div>
-          ))}
+          </div>
         </div>
 
         <div className="section-head">
           <h3>Account &amp; settings</h3>
         </div>
         <div className="list">
-          {SETTINGS.map((s) => (
-            <button className="list-row" key={s.title}>
-              <div className="lr-icon bare">
-                <Icon name={s.icon} size={17} />
-              </div>
-              <div className="lr-main">
-                <div className="lr-title">{s.title}</div>
-                <div className="lr-sub">{s.sub}</div>
-              </div>
-              <Icon name="chevronRight" size={17} />
-            </button>
-          ))}
-          <button className="list-row">
+          <button className="list-row" onClick={() => openSheet('account')}>
             <div className="lr-icon bare">
-              <Icon name="logout" size={17} />
+              <Icon name="you" size={17} />
             </div>
             <div className="lr-main">
-              <div className="lr-title">Sign out</div>
+              <div className="lr-title">Account</div>
+              <div className="lr-sub">Profile, plan, and sign out</div>
             </div>
+            <Icon name="chevronRight" size={17} />
+          </button>
+          <button className="list-row" onClick={() => openSheet('settings')}>
+            <div className="lr-icon bare">
+              <Icon name="settings" size={17} />
+            </div>
+            <div className="lr-main">
+              <div className="lr-title">Settings</div>
+              <div className="lr-sub">Notifications, privacy, and data</div>
+            </div>
+            <Icon name="chevronRight" size={17} />
           </button>
         </div>
 
         <div className="section-head">
           <h3>Connected devices</h3>
+          {connectedDevices.length > 0 && <span className="meta">tap to manage</span>}
         </div>
         <div className="list">
-          <div className="list-row">
-            <div className="lr-icon">
-              <Icon name="clock" size={17} />
+          {connectedDevices.map((d) => {
+            const photo = DEVICE_PHOTO[d.key];
+            return (
+              <button
+                key={d.key}
+                className="list-row"
+                onClick={() => openSheet('deviceDetail', { deviceKey: d.key })}
+              >
+                {photo ? (
+                  <div className="lr-icon app">
+                    <img src={photo} alt="" />
+                  </div>
+                ) : (
+                  <div className="lr-icon">
+                    <Icon name={d.icon} size={17} />
+                  </div>
+                )}
+                <div className="lr-main">
+                  <div className="lr-title">{d.title}</div>
+                  <div className="lr-sub">Connected · synced {d.lastSync || 'just now'}</div>
+                </div>
+                <span className="conn-dot on" aria-hidden="true" />
+                <Icon name="chevronRight" size={17} />
+              </button>
+            );
+          })}
+          {connectedDevices.length === 0 && (
+            <div className="list-row empty">
+              <div className="lr-main">
+                <div className="lr-title">No devices connected</div>
+                <div className="lr-sub">Pair a wearable to layer heart rate and sleep onto your therapy</div>
+              </div>
+            </div>
+          )}
+          <button className="list-row add" onClick={() => openSheet('addDevice')}>
+            <div className="lr-icon bare accent">
+              <Icon name="plus" size={17} />
             </div>
             <div className="lr-main">
-              <div className="lr-title">Apple Watch</div>
-              <div className="lr-sub">
-                {watchSync
-                  ? 'Synced · heart rate, blood oxygen, sleep stages'
-                  : 'Sync paused'}
-              </div>
+              <div className="lr-title">Add a device</div>
+              {/* <div className="lr-sub">
+                {connectedDevices.length === 0
+                  ? 'Apple Watch, Oura Ring, Whoop, or Apple Health'
+                  : `${availableCount} more available`}
+              </div> */}
             </div>
-            <Switch on={watchSync} onChange={setWatchSync} label="Apple Watch sync" />
-          </div>
-          {CONNECT_DEVICES.map((d) => (
-            <div className="list-row" key={d.key}>
-              <div className="lr-icon">
-                <Icon name={d.icon} size={17} />
-              </div>
-              <div className="lr-main">
-                <div className="lr-title">{d.title}</div>
-                <div className="lr-sub">{d.sub}</div>
-              </div>
-              <button className="connect-btn">Connect</button>
-            </div>
-          ))}
+            <Icon name="chevronRight" size={17} />
+          </button>
         </div>
 
         <div className="section-head">

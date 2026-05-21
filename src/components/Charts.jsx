@@ -29,9 +29,14 @@ ChartJS.register(
   Tooltip
 );
 
-/* token hexes mirrored from styles/tokens.css */
+/* token hexes mirrored from styles/tokens.css. The chart palette is the
+ * Oura-inspired 2-state system: `data` for every metric by default,
+ * `alert` only when a value crosses a threshold. `watch`/`good` remain in
+ * the table because non-chart UI (date-picker moons, lifecycle pills) still
+ * reads them — but charts must not call them. */
 const HEX = {
   data: '#7b95d8',
+  dataDeep: '#4a63a8',
   accent: '#f0a47a',
   accentDeep: '#d97f4f',
   watch: '#e6b85c',
@@ -41,8 +46,10 @@ const HEX = {
 const FAINT = 'rgba(123,149,216,0.28)';
 
 /* sleep-stage hexes mirrored from styles/tokens.css; level = wakefulness, so
- * the hypnogram bars step taller from deep sleep up to awake */
-const STAGE_HEX = { deep: '#2e4180', light: '#7c95c8', rem: '#b587d9', awake: '#e07a6a' };
+ * the hypnogram bars step taller from deep sleep up to awake. Stages ramp
+ * through one hue so the chart reads as a single phenomenon; awake breaks
+ * the ramp because it is the only out-of-expected state. */
+const STAGE_HEX = { deep: '#2e4180', light: '#7c95c8', rem: '#a3b7df', awake: '#e07a6a' };
 const STAGE_LEVEL = { deep: 0.3, light: 0.56, rem: 0.8, awake: 1 };
 
 function rgba(hex, a) {
@@ -89,10 +96,13 @@ function ChartBox({ height, marginTop, children }) {
 
 const emptyLabels = (n) => Array.from({ length: n }, () => '');
 
-/* ---- Sparkline: bars 0..1, optional per-bar kind ('', 'w', 'hi') ---- */
+/* ---- Sparkline: bars 0..1, optional per-bar kind ('', 'w', 'hi') ----
+ * 'hi' marks the focal bar (full-strength metric blue), 'w' marks an
+ * attention bar (coral). The rest sit faint. No yellow middle band — the
+ * 2-state palette does the work, the headline carries the verdict. */
 export function Sparkline({ values, kinds = [], height = 38 }) {
   const colors = values.map((_, i) =>
-    kinds[i] === 'hi' ? HEX.accent : kinds[i] === 'w' ? HEX.watch : FAINT
+    kinds[i] === 'hi' ? HEX.data : kinds[i] === 'w' ? HEX.alert : FAINT
   );
   const data = {
     labels: emptyLabels(values.length),
@@ -319,7 +329,12 @@ export function LineChart({ values, color = 'data', height = 110, threshold, yMi
   );
 }
 
-/* ---- Stacked bars: AHI events per night (csa / osa / hyp) ---- */
+/* ---- Stacked bars: AHI events per night (csa / osa / hyp) ----
+ * Hypopnea + obstructive ramp through the metric blue (faint → deep) so the
+ * stack reads as one quantity on a normal night. Central apneas alone get
+ * the coral attention hue, because per the safety rails their *appearance*
+ * is a clinical escalation signal — keeping them visually distinct lets the
+ * eye catch the pattern across the row without colouring every night red. */
 export function StackedBars({ series, height = 132 }) {
   const mk = (key, hex, label) => ({
     label,
@@ -334,8 +349,8 @@ export function StackedBars({ series, height = 132 }) {
     labels: emptyLabels(series.length),
     datasets: [
       mk('csa', HEX.alert, 'Central'),
-      mk('osa', HEX.watch, 'Obstructive'),
-      mk('hyp', HEX.data, 'Hypopnea'),
+      mk('osa', HEX.dataDeep, 'Obstructive'),
+      mk('hyp', rgba(HEX.data, 0.55), 'Hypopnea'),
     ],
   };
   const options = {

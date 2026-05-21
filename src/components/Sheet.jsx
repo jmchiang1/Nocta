@@ -1,12 +1,26 @@
 /* Nocta — modal slide-up sheet. Animates in on mount and out on close.
  * `children` / `footer` may be a render function receiving `close` so in-content
- * buttons trigger the same smooth dismissal. */
+ * buttons trigger the same smooth dismissal.
+ *
+ * `variant`: 'sheet' (default) slides up from the bottom; 'page' pushes in from
+ * the right edge — used for navigation drill-downs off the You tab (Account,
+ * Settings, Device Detail) where the surface is hierarchical rather than modal. */
 import { useState, useCallback } from 'react';
 import { Icon } from './Icons.jsx';
 
 const EXIT_MS = 300;
 
-export function Sheet({ eyebrow, title, onClose, children, footer, full = false, headRight }) {
+export function Sheet({
+  eyebrow,
+  title,
+  onClose,
+  children,
+  footer,
+  footerClass,
+  full = false,
+  headRight,
+  variant = 'sheet',
+}) {
   const [closing, setClosing] = useState(false);
 
   const close = useCallback(() => {
@@ -19,17 +33,19 @@ export function Sheet({ eyebrow, title, onClose, children, footer, full = false,
 
   const body = typeof children === 'function' ? children(close) : children;
   const foot = typeof footer === 'function' ? footer(close) : footer;
+  const isPage = variant === 'page';
+  const isFull = full || isPage;
 
   return (
     <>
       <div className={`sheet-scrim${closing ? ' closing' : ''}`} onClick={close} />
       <div
-        className={`sheet${full ? ' full' : ''}${closing ? ' closing' : ''}`}
+        className={`sheet${isFull ? ' full' : ''}${isPage ? ' page' : ''}${closing ? ' closing' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        {!full && <div className="sheet-grip" />}
+        {!isFull && <div className="sheet-grip" />}
         <div className="sheet-head">
           <div>
             {eyebrow && <div className="eyebrow">{eyebrow}</div>}
@@ -42,7 +58,9 @@ export function Sheet({ eyebrow, title, onClose, children, footer, full = false,
           )}
         </div>
         <div className="sheet-body">{body}</div>
-        {foot && <div className="sheet-foot">{foot}</div>}
+        {foot && (
+          <div className={`sheet-foot${footerClass ? ` ${footerClass}` : ''}`}>{foot}</div>
+        )}
       </div>
     </>
   );

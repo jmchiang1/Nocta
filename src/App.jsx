@@ -10,6 +10,12 @@ import { YouScreen } from './screens/YouScreen.jsx';
 import { CheckinSheet } from './screens/CheckinSheet.jsx';
 import { FullNightSheet } from './screens/FullNightSheet.jsx';
 import { CoachSheet } from './screens/CoachSheet.jsx';
+import { AccountSheet } from './screens/AccountSheet.jsx';
+import { SettingsSheet } from './screens/SettingsSheet.jsx';
+import { DeviceDetailSheet } from './screens/DeviceDetailSheet.jsx';
+import { AddDeviceSheet } from './screens/AddDeviceSheet.jsx';
+import { MaskPickerSheet } from './screens/MaskPickerSheet.jsx';
+import { JournalSheet } from './screens/JournalSheet.jsx';
 import { Onboarding } from './screens/Onboarding.jsx';
 
 const SCREENS = {
@@ -23,6 +29,12 @@ const SHEETS = {
   checkin: CheckinSheet,
   fullnight: FullNightSheet,
   coach: CoachSheet,
+  account: AccountSheet,
+  settings: SettingsSheet,
+  deviceDetail: DeviceDetailSheet,
+  addDevice: AddDeviceSheet,
+  maskPicker: MaskPickerSheet,
+  journal: JournalSheet,
 };
 
 function Shell() {
@@ -47,7 +59,9 @@ function Shell() {
       <DevPanel />
       <div className="phone">
         <Screen key={tab} />
-        <CoachFab />
+        {/* the Coach FAB is a focused entry point; hide it whenever a sheet
+         * is open so it can't compete for attention inside another flow */}
+        {!sheet && <CoachFab />}
         <TabBar />
         {ActiveSheet && <ActiveSheet />}
       </div>

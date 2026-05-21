@@ -9,10 +9,20 @@ import { MetricSecondary } from '../components/MetricSecondary.jsx';
 import { NightTimeline } from '../components/NightTimeline.jsx';
 import { PatternCard } from '../components/PatternCard.jsx';
 import { BodyResponse } from '../components/BodyResponse.jsx';
+import { activeBodyResponses } from '../lib/bodySource.js';
 
 export function TonightScreen() {
-  const { fixtureId, setFixtureId, setTab, openSheet } = useStore();
+  const {
+    fixtureId,
+    setFixtureId,
+    setTab,
+    openSheet,
+    deviceConnections,
+    deviceEnabled,
+    deviceReads,
+  } = useStore();
   const fx = FIXTURES[fixtureId];
+  const bodyCards = activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads);
 
   return (
     <div className="screen">
@@ -81,15 +91,14 @@ export function TonightScreen() {
 
         {fx.pattern && <PatternCard pattern={fx.pattern} />}
 
-        {fx.bodyResponse && (
-          <>
-            <div className="section-head">
-              <h3>Your body overnight</h3>
-              <span className="meta">{fx.bodyResponse.source}</span>
-            </div>
-            <BodyResponse data={fx.bodyResponse} session={fx.session} />
-          </>
+        {bodyCards.length > 0 && (
+          <div className="section-head">
+            <h3>Your body overnight</h3>
+          </div>
         )}
+        {bodyCards.map((data) => (
+          <BodyResponse key={data.deviceKey} data={data} session={fx.session} />
+        ))}
 
         <p className="disclaimer">
           Nocta is a wellness companion, not a medical device. It supplements — it does not

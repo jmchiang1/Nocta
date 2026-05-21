@@ -69,6 +69,398 @@
   font-size: 14px;
   font-weight: 600;
 }
+.btn.destructive {
+  background: rgba(224, 122, 106, 0.1);
+  border: 1px solid rgba(224, 122, 106, 0.3);
+  color: var(--alert);
+}
+
+/* shown inline (in sheets, lists) as a destructive call-out — sign out, delete */
+.lr-title.destructive {
+  color: var(--alert);
+}
+
+/* settings + sheet long-form note paragraphs */
+.settings-note {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0 4px 14px;
+}
+
+/* ============ DEVICE DETAIL SHEET ============ */
+/* the hero is intentionally iconless — the sheet title carries the device
+ * name; an extra glyph competed with it (especially Apple Watch's clock) */
+.device-hero {
+  padding: 0 0 18px;
+}
+.device-hero .dh-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+.device-hero .dh-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+.device-hero .dh-dot.on {
+  background: var(--good);
+  box-shadow: 0 0 6px rgba(125, 201, 154, 0.6);
+}
+.device-hero .dh-dot.off {
+  background: rgba(255, 255, 255, 0.18);
+}
+.device-hero .dh-dot.paused {
+  background: var(--watch);
+  box-shadow: 0 0 6px rgba(230, 184, 92, 0.45);
+}
+
+/* a connected-but-paused device greys out its reads list so the user can see
+ * the configured permissions without being invited to twiddle them */
+.list.muted {
+  opacity: 0.55;
+}
+.switch.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============ OAUTH / CONNECT FLOW ============
+ * Mock pairing screens shown inside the device-detail sheet when the user
+ * taps Connect. Authorize → syncing → done. Brand-tinted top mark per
+ * device so the handoff feels like the real OAuth screen would. */
+.oauth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 4px 24px;
+}
+.oauth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 28px;
+  margin-bottom: 22px;
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline-strong);
+  color: var(--text-primary);
+  min-width: 180px;
+}
+.oauth-brand.brand-oura {
+  background: linear-gradient(160deg, rgba(123, 149, 216, 0.18), rgba(123, 149, 216, 0.04));
+  border-color: rgba(123, 149, 216, 0.35);
+  color: var(--data-1);
+}
+/* photo-bearing variant — tighter padding around the image, no surrounding tint */
+.oauth-brand.is-photo {
+  padding: 0 0 14px;
+  background: none;
+  border: 0;
+}
+.oauth-brand-img {
+  display: block;
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--hairline-strong);
+}
+.oauth-brand.brand-watch {
+  background: linear-gradient(160deg, rgba(236, 240, 251, 0.12), rgba(236, 240, 251, 0.02));
+  border-color: rgba(236, 240, 251, 0.22);
+}
+.oauth-brand.brand-whoop {
+  background: linear-gradient(160deg, rgba(125, 201, 154, 0.14), rgba(125, 201, 154, 0.02));
+  border-color: rgba(125, 201, 154, 0.3);
+  color: var(--good);
+}
+.oauth-brand-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.oauth-title {
+  margin: 4px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  max-width: 320px;
+}
+.oauth-sub {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.oauth-perms {
+  align-self: stretch;
+  padding: 14px 16px 12px;
+  margin: 4px 0 18px;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  text-align: left;
+}
+.oauth-perms-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+.oauth-perm-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.oauth-perm-row svg {
+  color: var(--good);
+}
+.oauth-perm-row.muted {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+.oauth-fineprint {
+  margin: 0 0 18px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-tertiary);
+  max-width: 320px;
+}
+.oauth-progress {
+  align-self: stretch;
+  margin: 4px 0 18px;
+}
+.oauth-actions {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* Done step — extra breathing room between the mark, headline, and copy.
+ * The Done button sits in the Sheet footer so it doesn't crowd the content. */
+.oauth.oauth-done {
+  padding: 40px 4px 32px;
+}
+.oauth.oauth-done .oauth-done-mark {
+  margin-bottom: 30px;
+}
+.oauth.oauth-done .oauth-title {
+  margin: 0 0 20px;
+}
+.oauth.oauth-done .oauth-sub {
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+/* Staggered fade-and-rise entrance for the done step. Each direct child
+ * gets the same keyframe with progressively longer delay so the elements
+ * settle in one after another, matching the moment the sync completes. */
+@keyframes oauth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes oauth-bloom {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.oauth.oauth-done > * {
+  animation: oauth-rise 0.55s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.oauth.oauth-done > .oauth-done-mark {
+  animation: oauth-bloom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.oauth.oauth-done > *:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.oauth.oauth-done > *:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* footer override: when the Sheet footer is marked spacious, drop the
+ * default top hairline and stretch the bottom padding to 40px — used for
+ * the device-connected done step so the Done button stands alone */
+.sheet-foot.sheet-foot-spacious {
+  border-top: 0;
+  background: transparent;
+  padding: 14px 20px 40px;
+  animation: oauth-rise 0.55s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation-delay: 0.42s;
+}
+
+/* Connected-state hero mark — Nocta's peach accent + moon glyph (same visual
+ * language as the day-picker moons and the Coach FAB). Reads as "you're set
+ * for tonight" rather than a generic green checkmark. */
+.oauth-done-mark {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background:
+    radial-gradient(60% 60% at 50% 45%, rgba(240, 164, 122, 0.28) 0%, rgba(240, 164, 122, 0.06) 70%, transparent 100%),
+    rgba(240, 164, 122, 0.06);
+  border: 1px solid rgba(240, 164, 122, 0.32);
+  box-shadow: 0 0 0 6px rgba(240, 164, 122, 0.06),
+    0 14px 32px -10px rgba(240, 164, 122, 0.4);
+  margin-bottom: 20px;
+}
+.oauth-done-mark svg {
+  filter: drop-shadow(0 0 6px rgba(240, 164, 122, 0.55));
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.device-hero .dh-blurb {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* inline disconnect confirmation — fires from the destructive button */
+.confirm-row {
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: rgba(224, 122, 106, 0.08);
+  border: 1px solid rgba(224, 122, 106, 0.22);
+}
+.confirm-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.confirm-actions .btn {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+/* small connected/disconnected indicator on You-screen device rows */
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+.conn-dot.on {
+  background: var(--good);
+  box-shadow: 0 0 6px rgba(125, 201, 154, 0.55);
+}
+
+/* selected mask in MaskPickerSheet */
+.mask-list .list-row.selected .lr-title {
+  color: var(--accent-soft);
+}
+.mask-list .list-row.selected svg:last-child {
+  color: var(--accent);
+}
+
+/* ============ FORM CONTROLS (mask picker, generic sheet inputs) ============ */
+.text-field {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  margin-bottom: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  appearance: none;
+}
+.text-field::placeholder {
+  color: var(--text-tertiary);
+}
+.text-field:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 1px;
+}
+.filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.select-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 32px 10px 13px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--surface-1);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa3c0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.select-field:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 1px;
+}
+
+.result-count {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 8px 4px 8px;
+}
+.empty-note {
+  padding: 18px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--hairline-strong);
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
 
 /* ============ GENERIC CARD ============ */
 .card {
@@ -172,7 +564,7 @@
 .why-card {
   position: relative;
   border-radius: var(--r-xl);
-  padding: 24px;
+  padding: 24px 24px 12px;
   margin-bottom: 22px;
   overflow: hidden;
   box-shadow: var(--shadow-card);
@@ -463,10 +855,20 @@
   border-radius: var(--r-lg);
   background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
   border: 1px solid var(--hairline);
-  padding: 18px;
+  padding: 18px 18px 14px;
   margin-bottom: 14px;
   /* lets the section content transition to/from height:auto on modern browsers */
   interpolate-size: allow-keywords;
+}
+/* source eyebrow — names which wearable contributed this card, important when
+ * the user has more than one device connected (Apple Watch + Oura, etc.) */
+.body-card .bc-source {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
 }
 /* collapsible section — collapsed by default; native <details>/<summary> */
 .body-card .bc-section {
@@ -488,6 +890,9 @@
 }
 .body-card .bc-section:first-of-type .bc-summary {
   padding-top: 0;
+}
+.body-card .bc-section:last-of-type .bc-summary {
+  padding-bottom: 0;
 }
 .body-card .bc-summary-title {
   flex: 1;
@@ -1102,6 +1507,7 @@
   bottom: 0;
   z-index: 51;
   max-height: 92%;
+  padding-top: 2rem;
   display: flex;
   flex-direction: column;
   border-radius: var(--r-xl) var(--r-xl) 0 0;
@@ -1118,6 +1524,19 @@
   max-height: none;
   border-radius: 0;
 }
+/* `page` variant — used for the You-tab navigation drill-downs (Account,
+ * Settings, Device Detail). Pushes in from the right edge instead of
+ * sliding up, since these are hierarchical subpages rather than modals. */
+.sheet.page {
+  top: 0;
+  bottom: 0;
+  max-height: none;
+  border-radius: 0;
+  animation: slideInRight 0.34s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.sheet.page.closing {
+  animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1) both;
+}
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -1126,6 +1545,16 @@
 @keyframes slideDown {
   to {
     transform: translateY(100%);
+  }
+}
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes slideOutRight {
+  to {
+    transform: translateX(100%);
   }
 }
 .sheet-grip {
@@ -1169,6 +1598,8 @@
   flex-shrink: 0;
 }
 .sheet-body {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 4px 20px 28px;
   scrollbar-width: none;
@@ -1181,6 +1612,60 @@
   border-top: 1px solid var(--hairline);
   background: var(--bg-base);
   flex-shrink: 0;
+}
+
+/* ============ JOURNAL — month accordion (Sleep journal subpage) ============
+ * Native <details>/<summary>. The month summary and its row list visually
+ * fuse into one card when open. */
+.journal-month {
+  margin-bottom: 12px;
+  interpolate-size: allow-keywords;
+}
+.journal-month-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  list-style: none;
+}
+.journal-month-summary::-webkit-details-marker {
+  display: none;
+}
+.journal-month .jms-month {
+  flex: 1;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+.journal-month .jms-count {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.06);
+}
+.journal-month .jms-chev {
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+.journal-month[open] .jms-chev {
+  transform: rotate(180deg);
+}
+.journal-month[open] .journal-month-summary {
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  border-bottom-color: transparent;
+}
+.journal-month .journal-list {
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  border-top: none;
+  margin-bottom: 0;
 }
 
 /* disclaimer footnote */

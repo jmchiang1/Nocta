@@ -2,6 +2,12 @@
  * onboarded & checkin persist to localStorage. */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { DEFAULT_FIXTURE } from '../data/fixtures.js';
+import {
+  DEFAULT_MASK_ID,
+  DEFAULT_DEVICE_CONNECTIONS,
+  DEFAULT_DEVICE_ENABLED,
+  DEFAULT_DEVICE_READS,
+} from '../data/account.js';
 
 const StoreContext = createContext(null);
 
@@ -33,6 +39,24 @@ export function StoreProvider({ children }) {
   const [fixtureId, setFixtureId] = useState(DEFAULT_FIXTURE);
   const [sheet, setSheet] = useState(null); // { kind, ...params }
   const [checkin, setCheckin] = useState(loadCheckin);
+  const [maskId, setMaskId] = useState(DEFAULT_MASK_ID);
+  const [deviceConnections, setDeviceConnections] = useState(DEFAULT_DEVICE_CONNECTIONS);
+  const [deviceEnabled, setDeviceEnabledState] = useState(DEFAULT_DEVICE_ENABLED);
+  const [deviceReads, setDeviceReads] = useState(DEFAULT_DEVICE_READS);
+
+  const setDeviceConnected = useCallback(
+    (key, connected) => setDeviceConnections((c) => ({ ...c, [key]: connected })),
+    []
+  );
+  const setDeviceEnabled = useCallback(
+    (key, enabled) => setDeviceEnabledState((e) => ({ ...e, [key]: enabled })),
+    []
+  );
+  const setDeviceRead = useCallback(
+    (key, read, on) =>
+      setDeviceReads((r) => ({ ...r, [key]: { ...r[key], [read]: on } })),
+    []
+  );
 
   useEffect(() => {
     try {
@@ -79,6 +103,14 @@ export function StoreProvider({ children }) {
     checkin,
     completeCheckin,
     resetCheckin,
+    maskId,
+    setMaskId,
+    deviceConnections,
+    setDeviceConnected,
+    deviceEnabled,
+    setDeviceEnabled,
+    deviceReads,
+    setDeviceRead,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

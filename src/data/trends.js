@@ -26,30 +26,6 @@ function shape(seed, n, from, to, jitter) {
   return out;
 }
 
-/* realistic single-night APAP pressure trace: a smooth ramp from ~4 cmH₂O
- * up to the median, then a settled hover with occasional event-driven rises
- * that decay back down — not the flat noise a plain drift produces */
-function pressureNight(seed, n, median) {
-  const rnd = mulberry32(hashStr(String(seed)));
-  const rampEnd = Math.max(2, Math.round(n * 0.15));
-  const start = 4.2;
-  const out = [];
-  let v = start;
-  for (let i = 0; i < n; i++) {
-    if (i < rampEnd) {
-      const t = i / rampEnd;
-      const ease = t * t * (3 - 2 * t); // smoothstep
-      v = start + (median - start) * ease + (rnd() - 0.5) * 0.18;
-    } else {
-      v += (median - v) * 0.14; // decay back toward the median
-      v += (rnd() - 0.5) * 0.42; // organic wander
-      if (rnd() > 0.92) v += 0.6 + rnd() * 1.4; // pressure climbs to an event
-    }
-    out.push(Math.max(start - 0.4, v));
-  }
-  return out;
-}
-
 /* ---- per-fixture shape profiles: the same story the why-card tells ---- */
 const PROFILES = {
   /* anomaly — steady week, then a sharp central-event spike on the last night */
@@ -103,6 +79,9 @@ function build(id, range, n = RANGE_N[range]) {
   let hyp = shape(id + 'hyp', n, p.hyp[0], p.hyp[1], p.j);
   let leak = shape(id + 'leak', n, p.leak[0], p.leak[1], p.leak[2]);
   let hours = shape(id + 'hours', n, p.hours[0], p.hours[1], p.hours[2]);
+  /* pressure stays close to the prescribed median — small night-to-night
+   * jitter only. Per-night so the x-axis aligns with the other trend charts. */
+  let pressure = shape(id + 'p', n, p.pressure - 0.15, p.pressure + 0.15, 0.5);
 
   if (p.endSpike) {
     csa[n - 1] += p.endSpike[0];
@@ -113,14 +92,14 @@ function build(id, range, n = RANGE_N[range]) {
   if (p.sparseTail) {
     const keep = (a) => a.map((v, i) => (i >= n - p.sparseTail ? v : 0));
     csa = keep(csa); osa = keep(osa); hyp = keep(hyp);
-    leak = keep(leak); hours = keep(hours);
+    leak = keep(leak); hours = keep(hours); pressure = keep(pressure);
   }
 
   return {
     ahiSeries: csa.map((c, i) => ({ csa: c, osa: osa[i], hyp: hyp[i] })),
     leakSeries: leak,
     hoursSeries: hours,
-    pressureSeries: pressureNight(id + 'p' + range, 60, p.pressure),
+    pressureSeries: pressure,
   };
 }
 

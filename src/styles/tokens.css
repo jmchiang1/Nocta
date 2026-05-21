@@ -28,14 +28,23 @@
   --watch: #e6b85c;
   --alert: #e07a6a;
 
-  /* data viz */
+  /* data viz — Oura-inspired 2-state palette.
+   * --data-1 is the universal "metric" hue: every chart/graph/progress bar
+   * fills with this by default. --alert is the only "pay attention" hue;
+   * it appears solely when a value crosses an escalation threshold. We
+   * deliberately do not paint chart bands in --good/--watch/-good-bad
+   * gradients — qualitative tone lives in the accompanying word, never
+   * in the bar itself. */
   --data-1: #7b95d8;
   --data-2: #5f7bc4;
+  --data-deep: #4a63a8;
   --data-faint: rgba(123, 149, 216, 0.25);
 
-  /* sleep stages */
+  /* sleep stages — stepped ramp of --data-1 so the hypnogram reads as one
+   * instrument. Awake stays coral because being awake during a CPAP session
+   * is the "out of expected" state, matching the 2-state attention model. */
   --stage-awake: #e07a6a;
-  --stage-rem: #b587d9;
+  --stage-rem: #a3b7df;
   --stage-light: #7c95c8;
   --stage-deep: #2e4180;
 

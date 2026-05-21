@@ -1,6 +1,7 @@
 /* Nocta — Trends tab. Range selector, trend charts, journal patterns, best/worst night. */
 import { useState } from 'react';
 import { getTrends } from '../data/trends.js';
+import { JOURNAL_HISTORY } from '../data/journal.js';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -33,7 +34,7 @@ function nightCount(start, end) {
 }
 
 export function TrendsScreen() {
-  const { fixtureId } = useStore();
+  const { fixtureId, openSheet } = useStore();
   const [range, setRange] = useState('7d');
   const [customStart, setCustomStart] = useState('2026-05-25');
   const [customEnd, setCustomEnd] = useState('2026-06-07');
@@ -158,7 +159,9 @@ export function TrendsScreen() {
         <div className="chart-card">
           <LineChart values={t.pressureSeries} color="data" />
           <div className="chart-axis">
-            <span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span><span>8AM</span>
+            {t.xLabels.map((l, i) => (
+              <span key={i}>{l}</span>
+            ))}
           </div>
         </div>
 
@@ -167,7 +170,7 @@ export function TrendsScreen() {
           <span className="meta">L/min · 24 threshold</span>
         </div>
         <div className="chart-card">
-          <LineChart values={t.leakSeries} color="accent" threshold={24} />
+          <LineChart values={t.leakSeries} color="data" threshold={24} />
           <div className="chart-axis">
             {t.xLabels.map((l, i) => (
               <span key={i}>{l}</span>
@@ -180,7 +183,7 @@ export function TrendsScreen() {
           <span className="meta">hours · 4h compliance bar</span>
         </div>
         <div className="chart-card">
-          <Bars values={t.hoursSeries} color="good" target={4} />
+          <Bars values={t.hoursSeries} color="data" target={4} />
           <div className="chart-axis">
             {t.xLabels.map((l, i) => (
               <span key={i}>{l}</span>
@@ -221,6 +224,22 @@ export function TrendsScreen() {
             ))}
           </>
         )}
+
+        <div className="section-head">
+          <h3>Sleep journal</h3>
+        </div>
+        <div className="list">
+          <button className="list-row" onClick={() => openSheet('journal')}>
+            <div className="lr-icon bare">
+              <Icon name="doc" size={17} />
+            </div>
+            <div className="lr-main">
+              <div className="lr-title">View all entries</div>
+              <div className="lr-sub">{JOURNAL_HISTORY.length} nights logged</div>
+            </div>
+            <Icon name="chevronRight" size={17} />
+          </button>
+        </div>
 
         <p className="disclaimer">Trends describe your data. They are not a diagnosis.</p>
       </div>

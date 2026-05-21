@@ -1,14 +1,16 @@
 /* Nocta — Therapy tab. Device status, equipment lifecycle, view-only settings, exports. */
 import { useState } from 'react';
+import { useStore } from '../lib/store.jsx';
 import { DEVICE, EQUIPMENT, SETTINGS_VIEW, PROJECTION } from '../data/therapy.js';
+import { maskById } from '../data/account.js';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Rich } from '../components/Rich.jsx';
 import { ProgressBar } from '../components/Charts.jsx';
+import { MaskCard } from '../components/MaskCard.jsx';
 
 function lifeTone(pct) {
-  if (pct >= 1) return 'alert';
-  if (pct >= 0.8) return 'watch';
+  if (pct >= 0.8) return 'alert';
   return '';
 }
 function lifeWord(pct) {
@@ -19,6 +21,11 @@ function lifeWord(pct) {
 
 export function TherapyScreen() {
   const [exported, setExported] = useState(false);
+  const { maskId } = useStore();
+  /* keep the device card's Mask cell in sync with the picker on this screen */
+  const cells = DEVICE.cells.map((c) =>
+    c.k === 'Mask' ? { k: 'Mask', v: maskById(maskId).name } : c
+  );
 
   return (
     <div className="screen">
@@ -39,7 +46,7 @@ export function TherapyScreen() {
           <h3>{DEVICE.name}</h3>
           <div className="dc-sub">{DEVICE.source}</div>
           <div className="dc-grid">
-            {DEVICE.cells.map((c) => (
+            {cells.map((c) => (
               <div key={c.k} className="dc-cell">
                 <div className="dc-k">{c.k}</div>
                 <div className="dc-v">{c.v}</div>
@@ -47,6 +54,8 @@ export function TherapyScreen() {
             ))}
           </div>
         </section>
+
+        <MaskCard />
 
         <section className="projection">
           <div className="pj-eyebrow">{PROJECTION.eyebrow}</div>
@@ -60,6 +69,15 @@ export function TherapyScreen() {
             gradient
             height={8}
           />
+          <div
+            className="compliance-dots"
+            role="img"
+            aria-label="Compliance status per night, 30 nights"
+          >
+            {PROJECTION.nights.map((status, i) => (
+              <span key={i} className={`compliance-dot ${status}`} />
+            ))}
+          </div>
           <div className="pj-scale">
             {PROJECTION.scale.map((s, i) => (
               <span key={i}>{s}</span>
@@ -83,29 +101,11 @@ export function TherapyScreen() {
                     {e.ageDays} / {e.lifespanDays} days · {lifeWord(pct)}
                   </span>
                 </div>
-                <ProgressBar pct={pct * 100} color={tone || 'good'} height={6} />
+                <ProgressBar pct={pct * 100} color={tone || 'data'} height={6} />
               </div>
             );
           })}
         </div>
-
-        <div className="section-head">
-          <h3>Prescribed settings</h3>
-          <span className="meta">view only</span>
-        </div>
-        <div className="list">
-          {SETTINGS_VIEW.map((s) => (
-            <div className="list-row" key={s.k}>
-              <div className="lr-main">
-                <div className="lr-title">{s.k}</div>
-              </div>
-              <div className="lr-right">{s.v}</div>
-            </div>
-          ))}
-        </div>
-        <p className="disclaimer">
-          Pressure settings are set by your doctor. Nocta shows them but never changes them.
-        </p>
 
         <div className="section-head">
           <h3>For your doctor</h3>
