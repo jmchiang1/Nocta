@@ -38,7 +38,7 @@ const SHEETS = {
 };
 
 function Shell() {
-  const { tab, sheet, onboarded } = useStore();
+  const { tab, tabNonce, sheet, onboarded } = useStore();
 
   if (!onboarded) {
     return (
@@ -58,7 +58,11 @@ function Shell() {
     <div className="stage">
       <DevPanel />
       <div className="phone">
-        <Screen key={tab} />
+        {/* keying on tabNonce (bumped on every setTab call) remounts the
+         * screen on every tab tap — including re-tapping the current tab —
+         * so chart and card entrance animations replay each time the user
+         * "lands" on a page */}
+        <Screen key={tabNonce} />
         {/* the Coach FAB is a focused entry point; hide it whenever a sheet
          * is open so it can't compete for attention inside another flow */}
         {!sheet && <CoachFab />}

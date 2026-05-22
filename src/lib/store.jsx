@@ -35,7 +35,16 @@ function loadOnboarded() {
 
 export function StoreProvider({ children }) {
   const [onboarded, setOnboarded] = useState(loadOnboarded);
-  const [tab, setTab] = useState('tonight');
+  const [tab, setTabState] = useState('tonight');
+  /* bumped on every setTab call — even when the requested tab matches the
+   * current one — so the app shell can use it as a key to remount the
+   * active screen and replay chart + card entrance animations on every
+   * "landing", including re-taps of the current tab */
+  const [tabNonce, setTabNonce] = useState(0);
+  const setTab = useCallback((next) => {
+    setTabState(next);
+    setTabNonce((n) => n + 1);
+  }, []);
   const [fixtureId, setFixtureId] = useState(DEFAULT_FIXTURE);
   const [sheet, setSheet] = useState(null); // { kind, ...params }
   const [checkin, setCheckin] = useState(loadCheckin);
@@ -95,6 +104,7 @@ export function StoreProvider({ children }) {
     resetOnboarding,
     tab,
     setTab,
+    tabNonce,
     fixtureId,
     setFixtureId,
     sheet,

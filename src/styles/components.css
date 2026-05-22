@@ -557,6 +557,29 @@
 .day.selected .day-moon {
   filter: drop-shadow(0 0 8px currentColor);
 }
+/* Selected tint follows the night's status hue so the box and label read as
+ * one color with the moon — a green night stays green, not peach/orange. */
+.day.good.selected {
+  background: rgba(125, 201, 154, 0.12);
+  border-color: rgba(125, 201, 154, 0.32);
+}
+.day.good.selected .d-label {
+  color: var(--good);
+}
+.day.watch.selected {
+  background: rgba(230, 184, 92, 0.12);
+  border-color: rgba(230, 184, 92, 0.32);
+}
+.day.watch.selected .d-label {
+  color: var(--watch);
+}
+.day.alert.selected {
+  background: rgba(224, 122, 106, 0.12);
+  border-color: rgba(224, 122, 106, 0.32);
+}
+.day.alert.selected .d-label {
+  color: var(--alert);
+}
 
 /* ============ WHY-CARD ============
  * Pattern: headline (verdict) -> sparkline -> action -> receipts -> trust.
