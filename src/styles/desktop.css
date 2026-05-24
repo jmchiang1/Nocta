@@ -530,11 +530,12 @@
 .dash-grid {
   display: grid;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .dash-grid-tonight {
   grid-template-columns: 1.35fr 1fr;
+  margin-bottom: 4rem;
 }
 
 /* hero row — why-card beside its pattern card, same column split as the grid
@@ -544,7 +545,7 @@
   display: grid;
   grid-template-columns: 1.35fr 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
   margin-bottom: 20px;
 }
 .dash-tonight-hero.solo {
@@ -553,7 +554,48 @@
 .dash-tonight-hero > .why-card,
 .dash-tonight-hero > .pattern-card {
   margin: 0;
+  height: 100%;
 }
+
+/* KPI stat-card row (AHI + secondary metrics) — uniform cards, full width */
+.dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.dash-kpi {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  min-width: 0;
+  padding: 18px 18px 16px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--hairline);
+  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+button.dash-kpi { cursor: pointer; }
+button.dash-kpi:hover { border-color: var(--hairline-strong); transform: translateY(-2px); }
+.dash-kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
+.dash-kpi-k {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.dash-kpi-v {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  margin-top: 10px;
+}
+.dash-kpi-u { font-family: var(--font-body); font-size: 14px; color: var(--text-tertiary); margin-left: 3px; }
+.dash-kpi-chart { margin: 14px 0 10px; }
+.dash-kpi-sub { font-size: 12px; color: var(--text-tertiary); margin-top: auto; }
 
 .dash-grid-charts {
   grid-template-columns: 1fr 1fr;
@@ -584,6 +626,24 @@
   min-width: 0;
 }
 
+/* the single card inside a Tonight column fills its stretched column so the
+ * night-card and body-card end up the same height */
+.dash-grid-tonight .dash-col > .night-card,
+.dash-grid-tonight .dash-col > .body-card {
+  flex: 1;
+}
+
+/* Trends: patterns stack beside the insight list and fill the row height */
+.dash-patterns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dash-patterns > .pattern-card {
+  flex: 1;
+  margin: 0;
+}
+
 .dash-cell {
   min-width: 0;
 }
@@ -600,6 +660,7 @@
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
   padding: 20px 20px 16px;
+  height: -webkit-fill-available;
 }
 
 .panel-head {
@@ -749,6 +810,10 @@
   .dash-grid-therapy,
   .dash-tonight-hero {
     grid-template-columns: 1fr;
+  }
+
+  .dash-kpis {
+    grid-template-columns: 1fr 1fr;
   }
 
   .dash-grid-you {

@@ -7,11 +7,10 @@ import { FIXTURES } from '../../data/fixtures.js';
 import { mulberry32, hashStr } from '../../lib/format.js';
 import { Icon } from '../Icons.jsx';
 import { WhyCard } from '../WhyCard.jsx';
-import { MetricPrimary } from '../MetricPrimary.jsx';
-import { MetricSecondary } from '../MetricSecondary.jsx';
 import { NightTimeline } from '../NightTimeline.jsx';
 import { PatternCard } from '../PatternCard.jsx';
 import { BodyResponse } from '../BodyResponse.jsx';
+import { BaselineBar, MetricSpark } from '../Charts.jsx';
 import { activeBodyResponses } from '../../lib/bodySource.js';
 
 /* The desktop top bar shows a 14-night strip you can page through with the
@@ -81,6 +80,8 @@ export function DesktopTonight() {
   const rangeLabel = `${fmtShort(days[0].key)} – ${fmtShort(days[days.length - 1].key)}`;
   const fx = FIXTURES[fixtureId];
   const bodyCards = activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads);
+  const hasAhi = fx.ahi.value != null;
+  const ahiMax = Math.max(20, Math.ceil(Math.max(fx.ahi.value ?? 0, fx.ahi.avg14) * 1.6));
 
   return (
     <>
@@ -151,18 +152,56 @@ export function DesktopTonight() {
         {fx.pattern && <PatternCard pattern={fx.pattern} />}
       </div>
 
+      {/* KPI row — uniform stat cards fill the full width */}
+      <div className="dash-head">
+        <h3>Last night</h3>
+        <span className="dash-head-meta">{fx.session.start} — {fx.session.end}</span>
+      </div>
+      <div className="dash-kpis">
+        <div className="dash-kpi">
+          <div className="dash-kpi-top">
+            <span className="dash-kpi-k">AHI · events/hr</span>
+            {hasAhi && fx.ahi.delta != null && (
+              <span className={`delta-pill ${fx.ahi.dir === 'down' ? 'good' : ''}`}>
+                {fx.ahi.dir !== 'flat' && <Icon name={fx.ahi.dir === 'down' ? 'triDown' : 'triUp'} size={9} />}
+                {fx.ahi.delta}
+              </span>
+            )}
+          </div>
+          <div className="dash-kpi-v tnum">
+            {hasAhi ? fx.ahi.value.toFixed(1) : '—'}
+          </div>
+          <div className="dash-kpi-chart">
+            {hasAhi && <BaselineBar value={fx.ahi.value} avg={fx.ahi.avg14} max={ahiMax} height={10} />}
+          </div>
+          <div className="dash-kpi-sub">
+            {hasAhi ? `vs 14-night avg ${fx.ahi.avg14.toFixed(1)}` : 'Last night was too short to score'}
+          </div>
+        </div>
+        {fx.secondary.map((m) => (
+          <button
+            key={m.key}
+            className="dash-kpi"
+            onClick={() => openSheet('coach', { context: { kind: 'metric', label: m.label } })}
+          >
+            <div className="dash-kpi-top">
+              <span className="dash-kpi-k">{m.label}</span>
+            </div>
+            <div className="dash-kpi-v tnum">
+              {m.value}
+              <span className="dash-kpi-u">{m.unit}</span>
+            </div>
+            <div className="dash-kpi-chart">
+              <MetricSpark values={m.spark} hot={m.hot} height={38} />
+            </div>
+            <div className="dash-kpi-sub">{m.sub}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* night timeline beside the connected-device body data */}
       <div className="dash-grid dash-grid-tonight">
         <div className="dash-col">
-          <div className="dash-head">
-            <h3>Last night</h3>
-            <span className="dash-head-meta">{fx.session.start} — {fx.session.end}</span>
-          </div>
-          <MetricPrimary ahi={fx.ahi} />
-          <MetricSecondary
-            items={fx.secondary}
-            onMetric={(label) => openSheet('coach', { context: { kind: 'metric', label } })}
-          />
-
           <div className="dash-head">
             <h3>The night</h3>
           </div>

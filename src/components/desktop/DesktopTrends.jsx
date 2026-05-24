@@ -56,6 +56,17 @@ export function DesktopTrends() {
     pressure: norm(t.pressureSeries.slice(0, 14)),
   };
 
+  const insightList = (
+    <section className="insight-list" aria-label="Trend insights">
+      {t.insights.map((ins, i) => (
+        <div className="il-row" key={i}>
+          <div className="il-icon"><Icon name={ins.icon} size={15} /></div>
+          <div className="il-text"><Rich text={ins.text} /></div>
+        </div>
+      ))}
+    </section>
+  );
+
   return (
     <>
       <header className="dash-topbar">
@@ -161,17 +172,24 @@ export function DesktopTrends() {
         </div>
       </div>
 
-      <div className="dash-grid dash-grid-2">
-        <section className="insight-list" aria-label="Trend insights">
-          {t.insights.map((ins, i) => (
-            <div className="il-row" key={i}>
-              <div className="il-icon"><Icon name={ins.icon} size={15} /></div>
-              <div className="il-text"><Rich text={ins.text} /></div>
-            </div>
-          ))}
-        </section>
+      {t.patterns.length > 0 ? (
+        <div className="dash-grid dash-grid-2">
+          {insightList}
+          <div className="dash-patterns">
+            {t.patterns.map((p, i) => (
+              <PatternCard key={i} pattern={p} window={t.window} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        insightList
+      )}
 
-        {t.bestWorst && (
+      {t.bestWorst && (
+        <>
+          <div className="dash-head">
+            <h3>Best &amp; worst night</h3>
+          </div>
           <div className="compare">
             <div className="cmp-card best">
               <div className="cmp-tag">Best</div>
@@ -185,17 +203,6 @@ export function DesktopTrends() {
               <div className="cmp-ahi tnum">{t.bestWorst.worst.ahi}</div>
               <div className="cmp-sub">{t.bestWorst.worst.note}</div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {t.patterns.length > 0 && (
-        <>
-          <div className="dash-section-label">Patterns from your journal</div>
-          <div className="dash-grid dash-grid-2">
-            {t.patterns.map((p, i) => (
-              <PatternCard key={i} pattern={p} window={t.window} />
-            ))}
           </div>
         </>
       )}

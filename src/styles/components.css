@@ -589,6 +589,7 @@
   border-radius: var(--r-xl);
   padding: 24px 24px 12px;
   margin-bottom: 22px;
+  margin-top: 22px;
   overflow: hidden;
   box-shadow: var(--shadow-card);
   background:
@@ -1400,7 +1401,7 @@
   background: linear-gradient(135deg, rgba(125, 201, 154, 0.08) 0%, var(--surface-1) 60%);
   border: 1px solid var(--hairline);
   padding: 20px;
-  margin-bottom: 22px;
+  /* margin-bottom: 22px; */
 }
 .pattern .p-eyebrow {
   font-size: 11px;
