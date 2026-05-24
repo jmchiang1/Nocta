@@ -17,6 +17,8 @@ import { AddDeviceSheet } from './screens/AddDeviceSheet.jsx';
 import { MaskPickerSheet } from './screens/MaskPickerSheet.jsx';
 import { JournalSheet } from './screens/JournalSheet.jsx';
 import { Onboarding } from './screens/Onboarding.jsx';
+import { DesktopApp } from './components/desktop/DesktopApp.jsx';
+import { DesktopFullNight } from './components/desktop/DesktopFullNight.jsx';
 
 const SCREENS = {
   tonight: TonightScreen,
@@ -38,7 +40,7 @@ const SHEETS = {
 };
 
 function Shell() {
-  const { tab, tabNonce, sheet, onboarded } = useStore();
+  const { tab, tabNonce, sheet, onboarded, viewMode, closeSheet } = useStore();
 
   if (!onboarded) {
     return (
@@ -51,8 +53,37 @@ function Shell() {
     );
   }
 
-  const Screen = SCREENS[tab];
   const ActiveSheet = sheet ? SHEETS[sheet.kind] : null;
+
+  if (viewMode === 'desktop') {
+    return (
+      <div className="desktop-stage">
+        <DevPanel />
+        <DesktopApp />
+        {/* full-night gets a wide, desktop-native dialog; every other sheet
+         * renders as a centered desktop card (CSS in desktop.css re-styles the
+         * shared Sheet markup so it isn't a phone-shaped bottom sheet) */}
+        {sheet && (
+          <div
+            className="desktop-modal-wrap"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeSheet();
+            }}
+          >
+            {sheet.kind === 'fullnight' ? (
+              <div className="desktop-dialog">
+                <DesktopFullNight />
+              </div>
+            ) : (
+              ActiveSheet && <ActiveSheet />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const Screen = SCREENS[tab];
 
   return (
     <div className="stage">

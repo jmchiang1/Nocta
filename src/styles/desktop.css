@@ -1,0 +1,793 @@
+/* Nocta — desktop dashboard. A full-width sidebar + multi-panel layout that
+ * reuses the mobile components and the shared design tokens. Only active when
+ * the Layout toggle is set to Desktop. */
+
+/* ===== stage + floating dev control ===== */
+.desktop-stage {
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 70% at 50% -10%, rgba(240, 164, 122, 0.05), transparent 60%),
+    linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 40%, var(--bg-grad-bottom) 100%);
+}
+
+.desktop-stage .dev-panel {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  flex-direction: row;
+  align-items: center;
+  width: max-content;
+  /* max-width: 94vw; */
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: rgba(16, 20, 36, 0.9);
+  backdrop-filter: blur(12px);
+}
+
+/* ===== shell ===== */
+.dash {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+  max-width: 1640px;
+  margin: 0 auto;
+}
+
+/* ----- sidebar ----- */
+.dash-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 248px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 18px;
+  border-right: 1px solid var(--hairline);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%);
+}
+
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 6px 10px 0;
+  margin-bottom: 36px;
+}
+
+.dash-logo {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.dash-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.dash-wordmark {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.dash-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dash-nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.dash-nav-item.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+.dash-nav-item.active svg {
+  color: var(--accent);
+}
+
+.dash-side-foot {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
+.dash-user {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 6px 8px;
+}
+
+.dash-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-on-accent);
+  background: linear-gradient(150deg, var(--accent-soft), var(--accent-deep));
+}
+
+.dash-user-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dash-user-sub {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+/* ----- main ----- */
+.dash-main {
+  flex: 1;
+  min-width: 0;
+  padding: 30px 40px 64px;
+}
+
+.dash-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+  flex-direction: column;
+}
+
+.dash-eyebrow {
+  font-size: 13px;
+  color: var(--accent-soft);
+  font-style: italic;
+  font-family: var(--font-display);
+}
+
+.dash-h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 2px 0;
+}
+
+.dash-sub {
+  font-size: 13.5px;
+  color: var(--text-tertiary);
+}
+
+.dash-week {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  width: -webkit-fill-available;
+  justify-content: space-between;
+}
+
+/* match the mobile day-cell size (square, ~50px) rather than shrinking it */
+.dash-week .day {
+  width: 50px;
+  min-width: 50px;
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  gap: 8px;
+  aspect-ratio: auto;
+  height: auto;
+}
+
+.dash-week .day .d-label {
+  font-size: 1rem;
+}
+
+.week {
+  margin: 0;
+}
+
+/* ----- week pager (arrows on either end to cycle past fortnights) ----- */
+.dash-weeknav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* arrows live in the same row as the strip so they're vertically centered
+ * with the day cells (not with the strip + range label together) */
+.dash-weeknav-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+.dash-weeknav-row .dash-week {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-week-arrow {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-week-arrow:hover:not(:disabled) {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: rgba(240, 164, 122, 0.3);
+}
+
+.dash-week-arrow:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.dash-week-range {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  font-feature-settings: 'tnum' 1;
+  margin-top: 1rem;
+}
+
+/* ----- range control (Trends): segmented + optional custom date picker ----- */
+/* the segmented control is shared with mobile, where it stretches full-width;
+ * in the desktop topbar it sizes to content with roomier gap and padding */
+.dash-range {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash .segmented {
+  width: max-content;
+  gap: 5px;
+  padding: 5px;
+  margin-bottom: 0;
+}
+
+.dash .segmented button {
+  padding: 9px 20px;
+  font-size: 13px;
+}
+
+.dash .date-range {
+  width: 360px;
+  max-width: 100%;
+  margin-bottom: 0;
+}
+
+/* ===== full-night / coach modal on desktop (phone-shaped dialog) ===== */
+.desktop-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 7, 14, 0.62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: fade 0.25s ease both;
+}
+
+/* re-style the shared mobile Sheet markup into a centered desktop card:
+ * drop the phone bottom-sheet positioning + grip, present it as a dialog */
+.desktop-modal-wrap>.sheet-scrim {
+  display: none;
+}
+
+.desktop-modal-wrap>.sheet {
+  position: relative;
+  inset: auto;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  width: min(620px, 94vw);
+  max-width: 620px;
+  max-height: 86vh;
+  margin: 0;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-xl);
+  box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
+  transform: none;
+  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.desktop-modal-wrap>.sheet.full,
+.desktop-modal-wrap>.sheet.page {
+  top: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  max-height: 86vh;
+  border-radius: var(--r-xl);
+  transform: none;
+  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.desktop-modal-wrap>.sheet.closing {
+  animation: fadeOut 0.25s ease both;
+}
+
+.desktop-modal-wrap>.sheet .sheet-grip {
+  display: none;
+}
+
+.desktop-modal-wrap>.sheet .sheet-head {
+  padding-top: 20px;
+}
+
+/* wide desktop dialog (full-night) */
+.desktop-dialog {
+  width: min(960px, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--bg-base) 22%);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-xl);
+  box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
+  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.desktop-dialog::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes dfn-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+.dfn {
+  padding: 28px 30px 26px;
+}
+
+.dfn-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.dfn-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.dfn-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 27px;
+  letter-spacing: -0.01em;
+}
+
+.dfn-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hairline);
+}
+
+.dfn-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dfn-stats {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.dfn-stat {
+  flex: 1;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+.dfn-stat-k {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.dfn-stat b {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: -0.01em;
+}
+
+.dfn-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.dfn-lower {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.dfn-col {
+  min-width: 0;
+}
+
+.dfn-col .section-head:first-child {
+  margin-top: 0;
+}
+
+.dfn .disclaimer {
+  margin-top: 22px;
+}
+
+.disclaimer {
+  font-size: 12px;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+
+  .dfn-charts,
+  .dfn-lower {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== headings ===== */
+.dash-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 26px 0 12px;
+}
+
+.dash-head h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.dash-head-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.dash-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 20px 0 12px;
+}
+
+/* ===== grids ===== */
+/* one rhythm everywhere: 20px between stacked blocks, matching the grid gap */
+.dash-grid {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+
+.dash-grid-tonight {
+  grid-template-columns: 1.35fr 1fr;
+}
+
+/* hero row — why-card beside its pattern card, same column split as the grid
+ * below so the two stay aligned. `.solo` lets the why-card fill the row when a
+ * night has no pattern. */
+.dash-tonight-hero {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+.dash-tonight-hero.solo {
+  grid-template-columns: 1fr;
+}
+.dash-tonight-hero > .why-card,
+.dash-tonight-hero > .pattern-card {
+  margin: 0;
+}
+
+.dash-grid-charts {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 20px;
+}
+
+.dash-grid-2 {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 20px;
+}
+
+/* a section label already owns the space above the grid it introduces */
+.dash-section-label+.dash-grid-2 {
+  margin-top: 0;
+}
+
+.dash-grid-therapy {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dash-grid-you {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dash-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-cell {
+  min-width: 0;
+}
+
+/* the first heading in a grid cell hugs the cell top, not 26px below it */
+.dash-cell>.dash-head:first-child,
+.dash-col>.dash-head:first-child {
+  margin-top: 0;
+}
+
+/* ===== panel (surface card — used for raw charts + profile) ===== */
+.panel {
+  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: 20px 20px 16px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel-head h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.panel-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.dash-legend {
+  margin: 0 0 12px;
+  padding: 0;
+  border: none;
+}
+
+/* ===== trend tiles row ===== */
+.dash-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  /* the charts grid below owns the gap (margin-top: 20px) so it stays uniform */
+  margin-bottom: 0;
+}
+
+/* ===== You profile ===== */
+.dash-profile-panel {
+  margin-bottom: 22px;
+}
+
+.dash-profile-panel .profile-head {
+  margin: 0;
+}
+
+/* ===== You — tabbed settings ===== */
+.dash-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 24px;
+}
+
+.dash-tab {
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-tab:hover {
+  color: var(--text-secondary);
+}
+
+.dash-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.dash-settings-body {
+  max-width: 680px;
+}
+
+.dash-settings-body .dash-head:first-child {
+  margin-top: 0;
+}
+
+/* ===== reuse fixups inside the dashboard ===== */
+/* the secondary-metrics carousel bleeds to phone edges on mobile; cancel that */
+.dash .metrics-row {
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.dash .metric {
+  flex: 1 1 150px;
+}
+
+/* cards already carry their own margins on mobile; let the flex gap own spacing */
+.dash-col>.why-card,
+.dash-col>.metric-primary,
+.dash-col>.night-card,
+.dash-col>.device-card,
+.dash-col>.projection,
+.dash-col>.equip,
+.dash-col>.list,
+.dash-col>.mask-card,
+.dash-col>.metrics-row,
+.dash-col>.body-card {
+  margin-bottom: 16px;
+}
+
+.dash-col> :last-child {
+  margin-bottom: 0;
+}
+
+/* non-interactive rows on desktop (management lives in the mobile sheets) */
+.list-row.static {
+  cursor: default;
+}
+
+.list-row.static:hover {
+  background: none;
+}
+
+.dash-grid-2>.insight-list,
+.dash-grid-2>.compare,
+.dash-grid-2>.pattern-card {
+  margin: 0;
+}
+
+.dash .pattern-card {
+  margin: 0 0 16px;
+}
+
+.dash-col>.pattern-card:last-child {
+  margin-bottom: 0;
+}
+
+/* flattened Account/Settings: notes and lists sit flush inside their cell */
+.dash-cell>.settings-note {
+  margin: 0 0 12px;
+}
+
+.dash-cell>.settings-note:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== responsive ===== */
+@media (max-width: 1180px) {
+
+  .dash-grid-tonight,
+  .dash-grid-therapy,
+  .dash-tonight-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-grid-you {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dash-tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .dash-sidebar {
+    width: 76px;
+    padding: 22px 12px;
+  }
+
+  .dash-wordmark,
+  .dash-nav-item span,
+  .dash-user-meta {
+    display: none;
+  }
+
+  .dash-nav-item {
+    justify-content: center;
+  }
+
+  .dash-brand {
+    justify-content: center;
+    padding: 6px 0 0;
+  }
+
+  .dash-main {
+    padding: 24px 20px 64px;
+  }
+
+  .dash-grid-charts,
+  .dash-grid-2,
+  .dash-grid-you {
+    grid-template-columns: 1fr;
+  }
+}

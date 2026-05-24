@@ -46,6 +46,10 @@ export function StoreProvider({ children }) {
     setTabNonce((n) => n + 1);
   }, []);
   const [fixtureId, setFixtureId] = useState(DEFAULT_FIXTURE);
+  /* 'mobile' = the phone-in-the-center demo; 'desktop' = the full-width
+   * dashboard. Toggled from the DevPanel; both share the same underlying state
+   * (tab, fixture, devices) so switching keeps you on the same data. */
+  const [viewMode, setViewMode] = useState('mobile');
   const [sheet, setSheet] = useState(null); // { kind, ...params }
   const [checkin, setCheckin] = useState(loadCheckin);
   const [maskId, setMaskId] = useState(DEFAULT_MASK_ID);
@@ -107,6 +111,8 @@ export function StoreProvider({ children }) {
     tabNonce,
     fixtureId,
     setFixtureId,
+    viewMode,
+    setViewMode,
     sheet,
     openSheet,
     closeSheet,

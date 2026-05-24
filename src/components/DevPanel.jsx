@@ -5,7 +5,8 @@ import { useStore } from '../lib/store.jsx';
 import { FIXTURES, FIXTURE_ORDER } from '../data/fixtures.js';
 
 export function DevPanel() {
-  const { onboarded, completeOnboarding, resetOnboarding, fixtureId, setFixtureId } = useStore();
+  const { onboarded, completeOnboarding, resetOnboarding, fixtureId, setFixtureId, viewMode, setViewMode } =
+    useStore();
 
   return (
     <div className="dev-panel" role="group" aria-label="Demo controls">
@@ -15,6 +16,16 @@ export function DevPanel() {
       </button>
       <button className={onboarded ? 'on' : ''} onClick={completeOnboarding}>
         App
+      </button>
+
+      <span className="dp-sep" aria-hidden="true" />
+
+      <span className="dp-label">Layout</span>
+      <button className={viewMode === 'mobile' ? 'on' : ''} onClick={() => setViewMode('mobile')}>
+        Mobile
+      </button>
+      <button className={viewMode === 'desktop' ? 'on' : ''} onClick={() => setViewMode('desktop')}>
+        Desktop
       </button>
 
       <span className="dp-sep" aria-hidden="true" />
