@@ -3,6 +3,7 @@
  * getTrends() data and chart primitives as the mobile screen. */
 import { useState } from 'react';
 import { getTrends } from '../../data/trends.js';
+import { PRESSURE_RANGE } from '../../data/therapy.js';
 import { useStore } from '../../lib/store.jsx';
 import { Icon } from '../Icons.jsx';
 import { Rich } from '../Rich.jsx';
@@ -33,7 +34,7 @@ function nightCount(start, end) {
 }
 
 export function DesktopTrends() {
-  const { fixtureId } = useStore();
+  const { fixtureId, openSheet } = useStore();
   const [range, setRange] = useState('30d');
   const [customStart, setCustomStart] = useState('2026-05-25');
   const [customEnd, setCustomEnd] = useState('2026-06-07');
@@ -129,7 +130,10 @@ export function DesktopTrends() {
         })}
       </div>
 
-      <div className="dash-grid dash-grid-charts">
+      {/* primary/secondary split: the four trend charts carry the page; the
+       * narrative (insights, journal patterns, best/worst) reads as a rail */}
+      <div className="dash-trends-layout">
+      <div className="dash-trends-charts">
         <div className="panel">
           <div className="panel-head">
             <h3>AHI events</h3>
@@ -147,9 +151,9 @@ export function DesktopTrends() {
         <div className="panel">
           <div className="panel-head">
             <h3>Pressure</h3>
-            <span className="panel-meta">cmH₂O</span>
+            <span className="panel-meta">cmH₂O · shaded: prescribed {PRESSURE_RANGE[0]}–{PRESSURE_RANGE[1]}</span>
           </div>
-          <LineChart values={t.pressureSeries} color="data" height={188} />
+          <LineChart values={t.pressureSeries} color="data" height={188} band={PRESSURE_RANGE} />
           <div className="chart-axis">{t.xLabels.map((l, i) => <span key={i}>{l}</span>)}</div>
         </div>
 
@@ -172,40 +176,54 @@ export function DesktopTrends() {
         </div>
       </div>
 
-      {t.patterns.length > 0 ? (
-        <div className="dash-grid dash-grid-2">
-          {insightList}
-          <div className="dash-patterns">
-            {t.patterns.map((p, i) => (
-              <PatternCard key={i} pattern={p} window={t.window} />
-            ))}
-          </div>
-        </div>
-      ) : (
-        insightList
-      )}
-
-      {t.bestWorst && (
-        <>
+      <aside className="dash-rail" aria-label="Trend highlights">
+        <div>
           <div className="dash-head">
-            <h3>Best &amp; worst night</h3>
+            <h3>What stands out</h3>
           </div>
-          <div className="compare">
-            <div className="cmp-card best">
-              <div className="cmp-tag">Best</div>
-              <div className="cmp-date">{t.bestWorst.best.date}</div>
-              <div className="cmp-ahi tnum">{t.bestWorst.best.ahi}</div>
-              <div className="cmp-sub">{t.bestWorst.best.note}</div>
+          {insightList}
+        </div>
+
+        {t.patterns.length > 0 && (
+          <div>
+            <div className="dash-head">
+              <h3>From your journal</h3>
             </div>
-            <div className="cmp-card worst">
-              <div className="cmp-tag">Worst</div>
-              <div className="cmp-date">{t.bestWorst.worst.date}</div>
-              <div className="cmp-ahi tnum">{t.bestWorst.worst.ahi}</div>
-              <div className="cmp-sub">{t.bestWorst.worst.note}</div>
+            <div className="dash-patterns">
+              {t.patterns.map((p, i) => (
+                <PatternCard key={i} pattern={p} window={t.window} />
+              ))}
             </div>
           </div>
-        </>
-      )}
+        )}
+
+        {t.bestWorst && (
+          <div>
+            <div className="dash-head">
+              <h3>Best &amp; worst night</h3>
+              <button className="dash-head-action" onClick={() => openSheet('compare')}>
+                Compare nights
+                <Icon name="chevronRight" size={14} />
+              </button>
+            </div>
+            <div className="compare">
+              <div className="cmp-card best">
+                <div className="cmp-tag">Best</div>
+                <div className="cmp-date">{t.bestWorst.best.date}</div>
+                <div className="cmp-ahi tnum">{t.bestWorst.best.ahi}</div>
+                <div className="cmp-sub">{t.bestWorst.best.note}</div>
+              </div>
+              <div className="cmp-card worst">
+                <div className="cmp-tag">Worst</div>
+                <div className="cmp-date">{t.bestWorst.worst.date}</div>
+                <div className="cmp-ahi tnum">{t.bestWorst.worst.ahi}</div>
+                <div className="cmp-sub">{t.bestWorst.worst.note}</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+      </div>
     </>
   );
 }

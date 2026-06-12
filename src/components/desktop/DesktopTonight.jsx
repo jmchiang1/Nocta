@@ -152,13 +152,26 @@ export function DesktopTonight() {
         {fx.pattern && <PatternCard pattern={fx.pattern} />}
       </div>
 
+      {/* the night itself — the signature timeline, promoted to a full-width
+       * band so the story reads top-down: why → the actual night → the numbers */}
+      <div className="dash-head">
+        <h3>The night</h3>
+        <div className="dash-head-right">
+          <span className="dash-head-meta">{fx.session.start} — {fx.session.end}</span>
+          <button className="dash-head-action" onClick={() => openSheet('compare')}>
+            Compare nights
+            <Icon name="chevronRight" size={14} />
+          </button>
+        </div>
+      </div>
+      <NightTimeline timeline={fx.timeline} session={fx.session} onOpen={() => openSheet('fullnight')} />
+
       {/* KPI row — uniform stat cards fill the full width */}
       <div className="dash-head">
         <h3>Last night</h3>
-        <span className="dash-head-meta">{fx.session.start} — {fx.session.end}</span>
       </div>
       <div className="dash-kpis">
-        <div className="dash-kpi">
+        <div className="dash-kpi primary">
           <div className="dash-kpi-top">
             <span className="dash-kpi-k">AHI · events/hr</span>
             {hasAhi && fx.ahi.delta != null && (
@@ -199,25 +212,25 @@ export function DesktopTonight() {
         ))}
       </div>
 
-      {/* night timeline beside the connected-device body data */}
-      <div className="dash-grid dash-grid-tonight">
-        <div className="dash-col">
-          <div className="dash-head">
-            <h3>The night</h3>
-          </div>
-          <NightTimeline timeline={fx.timeline} session={fx.session} onOpen={() => openSheet('fullnight')} />
-        </div>
-
-        <div className="dash-col">
-          {bodyCards.length > 0 && (
-            <div className="dash-head">
-              <h3>Your body overnight</h3>
-            </div>
-          )}
-          {bodyCards.map((data) => (
+      {/* connected-device body data — wearable cards lay out side by side, the
+       * empty state spans the row */}
+      <div className="dash-head">
+        <h3>Your body overnight</h3>
+      </div>
+      <div className={`dash-tonight-body${bodyCards.length > 0 ? '' : ' empty'}`}>
+        {bodyCards.length > 0 ? (
+          bodyCards.map((data) => (
             <BodyResponse key={data.deviceKey} data={data} session={fx.session} />
-          ))}
-        </div>
+          ))
+        ) : (
+          <div className="ghost-card">
+            <b>No wearable connected</b>
+            <span>
+              Pair a watch or ring in the mobile app to see how your heart rate
+              and sleep stages responded to therapy overnight.
+            </span>
+          </div>
+        )}
       </div>
     </>
   );

@@ -4,6 +4,7 @@
 import { useStore } from '../../lib/store.jsx';
 import { Icon } from '../Icons.jsx';
 import { USER } from '../../data/account.js';
+import { DEVICE } from '../../data/therapy.js';
 import { DesktopTonight } from './DesktopTonight.jsx';
 import { DesktopTrends } from './DesktopTrends.jsx';
 import { DesktopTherapy } from './DesktopTherapy.jsx';
@@ -24,7 +25,7 @@ const VIEWS = {
 };
 
 export function DesktopApp() {
-  const { tab, setTab, tabNonce } = useStore();
+  const { tab, setTab, tabNonce, openSheet } = useStore();
   const View = VIEWS[tab] || DesktopTonight;
 
   return (
@@ -51,7 +52,21 @@ export function DesktopApp() {
           ))}
         </nav>
 
+        <button className="dash-coach" onClick={() => openSheet('coach')}>
+          <span className="dash-coach-icon" aria-hidden="true">
+            <Icon name="coach" size={18} />
+          </span>
+          <span className="dash-coach-text">
+            <span className="dash-coach-title">Ask Nocta</span>
+            <span className="dash-coach-sub">Your therapy coach</span>
+          </span>
+        </button>
+
         <div className="dash-side-foot">
+          <div className="dash-sync" title={DEVICE.source}>
+            <span className="dash-sync-dot" aria-hidden="true" />
+            <span className="dash-sync-text">{DEVICE.status} · SleepHQ</span>
+          </div>
           <div className="dash-user">
             <div className="dash-avatar">{USER.initials}</div>
             <div className="dash-user-meta">

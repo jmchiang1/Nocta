@@ -57,6 +57,55 @@ function rgba(hex, a) {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
+/* diagonal-hatch canvas pattern for the "typical range" band — built once,
+ * faint metric blue so the band reads as context, never as data */
+let _hatch = null;
+function hatchPattern() {
+  if (_hatch) return _hatch;
+  const tile = document.createElement('canvas');
+  tile.width = tile.height = 7;
+  const tc = tile.getContext('2d');
+  tc.fillStyle = rgba(HEX.data, 0.05);
+  tc.fillRect(0, 0, 7, 7);
+  tc.strokeStyle = rgba(HEX.data, 0.18);
+  tc.lineWidth = 1;
+  tc.beginPath();
+  tc.moveTo(-2, 9);
+  tc.lineTo(9, -2);
+  tc.stroke();
+  _hatch = tc.createPattern(tile, 'repeat');
+  return _hatch;
+}
+
+/* draws a hatched horizontal band between two y-values, behind the data —
+ * "your usual range", so every chart is read against the user's own baseline */
+const bandPlugin = {
+  id: 'typicalBand',
+  beforeDatasetsDraw(chart, _args, opts) {
+    const range = opts?.range;
+    if (!range) return;
+    const { ctx, chartArea: a, scales } = chart;
+    if (!a) return;
+    const yTop = scales.y.getPixelForValue(range[1]);
+    const yBot = scales.y.getPixelForValue(range[0]);
+    const top = Math.max(a.top, Math.min(yTop, yBot));
+    const bot = Math.min(a.bottom, Math.max(yTop, yBot));
+    if (bot <= top) return;
+    ctx.save();
+    ctx.fillStyle = hatchPattern() || rgba(HEX.data, 0.08);
+    ctx.fillRect(a.left, top, a.right - a.left, bot - top);
+    ctx.strokeStyle = rgba(HEX.data, 0.22);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(a.left, top);
+    ctx.lineTo(a.right, top);
+    ctx.moveTo(a.left, bot);
+    ctx.lineTo(a.right, bot);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
 /* themed tooltip, used only on the interactive data charts */
 const TOOLTIP = {
   enabled: true,
@@ -268,10 +317,12 @@ export function EventWave({ seed, color = 'good', height = 52 }) {
 }
 
 /* ---- Line chart with soft area fill + optional threshold line ----
- * `yMin` lifts the baseline off zero (e.g. heart rate never nears 0). */
-export function LineChart({ values, color = 'data', height = 110, threshold, yMin = 0 }) {
+ * `yMin` lifts the baseline off zero (e.g. heart rate never nears 0).
+ * `band` = [lo, hi] draws a hatched "your usual range" strip behind the
+ * line, so the night reads against the user's own baseline (no scoring). */
+export function LineChart({ values, color = 'data', height = 110, threshold, yMin = 0, band }) {
   const c = HEX[color] || HEX.data;
-  const max = Math.max(...values, threshold || 0) * 1.15 || 1;
+  const max = Math.max(...values, threshold || 0, band ? band[1] : 0) * 1.15 || 1;
   const datasets = [
     {
       type: 'line',
@@ -314,6 +365,7 @@ export function LineChart({ values, color = 'data', height = 110, threshold, yMi
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { display: false },
+      typicalBand: { range: band },
       tooltip: {
         ...TOOLTIP,
         filter: (item) => item.datasetIndex === 0,
@@ -324,7 +376,12 @@ export function LineChart({ values, color = 'data', height = 110, threshold, yMi
   };
   return (
     <ChartBox height={height}>
-      <Chart type="line" data={{ labels: emptyLabels(values.length), datasets }} options={options} />
+      <Chart
+        type="line"
+        data={{ labels: emptyLabels(values.length), datasets }}
+        options={options}
+        plugins={[bandPlugin]}
+      />
     </ChartBox>
   );
 }

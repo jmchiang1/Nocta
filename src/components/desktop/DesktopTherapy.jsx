@@ -25,6 +25,15 @@ export function DesktopTherapy() {
     c.k === 'Mask' ? { k: 'Mask', v: maskById(maskId).name } : c
   );
 
+  /* at-a-glance strip, derived from the same fixtures the cards below use */
+  const elapsed = PROJECTION.nights.filter((n) => n !== 'future');
+  const metNights = elapsed.filter((n) => n === 'met').length;
+  const targetDay = PROJECTION.scale[1].split(' ·')[0]; // 'Day 22 · target'
+  const nextDue = EQUIPMENT.reduce((a, e) =>
+    e.lifespanDays - e.ageDays < a.lifespanDays - a.ageDays ? e : a
+  );
+  const dueDays = nextDue.lifespanDays - nextDue.ageDays;
+
   return (
     <>
       <header className="dash-topbar">
@@ -32,10 +41,64 @@ export function DesktopTherapy() {
           <h1 className="dash-h1">Therapy</h1>
           <div className="dash-sub">Your machine, mask, and the paperwork</div>
         </div>
+        <div className="dash-topbar-meta">
+          <span className="dash-meta-pill">
+            <span className="dash-sync-dot" aria-hidden="true" />
+            AirSense 11 · connected
+          </span>
+          <button
+            className={`dash-topbar-action${exported ? ' done' : ''}`}
+            onClick={() => setExported(true)}
+          >
+            <Icon name={exported ? 'check' : 'download'} size={15} />
+            {exported ? 'Summary ready' : 'Export for doctor'}
+          </button>
+        </div>
       </header>
+
+      <div className="dash-statline">
+        <div className="stat-mini">
+          <div className="sm-k">Compliance nights</div>
+          <div className="sm-v">{metNights} of {elapsed.length}</div>
+          <div className="sm-sub">4+ hours, this 30-night window</div>
+        </div>
+        <div className="stat-mini">
+          <div className="sm-k">Projected to clear</div>
+          <div className="sm-v">{targetDay}</div>
+          <div className="sm-sub">at your current pace</div>
+        </div>
+        <div className="stat-mini">
+          <div className="sm-k">Next replacement</div>
+          <div className="sm-v">{nextDue.name}</div>
+          <div className="sm-sub">due in {dueDays} {dueDays === 1 ? 'day' : 'days'}</div>
+        </div>
+        <div className="stat-mini">
+          <div className="sm-k">Device</div>
+          <div className="sm-v">AirSense 11</div>
+          <div className="sm-sub">{DEVICE.status} · SleepHQ</div>
+        </div>
+      </div>
+
+      <div className="therapy-hero">
+        <section className="projection">
+          <div className="pj-eyebrow">{PROJECTION.eyebrow}</div>
+          <h4><Rich text={PROJECTION.headline} /></h4>
+          <p>{PROJECTION.body}</p>
+          <ProgressBar pct={PROJECTION.progressPct} marker={PROJECTION.targetPct} gradient height={8} />
+          <div className="compliance-dots" role="img" aria-label="Compliance status per night, 30 nights">
+            {PROJECTION.nights.map((status, i) => (
+              <span key={i} className={`compliance-dot ${status}`} />
+            ))}
+          </div>
+          <div className="pj-scale">
+            {PROJECTION.scale.map((s, i) => <span key={i}>{s}</span>)}
+          </div>
+        </section>
+      </div>
 
       <div className="dash-grid dash-grid-therapy">
         <div className="dash-col">
+          <div className="dash-head"><h3>Machine &amp; mask</h3></div>
           <section className="device-card">
             <div className="dc-top">
               <span className="dc-dot" />
@@ -54,39 +117,9 @@ export function DesktopTherapy() {
           </section>
 
           <MaskCard />
-
-          <div className="dash-head"><h3>For your doctor</h3></div>
-          <div className="list">
-            <button className="list-row" onClick={() => setExported(true)}>
-              <div className="lr-main">
-                <div className="lr-title">Export 30-night summary</div>
-                <div className="lr-sub">
-                  {exported
-                    ? 'Ready — 30 nights, AHI & leak trends, compliance. No AI commentary.'
-                    : 'A clean one-page PDF to bring to your appointment'}
-                </div>
-              </div>
-              <Icon name={exported ? 'check' : 'download'} size={18} />
-            </button>
-          </div>
         </div>
 
         <div className="dash-col">
-          <section className="projection">
-            <div className="pj-eyebrow">{PROJECTION.eyebrow}</div>
-            <h4><Rich text={PROJECTION.headline} /></h4>
-            <p>{PROJECTION.body}</p>
-            <ProgressBar pct={PROJECTION.progressPct} marker={PROJECTION.targetPct} gradient height={8} />
-            <div className="compliance-dots" role="img" aria-label="Compliance status per night, 30 nights">
-              {PROJECTION.nights.map((status, i) => (
-                <span key={i} className={`compliance-dot ${status}`} />
-              ))}
-            </div>
-            <div className="pj-scale">
-              {PROJECTION.scale.map((s, i) => <span key={i}>{s}</span>)}
-            </div>
-          </section>
-
           <div className="dash-head">
             <h3>Equipment</h3>
             <span className="dash-head-meta">replace on schedule</span>
@@ -108,6 +141,21 @@ export function DesktopTherapy() {
               );
             })}
           </div>
+
+          {/* <div className="dash-head"><h3>For your doctor</h3></div>
+          <div className="list">
+            <button className="list-row" onClick={() => setExported(true)}>
+              <div className="lr-main">
+                <div className="lr-title">Export 30-night summary</div>
+                <div className="lr-sub">
+                  {exported
+                    ? 'Ready — 30 nights, AHI & leak trends, compliance. No AI commentary.'
+                    : 'A clean one-page PDF to bring to your appointment'}
+                </div>
+              </div>
+              <Icon name={exported ? 'check' : 'download'} size={18} />
+            </button>
+          </div> */}
         </div>
       </div>
     </>

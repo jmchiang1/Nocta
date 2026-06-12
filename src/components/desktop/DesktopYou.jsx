@@ -53,35 +53,39 @@ export function DesktopYou() {
           <h1 className="dash-h1">You</h1>
           <div className="dash-sub">Profile, account, settings, and devices</div>
         </div>
+        <div className="dash-topbar-meta">
+          <span className="dash-meta-pill">Therapy day {USER.daysOnTherapy} of 30</span>
+          <span className="dash-meta-pill">{USER.plan}</span>
+        </div>
       </header>
 
-      <div className="panel dash-profile-panel">
-        <div className="profile-head">
-          <div className="avatar">{USER.initials}</div>
-          <div>
-            <div className="ph-name">{USER.name}</div>
-            <div className="ph-sub">
-              {USER.condition} · therapy day {USER.daysOnTherapy} of 30 · AirSense 11
+      <div className="dash-you">
+        <nav className="dash-tabs" role="tablist" aria-label="Settings sections">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`dash-tab${tab === t.id ? ' active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="dash-settings-body">
+        <div className="panel dash-profile-panel">
+          <div className="profile-head">
+            <div className="avatar">{USER.initials}</div>
+            <div>
+              <div className="ph-name">{USER.name}</div>
+              <div className="ph-sub">
+                {USER.condition} · therapy day {USER.daysOnTherapy} of 30 · AirSense 11
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="dash-tabs" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`dash-tab${tab === t.id ? ' active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="dash-settings-body">
         {tab === 'account' && (
           <div className="list">
             <div className="list-row static">
@@ -231,9 +235,10 @@ export function DesktopYou() {
             </button>
           </div>
         )}
-      </div>
 
-      <p className="disclaimer">Nocta v1 prototype · mock data · no live SleepHQ or OpenAI calls.</p>
+        <p className="disclaimer">Nocta v1 prototype · mock data · no live SleepHQ or OpenAI calls.</p>
+        </div>
+      </div>
     </>
   );
 }

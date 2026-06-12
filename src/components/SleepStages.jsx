@@ -13,29 +13,36 @@ const STAGE_ORDER = [
 ];
 
 export function SleepStages({ stages, session }) {
-  const asleepH = stages.deep + stages.rem + stages.light;
+  const totalH = stages.deep + stages.rem + stages.light + stages.awake;
   const samples = genHypnogram(
     `hyp-${stages.deep}-${stages.rem}-${stages.light}-${stages.awake}`,
     stages
   );
-  const pct = (h) => (asleepH > 0 ? Math.round((h / asleepH) * 100) : 0);
+  /* share of the whole night (including awake), so the four bars sum to 100 */
+  const pct = (h) => (totalH > 0 ? Math.round((h / totalH) * 100) : 0);
 
   return (
     <div className="sleep-stages">
       <Hypnogram samples={samples} />
       {session && (
         <div className="ss-axis">
-          <span>{session.start}</span>
-          <span>{session.end}</span>
+          <span className="time-pill tnum">{session.start}</span>
+          <span className="time-pill tnum">{session.end}</span>
         </div>
       )}
       <div className="ss-legend">
         {STAGE_ORDER.map(({ key, label }) => (
           <div key={key} className="ss-row">
-            <i className={`ss-dot stage-${key}`} />
-            <span className="ss-name">{label}</span>
-            <span className="ss-dur tnum">{fmtDur(stages[key])}</span>
-            <span className="ss-pct tnum">{key === 'awake' ? '' : `${pct(stages[key])}%`}</span>
+            <div className="ss-row-top">
+              <span className="ss-name">{label}</span>
+              <span className="ss-dur tnum">
+                {fmtDur(stages[key])}
+                <span className="ss-pct tnum"> · {pct(stages[key])}%</span>
+              </span>
+            </div>
+            <div className="ss-track">
+              <span className={`ss-fill stage-${key}`} style={{ width: `${pct(stages[key])}%` }} />
+            </div>
           </div>
         ))}
       </div>

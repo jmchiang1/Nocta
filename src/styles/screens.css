@@ -258,7 +258,6 @@
   height: 9px;
   border-radius: 50%;
   background: var(--good);
-  box-shadow: 0 0 8px rgba(125, 201, 154, 0.6);
 }
 .device-card .dc-status {
   font-size: 12px;
@@ -539,7 +538,6 @@
 }
 .compliance-dot.met {
   background: var(--good);
-  box-shadow: 0 0 4px rgba(125, 201, 154, 0.45);
 }
 .compliance-dot.missed {
   background: var(--alert);

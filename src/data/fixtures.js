@@ -6,7 +6,9 @@
  * would supply via HealthKit (future integration; out of v1 scope). Shape:
  *   source     — device label
  *   note       — one honest, non-diagnostic line about the body's response
- *   hr         — { series: overnight bpm trace, dir: vs the user's baseline }
+ *   hr         — { series: overnight bpm trace, dir: vs the user's baseline,
+ *                  typical: [lo, hi] — the user's usual overnight range, drawn
+ *                  as a hatched band behind the trace (same on every night) }
  *   hrv        — { value, unit, dir } overnight heart-rate variability
  *   respRate   — { value, unit } sleeping respiratory rate
  *   sleep      — { asleepHours (watch), maskOnHours (= session.durationHours) }
@@ -118,6 +120,7 @@ const anomaly = {
           { at: 0.64, width: 0.08, mag: 9 },
         ],
       }),
+      typical: [48, 64],
     },
     hrv: { value: 38, unit: 'ms', dir: 'down' },
     respRate: { value: 15.8, unit: 'br/min' },
@@ -207,6 +210,7 @@ const steady = {
           { at: 0.72, width: 0.06, mag: 5 },
         ],
       }),
+      typical: [48, 64],
     },
     hrv: { value: 54, unit: 'ms', dir: 'flat' },
     respRate: { value: 14.1, unit: 'br/min' },
@@ -291,6 +295,7 @@ const win = {
         base: 50, n: 48, drift: 3,
         arousals: [{ at: 0.55, width: 0.06, mag: 4 }],
       }),
+      typical: [48, 64],
     },
     hrv: { value: 61, unit: 'ms', dir: 'up' },
     respRate: { value: 13.6, unit: 'br/min' },
@@ -375,6 +380,7 @@ const escalation = {
           { at: 0.66, width: 0.1, mag: 12 },
         ],
       }),
+      typical: [48, 64],
     },
     hrv: { value: 34, unit: 'ms', dir: 'down' },
     respRate: { value: 15.2, unit: 'br/min' },
@@ -446,6 +452,7 @@ const insufficient = {
         base: 64, n: 16, drift: 2,
         arousals: [{ at: 0.5, width: 0.2, mag: 7 }],
       }),
+      typical: [48, 64],
     },
     hrv: { value: '—', unit: 'ms', dir: 'flat' },
     respRate: { value: 16, unit: 'br/min' },

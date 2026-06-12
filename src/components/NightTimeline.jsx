@@ -27,9 +27,9 @@ export function NightTimeline({ timeline, session, onOpen }) {
   return (
     <section className="night-card card-enter" aria-label="Overnight timeline">
       <div className="night-meta">
-        <span>{session.start}</span>
+        <span className="time-pill tnum">{session.start}</span>
         <span className="mid">{timeline.eventCount} events</span>
-        <span>{session.end}</span>
+        <span className="time-pill tnum">{session.end}</span>
       </div>
 
       <StackedBars series={bins} height={104} />

@@ -1,6 +1,7 @@
 /* Nocta — Trends tab. Range selector, trend charts, journal patterns, best/worst night. */
 import { useState } from 'react';
 import { getTrends } from '../data/trends.js';
+import { PRESSURE_RANGE } from '../data/therapy.js';
 import { JOURNAL_HISTORY } from '../data/journal.js';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
@@ -154,10 +155,10 @@ export function TrendsScreen() {
 
         <div className="section-head">
           <h3>Pressure</h3>
-          <span className="meta">cmH₂O</span>
+          <span className="meta">cmH₂O · shaded: prescribed {PRESSURE_RANGE[0]}–{PRESSURE_RANGE[1]}</span>
         </div>
         <div className="chart-card">
-          <LineChart values={t.pressureSeries} color="data" />
+          <LineChart values={t.pressureSeries} color="data" band={PRESSURE_RANGE} />
           <div className="chart-axis">
             {t.xLabels.map((l, i) => (
               <span key={i}>{l}</span>

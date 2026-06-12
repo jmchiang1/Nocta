@@ -40,7 +40,6 @@ export function TherapyScreen() {
 
         <section className="device-card">
           <div className="dc-top">
-            <span className="dc-dot" />
             <span className="dc-status">{DEVICE.status}</span>
           </div>
           <h3>{DEVICE.name}</h3>

@@ -53,7 +53,10 @@ export function BodyResponse({ data, session }) {
       {source && <div className="bc-source">{source}</div>}
       {hasHr && (
         <Section title="Heart rate" summary={`${avgHr} bpm avg`}>
-          <LineChart values={hr.series} color="data" height={94} yMin={40} />
+          <LineChart values={hr.series} color="data" height={94} yMin={40} band={hr.typical} />
+          {hr.typical && (
+            <div className="band-key">Shaded — your usual overnight range, {hr.typical[0]}–{hr.typical[1]} bpm</div>
+          )}
           <p className="bc-note">{note}</p>
           <div className="bc-stats">
             <Stat label="Avg HR" value={avgHr} unit="bpm" />

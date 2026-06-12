@@ -8,6 +8,14 @@
   background:
     radial-gradient(120% 70% at 50% -10%, rgba(240, 164, 122, 0.05), transparent 60%),
     linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 40%, var(--bg-grad-bottom) 100%);
+
+  /* the desktop dashboard runs a tighter, flatter radius than mobile — every
+   * card, panel, button, and dialog collapses to --r-sm. Pills (--r-pill) keep
+   * their shape. Scoped here so it cascades into reused mobile components and
+   * the modals without touching a single component rule. */
+  --r-md: var(--r-sm);
+  --r-lg: var(--r-sm);
+  --r-xl: var(--r-sm);
 }
 
 .desktop-stage .dev-panel {
@@ -32,8 +40,6 @@
   display: flex;
   align-items: flex-start;
   min-height: 100vh;
-  max-width: 1640px;
-  margin: 0 auto;
 }
 
 /* ----- sidebar ----- */
@@ -113,10 +119,84 @@
   color: var(--accent);
 }
 
-.dash-side-foot {
+/* persistent AI entry point — desktop's equivalent of the mobile Coach FAB.
+ * peach is the sacred AI accent; this is the only peach fill in the chrome.
+ * margin-top:auto anchors it (and the footer below) to the bottom of the rail */
+.dash-coach {
   margin-top: auto;
-  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(240, 164, 122, 0.22);
+  background:
+    linear-gradient(180deg, rgba(240, 164, 122, 0.14), rgba(240, 164, 122, 0.07));
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.dash-coach:hover {
+  border-color: rgba(240, 164, 122, 0.4);
+  background: linear-gradient(180deg, rgba(240, 164, 122, 0.2), rgba(240, 164, 122, 0.1));
+  transform: translateY(-1px);
+}
+
+.dash-coach-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-on-accent);
+  background: linear-gradient(150deg, var(--accent-soft), var(--accent-deep));
+  box-shadow: 0 6px 16px -6px var(--accent-glow);
+}
+
+.dash-coach-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-coach-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.dash-coach-sub {
+  font-size: 11.5px;
+  color: var(--accent-soft);
+}
+
+.dash-side-foot {
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid var(--hairline);
+}
+
+/* connected-product signal: a live sync line above the user chip */
+.dash-sync {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 12px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.dash-sync-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--good);
 }
 
 .dash-user {
@@ -154,16 +234,20 @@
 .dash-main {
   flex: 1;
   min-width: 0;
-  padding: 30px 40px 64px;
+  max-width: 1440px;
+  /* generous bottom padding so the floating dev panel never sits on content */
+  padding: 30px 40px 130px;
 }
 
+/* one row: page title block on the left, that page's control (week strip,
+ * range picker) on the right — wraps back to stacked when space runs out */
 .dash-topbar {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 28px;
-  flex-direction: column;
+  gap: 24px 40px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
 }
 
 .dash-eyebrow {
@@ -171,6 +255,59 @@
   color: var(--accent-soft);
   font-style: italic;
   font-family: var(--font-display);
+}
+
+/* right-aligned meta cluster for pages whose topbar has no page control
+ * (Therapy, You) — keeps every header balanced instead of a lone left title */
+.dash-topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dash-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-feature-settings: 'tnum' 1;
+}
+
+.dash-meta-pill .dash-sync-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.dash-topbar-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hairline-strong);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-topbar-action:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.dash-topbar-action.done {
+  color: var(--good);
+  border-color: rgba(125, 201, 154, 0.3);
+  background: rgba(125, 201, 154, 0.08);
 }
 
 .dash-h1 {
@@ -191,16 +328,17 @@
   display: flex;
   gap: 5px;
   flex-wrap: nowrap;
-  width: -webkit-fill-available;
+  width: 100%;
   justify-content: space-between;
 }
 
-/* match the mobile day-cell size (square, ~50px) rather than shrinking it */
+/* day cells flex to the available strip width, capped near the mobile size */
 .dash-week .day {
-  width: 50px;
-  min-width: 50px;
-  flex: 0 0 auto;
-  padding: 0.5rem 1rem;
+  width: auto;
+  min-width: 0;
+  max-width: 54px;
+  flex: 1 1 0;
+  padding: 0.55rem 0;
   gap: 8px;
   aspect-ratio: auto;
   height: auto;
@@ -219,7 +357,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 100%;
+  /* shares the topbar row with the title; shrinks before it wraps under */
+  flex: 0 1 860px;
+  min-width: 460px;
 }
 
 /* arrows live in the same row as the strip so they're vertically centered
@@ -266,7 +406,7 @@
   letter-spacing: 0.06em;
   color: var(--text-tertiary);
   font-feature-settings: 'tnum' 1;
-  margin-top: 1rem;
+  margin-top: 2px;
 }
 
 /* ----- range control (Trends): segmented + optional custom date picker ----- */
@@ -500,6 +640,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
   margin: 26px 0 12px;
 }
 
@@ -516,6 +658,246 @@
   font-weight: 600;
 }
 
+.dash-head-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* quiet inline action that lives in a section heading (e.g. "Compare nights") */
+.dash-head-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-soft);
+  transition: color 0.15s ease, gap 0.15s ease;
+}
+
+.dash-head-action:hover {
+  color: var(--accent);
+  gap: 6px;
+}
+
+/* ===== compare-two-nights dialog ===== */
+.cmp2-dialog {
+  width: min(720px, 94vw);
+}
+
+.cmp2 {
+  padding: 28px 30px 24px;
+}
+
+.cmp2-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.cmp2-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.cmp2-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+}
+
+/* shared 3-track axis: night A | center | night B. Every row below aligns to
+ * these columns so the eye scans straight across. */
+.cmp2-cols,
+.cmp2-row,
+.cmp2-verdicts {
+  display: grid;
+  grid-template-columns: 1fr 96px 1fr;
+  align-items: center;
+}
+
+.cmp2-cols {
+  gap: 0 16px;
+  margin-bottom: 8px;
+}
+
+.cmp2-col-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.cmp2-vs {
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-tertiary);
+}
+
+.cmp2-pick {
+  position: relative;
+  width: 100%;
+}
+
+.cmp2-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 11px 34px 11px 14px;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline-strong);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.cmp2-select:hover,
+.cmp2-select:focus-visible {
+  outline: none;
+  border-color: rgba(240, 164, 122, 0.4);
+}
+
+.cmp2-select-caret {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+/* state tag under each picker — colors follow the why-card state language */
+.cmp2-state {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 11px;
+  border-radius: var(--r-pill);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+.cmp2-state.anomaly { color: var(--accent); background: var(--accent-glow); }
+.cmp2-state.win,
+.cmp2-state.steady { color: var(--good); background: rgba(125, 201, 154, 0.12); }
+.cmp2-state.escalation { color: var(--alert); background: rgba(224, 122, 106, 0.12); }
+.cmp2-state.insufficient { color: var(--text-tertiary); }
+
+.cmp2-rows {
+  margin: 18px 0 6px;
+  border-top: 1px solid var(--hairline);
+}
+
+.cmp2-row {
+  gap: 0 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.cmp2-val {
+  position: relative;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.cmp2-val.steady {
+  color: var(--good);
+}
+
+.cmp2-flag {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--good);
+}
+
+.cmp2-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.cmp2-metric-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.cmp2-metric-unit {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+.cmp2-verdicts {
+  gap: 0 16px;
+  margin-top: 18px;
+}
+
+.cmp2-verdict {
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+/* the verdict cards flank the same center gutter as the rows above */
+.cmp2-verdict:first-child { grid-column: 1; }
+.cmp2-verdict:last-child { grid-column: 3; }
+
+.cmp2-verdict-k {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.cmp2-verdict p {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.cmp2 .disclaimer {
+  margin-top: 22px;
+}
+
+@media (max-width: 600px) {
+  .cmp2-cols,
+  .cmp2-row,
+  .cmp2-verdicts {
+    grid-template-columns: 1fr 44px 1fr;
+  }
+  .cmp2-val { font-size: 24px; }
+}
+
 .dash-section-label {
   font-size: 11px;
   font-weight: 700;
@@ -526,16 +908,16 @@
 }
 
 /* ===== grids ===== */
-/* one rhythm everywhere: 20px between stacked blocks, matching the grid gap */
+/* one rhythm everywhere: 18px between cards and grid tracks, headings own the
+ * 26px band above each section — nothing else adds vertical margin */
 .dash-grid {
   display: grid;
-  gap: 20px;
+  gap: 18px;
   align-items: stretch;
 }
 
 .dash-grid-tonight {
   grid-template-columns: 1.35fr 1fr;
-  margin-bottom: 4rem;
 }
 
 /* hero row — why-card beside its pattern card, same column split as the grid
@@ -543,10 +925,10 @@
  * night has no pattern. */
 .dash-tonight-hero {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 18px;
   align-items: stretch;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 .dash-tonight-hero.solo {
   grid-template-columns: 1fr;
@@ -557,12 +939,35 @@
   height: 100%;
 }
 
-/* KPI stat-card row (AHI + secondary metrics) — uniform cards, full width */
+/* the night timeline runs full-width as a hero band; the following section
+ * heading owns the gap beneath it */
+.dash-main > .night-card {
+  margin: 0;
+}
+
+/* wearable body cards lay out side by side and reflow; the empty state spans
+ * the whole row rather than sitting in a lonely narrow column */
+.dash-tonight-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.dash-tonight-body.empty {
+  display: block;
+}
+
+.dash-tonight-body > * {
+  margin: 0;
+}
+
+/* KPI stat-card row (AHI + secondary metrics) — uniform cards, full width.
+ * No bottom margin: the next section's heading owns the space below. */
 .dash-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 18px;
 }
 .dash-kpi {
   display: flex;
@@ -576,7 +981,30 @@
   transition: border-color 0.18s ease, transform 0.18s ease;
 }
 button.dash-kpi { cursor: pointer; }
-button.dash-kpi:hover { border-color: var(--hairline-strong); transform: translateY(-2px); }
+button.dash-kpi:hover {
+  border-color: var(--hairline-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px -22px rgba(0, 0, 0, 0.8);
+}
+button.dash-kpi:focus-visible {
+  outline: none;
+  border-color: rgba(240, 164, 122, 0.5);
+}
+
+/* AHI is the AAA hero number — distinguish it structurally (elevated surface,
+ * brighter top hairline, larger numeral) without color, since semantic hues are
+ * reserved for state and peach for AI */
+.dash-kpi.primary {
+  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface-1) 100%);
+  border-color: var(--hairline-strong);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+.dash-kpi.primary .dash-kpi-v {
+  font-size: 44px;
+}
+.dash-kpi.primary .dash-kpi-k {
+  color: var(--text-secondary);
+}
 .dash-kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 20px; }
 .dash-kpi-k {
   font-size: 10px;
@@ -599,12 +1027,12 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
 
 .dash-grid-charts {
   grid-template-columns: 1fr 1fr;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 .dash-grid-2 {
   grid-template-columns: 1fr 1fr;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 /* a section label already owns the space above the grid it introduces */
@@ -614,6 +1042,57 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
 
 .dash-grid-therapy {
   grid-template-columns: 1fr 1fr;
+}
+
+/* ===== Therapy: status strip + compliance hero ===== */
+/* four at-a-glance stat cards (compliance, projection, next replacement,
+ * device sync) so the page opens with a real overview row */
+.dash-statline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.stat-mini {
+  min-width: 0;
+  padding: 16px 18px 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--hairline);
+  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+}
+
+.stat-mini .sm-k {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.stat-mini .sm-v {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin: 8px 0 4px;
+  font-feature-settings: 'tnum' 1;
+}
+
+.stat-mini .sm-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* the compliance projection is the page's most important content — give it
+ * the full row under the strip rather than burying it in a column */
+.therapy-hero {
+  margin-bottom: 18px;
+}
+
+.therapy-hero .projection {
+  margin: 0;
+  padding: 22px 24px 18px;
 }
 
 .dash-grid-you {
@@ -633,11 +1112,54 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
   flex: 1;
 }
 
-/* Trends: patterns stack beside the insight list and fill the row height */
+/* Trends: 2×2 chart grid on the left, a narrow reading rail on the right with
+ * the insights, journal patterns, and best/worst night stacked in priority
+ * order — gives the page a clear primary/secondary split instead of one long
+ * undifferentiated scroll */
+.dash-trends-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.dash-trends-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.dash-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  /* the chart panels sit beside the rail and pad their titles 20px down from
+   * the grid top; match that so "What stands out" lines up with "AHI events" */
+  padding-top: 20px;
+}
+
+.dash-rail .dash-head {
+  margin: 0 0 10px;
+}
+
+.dash-rail .insight-list,
+.dash-rail .pattern-card,
+.dash-rail .compare {
+  margin: 0;
+}
+
+/* best/worst stack vertically in the rail instead of two squeezed columns */
+.dash-rail .compare {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
 .dash-patterns {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 .dash-patterns > .pattern-card {
   flex: 1;
@@ -648,7 +1170,38 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
   min-width: 0;
 }
 
-/* the first heading in a grid cell hugs the cell top, not 26px below it */
+/* quiet empty state for the body column when no wearable is connected */
+.ghost-card {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  place-content: center;
+  text-align: center;
+  padding: 28px 24px;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: var(--r-lg);
+  color: var(--text-tertiary);
+}
+
+.ghost-card b {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ghost-card span {
+  font-size: 12.5px;
+  line-height: 1.5;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+/* inside a column, cards already carry an 18px bottom margin — a following
+ * section head only adds a small extra band, and the first head hugs the top */
+.dash-col>.dash-head {
+  margin-top: 8px;
+}
+
 .dash-cell>.dash-head:first-child,
 .dash-col>.dash-head:first-child {
   margin-top: 0;
@@ -660,7 +1213,8 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
   padding: 20px 20px 16px;
-  height: -webkit-fill-available;
+  height: 100%;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
 .panel-head {
@@ -692,8 +1246,8 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
 .dash-tiles {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  /* the charts grid below owns the gap (margin-top: 20px) so it stays uniform */
+  gap: 18px;
+  /* the layout grid below owns the gap (margin-top: 18px) so it stays uniform */
   margin-bottom: 0;
 }
 
@@ -706,35 +1260,48 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
   margin: 0;
 }
 
-/* ===== You — tabbed settings ===== */
+/* ===== You — settings with a left sub-nav and a readable content column =====
+ * settings rows were stretching the full ~1200px content width; the grid caps
+ * the column at 720px with the section nav alongside, like every good web
+ * settings page */
+.dash-you {
+  display: grid;
+  grid-template-columns: 208px minmax(0, 720px);
+  gap: 40px;
+  align-items: start;
+}
+
 .dash-tabs {
   display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--hairline);
-  margin-bottom: 24px;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 30px;
 }
 
 .dash-tab {
-  padding: 12px 18px;
+  padding: 11px 14px;
   font-size: 14px;
   font-weight: 600;
+  text-align: left;
+  border-radius: var(--r-md);
   color: var(--text-tertiary);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .dash-tab:hover {
   color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .dash-tab.active {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  background: var(--accent-glow);
 }
 
 .dash-settings-body {
-  max-width: 680px;
+  width: 100%;
+  min-width: 0;
 }
 
 .dash-settings-body .dash-head:first-child {
@@ -764,7 +1331,7 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
 .dash-col>.mask-card,
 .dash-col>.metrics-row,
 .dash-col>.body-card {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .dash-col> :last-child {
@@ -804,6 +1371,24 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
 }
 
 /* ===== responsive ===== */
+/* Trends stacks earlier than the other two-column pages: its rail carries
+ * headings + actions that cramp below ~1280px, so drop it to one column there.
+ * Once stacked, the rail sits below the charts full-width — its title no longer
+ * needs the panel-padding offset, and best/worst spreads back to two columns. */
+@media (max-width: 1280px) {
+  .dash-trends-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-rail {
+    padding-top: 0;
+  }
+
+  .dash-rail .compare {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 1180px) {
 
   .dash-grid-tonight,
@@ -812,7 +1397,8 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
     grid-template-columns: 1fr;
   }
 
-  .dash-kpis {
+  .dash-kpis,
+  .dash-statline {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -822,6 +1408,22 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
 
   .dash-tiles {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .dash-weeknav {
+    min-width: 100%;
+  }
+
+  /* settings nav returns to a horizontal row above the content column */
+  .dash-you {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .dash-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
   }
 }
 
@@ -833,12 +1435,21 @@ button.dash-kpi:hover { border-color: var(--hairline-strong); transform: transla
 
   .dash-wordmark,
   .dash-nav-item span,
+  .dash-coach-text,
+  .dash-sync-text,
   .dash-user-meta {
     display: none;
   }
 
   .dash-nav-item {
     justify-content: center;
+  }
+
+  .dash-coach,
+  .dash-sync {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .dash-brand {

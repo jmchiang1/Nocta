@@ -5,6 +5,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* headings carry no intrinsic spacing — every heading style sets its own
+ * margin explicitly, so the UA default just fought our layout rhythm */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
 html,
 body {
   margin: 0;

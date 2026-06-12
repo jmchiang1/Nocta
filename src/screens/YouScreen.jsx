@@ -82,7 +82,6 @@ export function YouScreen() {
                   <div className="lr-title">{d.title}</div>
                   <div className="lr-sub">Connected · synced {d.lastSync || 'just now'}</div>
                 </div>
-                <span className="conn-dot on" aria-hidden="true" />
                 <Icon name="chevronRight" size={17} />
               </button>
             );

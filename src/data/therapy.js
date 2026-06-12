@@ -1,5 +1,9 @@
 /* Nocta — Therapy tab mock data: device, equipment lifecycle, settings, projection */
 
+/* prescribed APAP window — mirrored by the '5 – 12 cmH₂O' strings below and
+ * drawn as the hatched band on the pressure trend chart */
+export const PRESSURE_RANGE = [5, 12];
+
 export const DEVICE = {
   status: 'Synced 6 hours ago',
   name: 'ResMed AirSense 11 AutoSet',
@@ -32,7 +36,7 @@ export const SETTINGS_VIEW = [
 export const PROJECTION = {
   eyebrow: 'Compliance outlook',
   headline: 'On track to clear compliance around *day 22*.',
-  // body: 'Insurance asks for 4+ hours on 21 of any 30 nights. You have hit it on 9 of 11 so far — two short nights early on, but staying on this pace still clears the bar with a few days to spare.',
+  body: 'Insurance asks for 4+ hours on 21 of any 30 nights. You have hit it on 9 of 11 so far — two short nights early on, but staying on this pace still clears the bar with a few days to spare.',
   progressPct: 52,
   targetPct: 72, // day 22 of 30
   scale: ['Day 1', 'Day 22 · target', 'Day 30'],

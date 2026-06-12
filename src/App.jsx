@@ -19,6 +19,7 @@ import { JournalSheet } from './screens/JournalSheet.jsx';
 import { Onboarding } from './screens/Onboarding.jsx';
 import { DesktopApp } from './components/desktop/DesktopApp.jsx';
 import { DesktopFullNight } from './components/desktop/DesktopFullNight.jsx';
+import { DesktopCompare } from './components/desktop/DesktopCompare.jsx';
 
 const SCREENS = {
   tonight: TonightScreen,
@@ -73,6 +74,10 @@ function Shell() {
             {sheet.kind === 'fullnight' ? (
               <div className="desktop-dialog">
                 <DesktopFullNight />
+              </div>
+            ) : sheet.kind === 'compare' ? (
+              <div className="desktop-dialog cmp2-dialog">
+                <DesktopCompare />
               </div>
             ) : (
               ActiveSheet && <ActiveSheet />
