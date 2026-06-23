@@ -197,7 +197,7 @@
 .compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 18px;
   margin-bottom: 14px;
 }
 .compare .cmp-card {

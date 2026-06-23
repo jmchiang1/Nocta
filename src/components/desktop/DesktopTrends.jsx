@@ -130,9 +130,8 @@ export function DesktopTrends() {
         })}
       </div>
 
-      {/* primary/secondary split: the four trend charts (with best/worst beneath
-       * them) carry the page; the narrative (insights, journal patterns) reads
-       * as a rail on the right */}
+      {/* one full-width column: the four trend charts, then best/worst, then the
+       * narrative (insights, journal patterns) as a full-width rail beneath */}
       <div className="dash-trends-layout">
       <div className="dash-trends-main">
       <div className="dash-trends-charts">

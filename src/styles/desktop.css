@@ -1030,21 +1030,11 @@ button.dash-kpi:focus-visible {
   border-color: rgba(240, 164, 122, 0.5);
 }
 
-/* AHI is the AAA hero number — distinguish it structurally (elevated surface,
- * brighter top hairline, larger numeral) without color, since semantic hues are
- * reserved for state and peach for AI */
-.dash-kpi.primary {
-  background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface-1) 100%);
-  border-color: var(--hairline-strong);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
-}
-
+/* AHI is the hero metric, but its card shares the same surface, border, and
+ * label treatment as the other KPIs so the row reads as one consistent set —
+ * only the numeral is larger, distinguishing it by size rather than colour */
 .dash-kpi.primary .dash-kpi-v {
   font-size: 44px;
-}
-
-.dash-kpi.primary .dash-kpi-k {
-  color: var(--text-secondary);
 }
 
 .dash-kpi-top {
@@ -1180,9 +1170,11 @@ button.dash-kpi:focus-visible {
  * the insights, journal patterns, and best/worst night stacked in priority
  * order — gives the page a clear primary/secondary split instead of one long
  * undifferentiated scroll */
+/* one full-width column: the chart grid, then best/worst, then the highlights
+ * rail — each stretched across the whole page rather than charts-beside-rail */
 .dash-trends-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 18px;
   align-items: start;
   margin-top: 18px;
@@ -1211,14 +1203,23 @@ button.dash-kpi:focus-visible {
   margin: 0;
 }
 
+/* full-width band beneath best/worst: the two highlight sections sit side by
+ * side so the list copy doesn't stretch the whole page. align-items: stretch
+ * lets both columns share the taller one's height. */
 .dash-rail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+/* each section is heading + card; make it a flex column so the card can grow to
+ * fill the shared row height — "What stands out" and "From your journal" match */
+.dash-rail > div {
   display: flex;
   flex-direction: column;
-  gap: 18px;
   min-width: 0;
-  /* the chart panels sit beside the rail and pad their titles 20px down from
-   * the grid top; match that so "What stands out" lines up with "AHI events" */
-  /* padding-top: 20px; */
 }
 
 .dash-rail .dash-head {
@@ -1226,9 +1227,15 @@ button.dash-kpi:focus-visible {
 }
 
 .dash-rail .insight-list,
-.dash-rail .pattern-card,
+.dash-rail .pattern,
 .dash-rail .compare {
   margin: 0;
+}
+
+/* both cards grow to fill their (now equal-height) column */
+.dash-rail .insight-list,
+.dash-rail .dash-patterns {
+  flex: 1;
 }
 
 /* best/worst stack vertically in the rail instead of two squeezed columns */
@@ -1243,7 +1250,7 @@ button.dash-kpi:focus-visible {
   gap: 18px;
 }
 
-.dash-patterns>.pattern-card {
+.dash-patterns>.pattern {
   flex: 1;
   margin: 0;
 }
@@ -1460,21 +1467,11 @@ button.dash-kpi:focus-visible {
 }
 
 /* ===== responsive ===== */
-/* Trends stacks earlier than the other two-column pages: its rail carries
- * headings + actions that cramp below ~1280px, so drop it to one column there.
- * Once stacked, the rail sits below the charts full-width — its title no longer
- * needs the panel-padding offset, and best/worst spreads back to two columns. */
+/* The Trends page is already a single full-width column; below ~1280px the two
+ * highlight sections in the rail stack instead of sitting side by side. */
 @media (max-width: 1280px) {
-  .dash-trends-layout {
-    grid-template-columns: 1fr;
-  }
-
   .dash-rail {
-    padding-top: 0;
-  }
-
-  .dash-rail .compare {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
