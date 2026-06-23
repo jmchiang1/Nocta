@@ -1137,7 +1137,7 @@ button.dash-kpi:focus-visible {
   min-width: 0;
   /* the chart panels sit beside the rail and pad their titles 20px down from
    * the grid top; match that so "What stands out" lines up with "AHI events" */
-  padding-top: 20px;
+  /* padding-top: 20px; */
 }
 
 .dash-rail .dash-head {
