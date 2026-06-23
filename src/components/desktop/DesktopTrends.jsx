@@ -130,9 +130,11 @@ export function DesktopTrends() {
         })}
       </div>
 
-      {/* primary/secondary split: the four trend charts carry the page; the
-       * narrative (insights, journal patterns, best/worst) reads as a rail */}
+      {/* primary/secondary split: the four trend charts (with best/worst beneath
+       * them) carry the page; the narrative (insights, journal patterns) reads
+       * as a rail on the right */}
       <div className="dash-trends-layout">
+      <div className="dash-trends-main">
       <div className="dash-trends-charts">
         <div className="panel">
           <div className="panel-head">
@@ -176,6 +178,33 @@ export function DesktopTrends() {
         </div>
       </div>
 
+      {t.bestWorst && (
+        <section className="dash-bestworst">
+          <div className="dash-head">
+            <h3>Best &amp; worst night</h3>
+            <button className="dash-head-action" onClick={() => openSheet('compare')}>
+              Compare nights
+              <Icon name="chevronRight" size={14} />
+            </button>
+          </div>
+          <div className="compare">
+            <div className="cmp-card best">
+              <div className="cmp-tag">Best</div>
+              <div className="cmp-date">{t.bestWorst.best.date}</div>
+              <div className="cmp-ahi tnum">{t.bestWorst.best.ahi}</div>
+              <div className="cmp-sub">{t.bestWorst.best.note}</div>
+            </div>
+            <div className="cmp-card worst">
+              <div className="cmp-tag">Worst</div>
+              <div className="cmp-date">{t.bestWorst.worst.date}</div>
+              <div className="cmp-ahi tnum">{t.bestWorst.worst.ahi}</div>
+              <div className="cmp-sub">{t.bestWorst.worst.note}</div>
+            </div>
+          </div>
+        </section>
+      )}
+      </div>
+
       <aside className="dash-rail" aria-label="Trend highlights">
         <div>
           <div className="dash-head">
@@ -193,32 +222,6 @@ export function DesktopTrends() {
               {t.patterns.map((p, i) => (
                 <PatternCard key={i} pattern={p} window={t.window} />
               ))}
-            </div>
-          </div>
-        )}
-
-        {t.bestWorst && (
-          <div>
-            <div className="dash-head">
-              <h3>Best &amp; worst night</h3>
-              <button className="dash-head-action" onClick={() => openSheet('compare')}>
-                Compare nights
-                <Icon name="chevronRight" size={14} />
-              </button>
-            </div>
-            <div className="compare">
-              <div className="cmp-card best">
-                <div className="cmp-tag">Best</div>
-                <div className="cmp-date">{t.bestWorst.best.date}</div>
-                <div className="cmp-ahi tnum">{t.bestWorst.best.ahi}</div>
-                <div className="cmp-sub">{t.bestWorst.best.note}</div>
-              </div>
-              <div className="cmp-card worst">
-                <div className="cmp-tag">Worst</div>
-                <div className="cmp-date">{t.bestWorst.worst.date}</div>
-                <div className="cmp-ahi tnum">{t.bestWorst.worst.ahi}</div>
-                <div className="cmp-sub">{t.bestWorst.worst.note}</div>
-              </div>
             </div>
           </div>
         )}

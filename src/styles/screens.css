@@ -246,7 +246,9 @@
   border: 1px solid var(--hairline);
   background: linear-gradient(135deg, rgba(125, 201, 154, 0.08), var(--surface-1) 55%);
   padding: 18px;
-  margin-bottom: 16px;
+  /* mobile: natural height. Desktop fills its column — see desktop.css */
+  height: fit-content;
+  margin-bottom: 0px !important;
 }
 .device-card .dc-top {
   display: flex;
