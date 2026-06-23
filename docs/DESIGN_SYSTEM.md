@@ -75,16 +75,16 @@ The visual language is documented as design tokens. The reference implementation
 Two fonts, loaded from Google Fonts:
 
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 ```
 
-- **Fraunces** — display headlines, large numerals, AI Coach voice. Italic for AI Coach
+- **DM Sans** — display headlines, large numerals, AI Coach voice. Italic for AI Coach
   emphasis only.
 - **Inter** — body, UI chrome, labels, metric subtitles, all buttons.
 
 ```css
 :root {
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-display: 'DM Sans', system-ui, sans-serif;
   --font-body:    'Inter', -apple-system, system-ui, sans-serif;
 }
 ```
@@ -93,10 +93,10 @@ Two fonts, loaded from Google Fonts:
 
 | Token | Size / Font | Use |
 |---|---|---|
-| `--type-display-xl` | 64px / Fraunces 400 | Hero numerals (AHI value) |
-| `--type-display-lg` | 32px / Fraunces 500 | Page titles ("Saturday") |
-| `--type-display-md` | 26px / Fraunces 400 | Hero why-card headline |
-| `--type-display-sm` | 22px / Fraunces 500 | Secondary metric values |
+| `--type-display-xl` | 64px / DM Sans 400 | Hero numerals (AHI value) |
+| `--type-display-lg` | 32px / DM Sans 500 | Page titles ("Saturday") |
+| `--type-display-md` | 26px / DM Sans 400 | Hero why-card headline |
+| `--type-display-sm` | 22px / DM Sans 500 | Secondary metric values |
 | `--type-body-lg` | 17px / Inter 500 | Insight observation body (min body size) |
 | `--type-body-md` | 14.5px / Inter 400 | Default body |
 | `--type-body-sm` | 13px / Inter 500 | Chips, button labels |
@@ -107,7 +107,7 @@ Two fonts, loaded from Google Fonts:
 
 - **17pt minimum on body text, 18pt ideal.** Never weight 300, anywhere.
 - **All numerical readouts use `font-feature-settings: "tnum" 1;`**.
-- **Italic Fraunces is reserved for AI Coach voice moments** in display headlines.
+- **Italic DM Sans is reserved for AI Coach voice moments** in display headlines.
 - The `--type-label` style is the only place we use caps.
 
 ---
@@ -167,7 +167,7 @@ wall of text.
 **Structure (consistent across all five states), top to bottom:**
 
 1. **Eyebrow** — who / when, e.g. "Nocta Coach · Last night". State-coloured.
-2. **Headline** — one idea, the verdict. Fraunces 30px. ≤ 9 words ideal, ≤ 14 hard max.
+2. **Headline** — one idea, the verdict. DM Sans 30px. ≤ 9 words ideal, ≤ 14 hard max.
    Single italic emphasis via `<em>` (`accent-soft`, weight 500).
 3. **Sparkline** — 32px tall. Carries timing/shape visually so the headline doesn't have to.
 4. **Action box** — second-largest visual element; one concrete next step. **Omitted
@@ -202,15 +202,15 @@ redundant.
 
 - Sage accent (no peach — this is a learned pattern, not AI-generated for this night)
 - 135deg radial sage tint at top-left
-- Headline in Fraunces 400 18pt
-- Always includes a small-stat row at bottom: three numbers in Fraunces 500 (effect size,
+- Headline in DM Sans 400 18pt
+- Always includes a small-stat row at bottom: three numbers in DM Sans 500 (effect size,
   sample size, data window)
 
 ### Metric cards
 
 - **Primary metric** (AHI on Home): full-width card, 64px display numeral, baseline strip
   below, delta pill in top-right
-- **Secondary metric** (in 3-column row): compact card, 22px Fraunces value, 16px
+- **Secondary metric** (in 3-column row): compact card, 22px DM Sans value, 16px
   sparkline, single-line context
 - **Tertiary metric** (Trends grids): mini-tile with 18px value and sparkline
 
@@ -298,4 +298,4 @@ Honor `prefers-reduced-motion: reduce` — disable all non-essential animation.
 - **Red/green/yellow score bands** for clinical metrics.
 - **Pure white text on pure black background.**
 - **Stock photography of older people.**
-- **Generic system fonts.** Fraunces + Inter is the commitment.
+- **Generic system fonts.** DM Sans + Inter is the commitment.

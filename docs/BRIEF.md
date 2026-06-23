@@ -92,7 +92,7 @@ than CPAP-data alone could support.
   Differentiates from every clinical-blue competitor.
 - **Restrained chart palette** — muted data blue for default series; sage/amber/coral
   reserved for semantic states.
-- **Fraunces serif** for headlines and numerals (italic accents on AI Coach moments
+- **DM Sans** for headlines and numerals (italic accents on AI Coach moments
   specifically). **Inter** for body and chrome.
 - **No donut gauges** — they imply false ceilings on open-ended medical metrics. Use
   horizontal baseline strips or sparkline + tabular value.

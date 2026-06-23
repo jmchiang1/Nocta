@@ -38,7 +38,7 @@ never a wall of text on first read.
 │ ✦ NOCTA COACH · LAST NIGHT                        │  Eyebrow — who/when, state-coloured
 │                                                   │
 │ Your AHI nearly doubled last night.               │  Headline — one verdict, ≤9 words
-│                                                   │  Fraunces 30pt, italic on one word
+│                                                   │  DM Sans 30pt, italic on one word
 │ ▁▁▃▂▇▇▆▄▂▁▁▁                                      │  Sparkline — 32px, carries timing
 │                                                   │
 │ → Try sleeping on your side tonight.              │  Action box (omit: steady, low-data)

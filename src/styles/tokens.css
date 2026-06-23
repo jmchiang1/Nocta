@@ -49,7 +49,7 @@
   --stage-deep: #2e4180;
 
   /* fonts */
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-display: 'DM Sans', system-ui, sans-serif;
   --font-body: 'Inter', -apple-system, system-ui, sans-serif;
 
   /* spacing */

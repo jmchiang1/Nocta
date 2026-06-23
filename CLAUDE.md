@@ -42,7 +42,7 @@ If a request would pull in a UI framework or CSS framework, push back and ask fi
 - **CSS variables for everything.** The design system is token-driven (see
   `docs/DESIGN_SYSTEM.md`). Never hardcode hex values in component CSS — pull from `:root`.
 - **No CSS frameworks.** Custom CSS only, in plain stylesheets.
-- **Fonts**: Fraunces (display + numerals) and Inter (body + UI). Loaded from Google Fonts
+- **Fonts**: DM Sans (display + numerals) and Inter (body + UI). Loaded from Google Fonts
   in `index.html`.
 - **Mobile-first**, 390px design width. Desktop is a "phone in the middle of the page".
 - **Accessibility floors**: 17pt body minimum, 48pt touch targets minimum (56pt for primary
