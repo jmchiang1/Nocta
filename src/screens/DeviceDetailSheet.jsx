@@ -10,12 +10,14 @@
  * until the device flips to connected, then the normal detail view returns. */
 import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
-import { deviceByKey } from '../data/account.js';
+import { deviceByKey, DEVICE_PHOTO } from '../data/account.js';
+import { NIGHTS_ON_THERAPY } from '../data/history.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { ProgressBar } from '../components/Charts.jsx';
 
-const SYNC_NIGHTS = 30;
+// pulls the same nights you've been on therapy, so the counts match everywhere
+const SYNC_NIGHTS = NIGHTS_ON_THERAPY;
 const SYNC_DURATION_MS = 2400;
 const SYNC_HOLD_MS = 700;
 
@@ -36,14 +38,15 @@ function Switch({ on, onChange, label, disabled }) {
   );
 }
 
-/* Brand mark shown at the top of the authorize + syncing steps. Oura gets a
- * real product photo because the device-detail entry point already showed a
- * ring icon; the photo makes the handoff feel like the real OAuth screen. */
+/* Brand mark shown at the top of the authorize + syncing steps: the device's
+ * real app icon (public/brands), so the handoff feels like the real OAuth
+ * screen. Falls back to its line icon if a device has no artwork. */
 function BrandMark({ device }) {
-  if (device.key === 'oura') {
+  const photo = DEVICE_PHOTO[device.key];
+  if (photo) {
     return (
-      <div className="oauth-brand brand-oura is-photo">
-        <img src="/ouraring.jpg" alt="" className="oauth-brand-img" />
+      <div className={`oauth-brand brand-${device.key} is-photo`}>
+        <img src={photo} alt="" className="oauth-brand-img" />
         <div className="oauth-brand-name">{device.title}</div>
       </div>
     );

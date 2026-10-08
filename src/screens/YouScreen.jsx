@@ -6,25 +6,14 @@
  * DevPanel outside the phone, so the app itself reads as shipped. */
 import { useStore } from '../lib/store.jsx';
 import { USER, CONNECTED_DEVICES, DEVICE_PHOTO } from '../data/account.js';
-import { PROJECTION, machineById } from '../data/therapy.js';
-import { getTrends } from '../data/trends.js';
+import { machineById } from '../data/therapy.js';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
-import { CountUp } from '../lib/motion.jsx';
 
 export function YouScreen() {
   const { openSheet, deviceConnections, machineId } = useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
 
-  // a quiet summary of where therapy stands — plain facts, no score, no streak
-  const nightsMet = PROJECTION.nights.filter((n) => n === 'met').length;
-  const nightsLogged = PROJECTION.nights.filter((n) => n !== 'future').length;
-  const ahiTile = getTrends(null, '7d') // "now", not the night picked on Tonight.tiles.find((t) => t.key === 'ahi');
-  const stats = [
-    { v: String(USER.daysOnTherapy), k: 'nights on therapy' },
-    { v: `${nightsMet} / ${nightsLogged}`, k: 'nights over 4 h' },
-    { v: ahiTile ? ahiTile.value : '—', k: 'avg AHI · 7 nights' },
-  ];
 
   return (
     <ScreenFrame title="You">
@@ -40,20 +29,14 @@ export function YouScreen() {
           <div>
             <div className="ph-name">{USER.name}</div>
             <div className="ph-sub">
-              {USER.condition} · {machineById(machineId).short} · since{' '}
+              {USER.condition} · {machineById(machineId).short}
+            </div>
+            {/* one plain milestone; compliance and AHI live on Therapy and Trends */}
+            <div className="ph-meta tnum">
+              {USER.daysOnTherapy} nights on therapy · since{' '}
               {USER.joinedDate.replace(/, \d{4}$/, '')}
             </div>
           </div>
-        </div>
-        <div className="profile-stats">
-          {stats.map((s, i) => (
-            <div key={s.k} className="ps-stat">
-              <strong className="tnum">
-                <CountUp value={s.v} duration={900} delay={200 + i * 90} />
-              </strong>
-              <span>{s.k}</span>
-            </div>
-          ))}
         </div>
       </section>
 

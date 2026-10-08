@@ -33,12 +33,14 @@ export const DEVICE = {
 };
 
 /* the four view-only cells on the device card, for the chosen machine + mask */
-export function deviceCells(machine, maskName) {
+/* the machine card's settings grid. The mask isn't here: it has its own card
+ * right below on Therapy. */
+export function deviceCells(machine) {
   return [
     { k: 'Mode', v: machine.mode },
     { k: 'Pressure range', v: DEVICE.pressureRange },
     { k: machine.comfortKey, v: machine.comfort },
-    { k: 'Mask', v: maskName },
+    { k: 'Humidity', v: SETTINGS_VIEW.find((s) => s.k === 'Humidity')?.v ?? '—' },
   ];
 }
 

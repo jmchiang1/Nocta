@@ -12,16 +12,6 @@ export function AccountSheet() {
     <Sheet title="Account" onClose={closeSheet} variant="page">
       {(close) => (
         <>
-          <div className="profile-head" style={{ marginBottom: 20 }}>
-            <div className="avatar">
-              <img src={USER.photo} alt={USER.name} />
-            </div>
-            <div>
-              <div className="ph-name">{USER.name}</div>
-              <div className="ph-sub">{USER.email}</div>
-            </div>
-          </div>
-
           <div className="section-head">
             <h3>Plan</h3>
           </div>

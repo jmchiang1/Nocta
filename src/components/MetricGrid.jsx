@@ -35,7 +35,7 @@ export function MetricGrid({ fixtureId, ahi, items, onMetric }) {
           type="button"
           className="mg-tile card-enter"
           onClick={() => onMetric(m.label)}
-          aria-label={`${m.label} ${m.value}${m.unit ? ` ${m.unit}` : ''}, ${m.sub}. Ask Nocta about it`}
+          aria-label={`${m.label} ${m.value}${m.unit ? ` ${m.unit}` : ''}, ${m.sub}. Ask Nox about it`}
         >
           <span className="mg-top">
             <span className="mg-label">{m.label}</span>

@@ -8,7 +8,7 @@ import { deviceByKey } from '../data/account.js';
 /* Devices that contribute to the "your body overnight" cards. Apple Health is
  * deliberately excluded — it aggregates steps/workouts/weight, not overnight
  * physiology. Order here = display order on the home screen. */
-const BODY_DEVICES = ['watch', 'oura', 'whoop'];
+const BODY_DEVICES = ['watch', 'oura', 'fitbit', 'garmin', 'samsung', 'whoop'];
 
 /* Each BodyResponse field is gated by exactly one device-read label. */
 const FIELD_READ = {
@@ -25,6 +25,9 @@ const FIELD_READ = {
 const DEVICE_TUNE = {
   watch: { hrShift: 0, hrvShift: 0 },
   oura: { hrShift: -2, hrvShift: 4 },
+  fitbit: { hrShift: 1, hrvShift: 2 },
+  garmin: { hrShift: -1, hrvShift: -2 },
+  samsung: { hrShift: 2, hrvShift: 0 },
   whoop: { hrShift: 1, hrvShift: -3 },
 };
 
@@ -47,7 +50,11 @@ function bodyResponseFor(fx, deviceKey, deviceReads) {
     ? { ...base.hr, series: base.hr.series.map((v) => v + tune.hrShift) }
     : null;
   const hrv = has('Heart-rate variability')
-    ? { ...base.hrv, value: base.hrv.value + tune.hrvShift }
+    ? {
+        ...base.hrv,
+        // a missing reading stays "—" (adding the per-device shift made "—0")
+        value: typeof base.hrv.value === 'number' ? base.hrv.value + tune.hrvShift : base.hrv.value,
+      }
     : null;
   const respRate = has('Respiratory rate') ? base.respRate : null;
   const spo2 = has('Blood oxygen') ? base.spo2 : null;

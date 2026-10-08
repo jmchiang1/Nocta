@@ -22,6 +22,8 @@ import { MachinePickerSheet } from './screens/MachinePickerSheet.jsx';
 import { JournalSheet } from './screens/JournalSheet.jsx';
 import { DoctorSummarySheet } from './screens/DoctorSummarySheet.jsx';
 import { Onboarding } from './screens/Onboarding.jsx';
+import { MetricDetailSheet } from './screens/MetricDetailSheet.jsx';
+import { WhySheet } from './screens/WhySheet.jsx';
 import { DesktopApp } from './components/desktop/DesktopApp.jsx';
 import { DesktopFullNight } from './components/desktop/DesktopFullNight.jsx';
 import { DesktopCompare } from './components/desktop/DesktopCompare.jsx';
@@ -45,6 +47,8 @@ const SHEETS = {
   machinePicker: MachinePickerSheet,
   journal: JournalSheet,
   doctor: DoctorSummarySheet,
+  why: WhySheet,
+  metricDetail: MetricDetailSheet,
 };
 
 /* drill-down subpages push in from the right; everything else is a modal */
@@ -55,10 +59,11 @@ const PAGE_SHEETS = new Set([
   'addDevice',
   'fullnight',
   'journal',
+  'metricDetail',
 ]);
 
 function Shell() {
-  const { tab, tabNonce, tabDir, sheet, sheetLeaving, onboarded, viewMode, closeSheet, startSync, tonightLayout } =
+  const { tab, tabNonce, tabDir, sheet, sheets, sheetLeaving, onboarded, viewMode, closeSheet, startSync, tonightLayout } =
     useStore();
 
   // opening the app pulls last night from SleepHQ (mock) — the Dynamic Island
@@ -136,7 +141,12 @@ function Shell() {
           </div>
           <TabBar />
         </div>
-        {ActiveSheet && <ActiveSheet />}
+        {/* sheets stack: one opened from another (the check-in from the
+         * full-night page) layers over it, so its own backdrop stays put */}
+        {sheets.map((s, i) => {
+          const SheetView = SHEETS[s.kind];
+          return SheetView ? <SheetView key={`${i}-${s.kind}`} /> : null;
+        })}
         <DynamicIsland />
       </div>
     </div>

@@ -34,7 +34,7 @@ export function DesktopApp() {
       <aside className="dash-sidebar">
         <div className="dash-brand">
           <span className="dash-logo" aria-hidden="true">
-            <img src="/Nocta-logo.svg" alt="" />
+            <img src="/Nocta-constellation-sm.svg" alt="" />
           </span>
           <span className="dash-wordmark">Nocta</span>
         </div>
@@ -58,7 +58,7 @@ export function DesktopApp() {
             <Mascot size={34} />
           </span>
           <span className="dash-coach-text">
-            <span className="dash-coach-title">Ask Nocta</span>
+            <span className="dash-coach-title">Ask Nox</span>
             <span className="dash-coach-sub">Your therapy coach</span>
           </span>
         </button>

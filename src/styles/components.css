@@ -555,7 +555,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 2px var(--bg-base);
 }
 .day.missed .day-moon {
   color: rgba(255, 255, 255, 0.14);
@@ -1225,7 +1224,6 @@
   background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
   border: 1px solid var(--hairline);
   padding: 20px 20px 16px;
-  margin-bottom: 22px;
   box-shadow: var(--shadow-card);
 }
 .night-card .chart {
@@ -1326,6 +1324,38 @@
   color: var(--text-tertiary);
   font-weight: 600;
   letter-spacing: 0.06em;
+}
+/* a chart slot with nothing recorded (e.g. no leak data on a short night) */
+.fn-nodata {
+  display: grid;
+  place-items: center;
+  height: 96px;
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+.md-nodata {
+  height: 240px;
+}
+/* no line to read times against, so no time axis under the placeholder */
+.fn-nodata + .time-axis {
+  display: none;
+}
+/* clock-time axis (TimeAxis): ticks sit where each hour falls in the session */
+.time-axis {
+  display: block;
+  position: relative;
+  height: 14px;
+  margin-top: 9px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.time-axis span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 .legend {
   display: flex;
@@ -1799,6 +1829,34 @@
 .mascot.asleep .mc-shut { opacity: 1; }
 .mascot.asleep .mc-body { animation: mcBreathe 6.4s ease-in-out infinite; }
 .mascot.waking .mc-open { animation: mcBlink 0.5s 0.25s ease-in-out; }
+/* pleased: a little hop and happy ^ ^ eyes */
+.mascot .mc-happy {
+  fill: none;
+  stroke: var(--text-on-accent);
+  stroke-linecap: round;
+}
+.mascot.pleased .mc-open { opacity: 0; }
+.mascot.pleased .mc-body { animation: mcHop 0.7s var(--ease-spring) 0.15s backwards; }
+@keyframes mcHop {
+  40% { transform: translateY(-9px) scale(1.03, 0.98); }
+}
+/* idle: long stretches of stillness, then a glance — left, up-right, down —
+ * with a blink between; a 14s loop so it feels occasional, never busy */
+.mascot.idle .mc-eyes { animation: mcGlance 14s ease-in-out 2.5s infinite; }
+.mascot.idle .mc-open { animation: mcIdleBlink 14s ease-in-out 2.5s infinite; }
+@keyframes mcGlance {
+  0%, 14% { transform: translate(0, 0); }
+  17%, 27% { transform: translate(-8px, 1px); }
+  30%, 46% { transform: translate(0, 0); }
+  49%, 58% { transform: translate(8px, -7px); }
+  61%, 74% { transform: translate(0, 0); }
+  77%, 85% { transform: translate(3px, 8px); }
+  88%, 100% { transform: translate(0, 0); }
+}
+@keyframes mcIdleBlink {
+  0%, 37%, 39.5%, 92%, 94.5%, 100% { transform: scaleY(1); }
+  38.2%, 93.2% { transform: scaleY(0.1); }
+}
 
 @keyframes mcBreathe {
   0%, 100% { transform: scale(1, 1); }
@@ -1817,7 +1875,7 @@
   50% { transform: scaleY(0.1); }
 }
 
-/* why-card byline — "Nocta Coach · Last night", state-coloured (DESIGN_SYSTEM item 1) */
+/* why-card byline — "Nox · Last night", state-coloured (DESIGN_SYSTEM item 1) */
 .why-card .why-eyebrow {
   display: flex;
   align-items: center;
@@ -1907,4 +1965,443 @@
   .mg-tile:hover {
     background: var(--surface-2);
   }
+}
+
+
+/* =================================================================
+ * Why-horizon — Tonight's insight, sky-first (components/WhyHorizon.jsx).
+ * A short verdict, the night as a horizon line edge to edge, the one action
+ * in words, then the receipts + Coach rows (shared with the why-card above).
+ * ================================================================= */
+.why-horizon {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: 14px;
+}
+.wh-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 1.02;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  color: var(--text-primary);
+}
+.wh-headline em {
+  font-style: italic;
+  color: var(--accent-soft);
+}
+/* the reference point that gives the verdict meaning */
+.wh-detail {
+  margin: 10px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 17px;
+  color: var(--text-secondary);
+  animation: riseIn 0.5s var(--ease-out) 0.7s backwards;
+}
+.why-horizon.state-steady .wh-headline em,
+.why-horizon.state-win .wh-headline em {
+  color: var(--good);
+}
+.why-horizon.state-escalation .wh-headline em {
+  color: var(--alert);
+}
+
+/* full-bleed: out past the scroll's 20px side padding */
+.wh-figure {
+  margin: 14px -20px 0;
+}
+.wh-plot {
+  position: relative;
+  height: 190px;
+  margin-top: 34px; /* room for the peak label above the line */
+}
+.wh-plot svg {
+  display: block;
+  overflow: visible;
+}
+/* the info button beside the detail line opens Nocta's reasoning (WhySheet) */
+.wh-info {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -12px -10px -12px 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-tertiary);
+  transition: color var(--dur-fast) ease;
+}
+.wh-info:hover,
+.wh-info:active {
+  color: var(--text-primary);
+}
+/* the dashed line at your usual AHI: above it is a worse-than-usual hour */
+.wh-usual {
+  stroke: color-mix(in srgb, var(--text-primary) 38%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  animation: whFade 0.8s ease-out 0.5s backwards;
+}
+.wh-usual-label {
+  position: absolute;
+  right: 16px;
+  transform: translateY(-50%);
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--bg-base) 72%, transparent);
+  border: 1px solid var(--hairline);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  animation: whFade 0.8s ease-out 0.6s backwards;
+}
+/* two-hourly clock ticks under the line */
+.wh-ticks {
+  position: relative;
+  height: 18px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.wh-ticks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+.wh-line {
+  stroke: var(--stage-rem);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  animation: whDraw 1.4s var(--ease-out) 0.35s backwards;
+}
+.wh-area {
+  animation: whFade 1.2s ease-out 0.7s backwards;
+}
+.wh-peak-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  box-shadow:
+    0 0 0 8px color-mix(in srgb, var(--text-primary) 15%, transparent),
+    0 0 22px color-mix(in srgb, var(--text-primary) 60%, transparent);
+  animation: whPop 0.6s var(--ease-spring) 1.3s backwards;
+}
+.wh-peak-label {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 18px));
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 18%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: whLabel 0.5s var(--ease-out) 1.5s backwards;
+}
+/* headline + Nocta's face (the Coach entry) on one row */
+.wh-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.wh-ask {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 -6px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  animation: riseIn 0.5s var(--ease-out) 0.9s backwards;
+  transition: transform var(--dur-press) ease;
+}
+.wh-ask .mascot {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+.wh-ask:active {
+  transform: scale(0.94);
+}
+
+/* the one action, led by a guiding star (T1): a bright four-point star with
+ * a trail of light falling beneath it, the instruction in display type, the
+ * reason in a quieter line. Peach-white, because the suggestion is Nocta's. */
+.wh-guide {
+  margin: 24px 0 6px;
+  display: flex;
+  gap: 16px;
+}
+.wh-guide-mark {
+  flex-shrink: 0;
+  width: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.wh-star {
+  fill: var(--accent-hi);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent-hi) 90%, transparent))
+    drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 60%, transparent));
+  transform-origin: center;
+  animation:
+    starIn 0.7s var(--ease-spring) 1.5s backwards,
+    starTwinkle 4.5s ease-in-out 2.4s infinite;
+}
+.wh-guide-trail {
+  margin-top: 6px;
+  width: 1px;
+  flex-grow: 1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-hi) 70%, transparent),
+    transparent
+  );
+  transform-origin: top;
+  animation: trailIn 0.8s var(--ease-out) 1.8s backwards;
+}
+.wh-guide-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0 4px;
+  animation: riseIn 0.55s var(--ease-out) 1.7s backwards;
+}
+.wh-guide-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.wh-guide-head {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.12;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+.wh-guide-head.long {
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.wh-guide-reason {
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+@keyframes starIn {
+  from {
+    opacity: 0;
+    transform: scale(0.2) rotate(-45deg);
+  }
+}
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(0.86);
+  }
+}
+@keyframes trailIn {
+  from {
+    transform: scaleY(0);
+  }
+}
+/* hard escalation: the action is the doctor path */
+.wh-doctor {
+  margin: 18px 0 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--alert) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--alert) 36%, transparent);
+  animation: riseIn 0.5s var(--ease-out) 1.6s backwards;
+}
+.wh-doctor-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+.wh-doctor-text {
+  grid-column: 1;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.wh-doctor svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--text-tertiary);
+}
+@keyframes whDraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes whFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes whPop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+@keyframes whLabel {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 8px));
+  }
+}
+
+/* ---- Tonight modules: below the open hero, each section sits in a soft,
+ * translucent panel over the sky (like Weather's modules). Grouping, not
+ * heavy boxes: the sections inside keep their open, borderless styling. */
+.tn-module {
+  margin-top: 14px;
+  padding: 2px 16px 14px;
+  border-radius: var(--r-xl);
+  background: color-mix(in srgb, var(--surface-1) 56%, transparent);
+  border: 1px solid var(--hairline);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+.why-horizon + .tn-module,
+.night-swiper + .tn-module {
+  margin-top: 22px;
+}
+.tn-module > .section-head:first-child {
+  margin: 16px 2px 12px;
+}
+.tonight-open .tn-module .pattern {
+  border-top: 0;
+  padding: 16px 2px 2px;
+  margin-bottom: 0;
+}
+.tn-module .body-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 0;
+}
+.tn-module .body-card + .body-card {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+
+/* ---- "Why Nocta thinks this" sheet (screens/WhySheet.jsx) ---- */
+.why-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 6px;
+}
+.ws-receipts {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+.ws-receipts strong {
+  font-weight: 600;
+}
+.ws-observation {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.ws-observation strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.ws-trust {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.ws-conf {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.ws-bars {
+  display: inline-flex;
+  gap: 2px;
+}
+.ws-bars span {
+  width: 3px;
+  height: 9px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+.ws-bars span.on {
+  background: var(--text-secondary);
+}
+
+/* link from a night's reasoning to the multi-night pattern on Trends */
+.ws-pattern {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--good) 28%, transparent);
+  background: color-mix(in srgb, var(--good) 8%, transparent);
+  font-family: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: var(--text-primary);
+}
+.ws-pattern-go {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+  color: var(--good);
 }

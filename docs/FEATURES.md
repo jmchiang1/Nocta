@@ -8,7 +8,7 @@
 | **Trends tab** | 7/30/90d ranges, metric trend charts, journal correlation cards, best/worst night view | Year view, cohort comparison |
 | **Therapy tab** | Device pairing status, equipment lifecycle, view-only settings, doctor PDF export, compliance projection | DME reorder integration, telehealth booking |
 | **You tab** | Profile, journal history, settings, account | Social features, sharing |
-| **AI Coach** | Contextual "Ask Nocta" entries (why-card, Trends insights), context-aware chat opening from any card, suggested follow-ups | Voice input (deferred), proactive notifications |
+| **AI Coach** | Contextual "Ask Nox" entries (why-card, Trends insights), context-aware chat opening from any card, suggested follow-ups | Voice input (deferred), proactive notifications |
 | **Onboarding** | 8 screens, deferred signup, deferred CPAP pairing, health-data priming | Wearable connect, doctor invite |
 
 ---
@@ -50,7 +50,7 @@ never a wall of text on first read.
 └──────────────────────────────────────────────────┘
 ```
 
-No chip row — the card ends with one "Ask Nocta about last night" row.
+No chip row — the card ends with one "Ask Nox about last night" row.
 
 ### AI insight JSON schema (Structured Outputs, strict mode)
 
@@ -68,6 +68,31 @@ Structured Outputs (`response_format: { type: "json_schema", strict: true }`).
     "headline": {
       "type": "string",
       "description": "The verdict — one idea, plain language. <=9 words ideal, <=14 hard max. Exactly one italic emphasis word using *asterisks*."
+    },
+    "glance": {
+      "type": "object",
+      "description": "The at-a-glance layer shown on Tonight above the night's horizon line.",
+      "properties": {
+        "headline": {
+          "type": "string",
+          "description": "The verdict in <=4 words, one italic emphasis word using *asterisks*, e.g. 'AHI *doubled.*'. Same rules as headline: no diagnosis, no scoring language."
+        },
+        "detail": {
+          "type": "string",
+          "description": "One plain line under the glance headline giving it a reference point, <=8 words, e.g. '10.5 an hour, up from your usual 4.6'. Cites a real number."
+        },
+        "peak_window": {
+          "type": ["string", "null"],
+          "description": "Time window of the night's clear peak, e.g. '2–5 a.m.'. null when there is no clear peak; never guessed."
+        },
+        "peak_position": {
+          "type": ["string", "null"],
+          "enum": ["stomach", "back", "side", null],
+          "description": "Main sleep position during peak_window, when position data supports it. null otherwise."
+        }
+      },
+      "required": ["headline", "detail", "peak_window", "peak_position"],
+      "additionalProperties": false
     },
     "receipts": {
       "type": "string",
@@ -152,7 +177,7 @@ Structured Outputs (`response_format: { type: "json_schema", strict: true }`).
     }
   },
   "required": [
-    "card_state", "headline", "receipts", "observation", "time_window",
+    "card_state", "headline", "glance", "receipts", "observation", "time_window",
     "likely_causes", "recommended_action", "confidence",
     "escalation_flag", "data_citations"
   ],
@@ -166,7 +191,7 @@ Don't pass raw waveform data to the LLM. Compute aggregates server-side, pass a 
 
 **System prompt outline:**
 ```
-You are Nocta Coach, a wellness companion that explains CPAP therapy data
+You are Nox, Nocta's coach — a wellness companion that explains CPAP therapy data
 to sleep apnea patients. You are NOT a medical device and do not give
 medical advice.
 
@@ -347,10 +372,10 @@ In the Trends view, the journal is a separate filterable lens.
 
 ---
 
-## Feature 3 (supporting): Nocta Coach chat
+## Feature 3 (supporting): Nox, the Coach chat
 
-Not a tab, and not global chrome. Coach opens from where questions arise: an "Ask Nocta
-about last night" row on the why-card, "Ask Nocta about these trends" on the Trends
+Not a tab, and not global chrome. Coach opens from where questions arise: an "Ask Nox
+about last night" row on the why-card, "Ask Nox about these trends" on the Trends
 insights card. Metric cards are read-only.
 
 ### Context-aware opening

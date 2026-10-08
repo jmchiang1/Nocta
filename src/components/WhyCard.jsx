@@ -21,12 +21,12 @@ const NO_ACTION = new Set(['steady', 'insufficient_data']);
 // trust line (inside the expanded receipts): confidence as 1–3 bars plus a word, never a colour
 const CONFIDENCE = { low: 1, medium: 2, high: 3 };
 
-/* onAsk: optional — when given, the card ends with an "Ask Nocta" row. This
+/* onAsk: optional — when given, the card ends with an "Ask Nox" row. This
  * is the Coach's primary entry point: right after reading the verdict is
  * when "why?" and "what does that mean?" actually come up.
  * onDoctor: when the insight carries escalation_flag "hard", the action box
  * becomes the doctor path — a button that opens the doctor summary.
- * eyebrow: show the "Nocta Coach · Last night" byline (DESIGN_SYSTEM item 1). */
+ * eyebrow: show the "Nox · Last night" byline (DESIGN_SYSTEM item 1). */
 export function WhyCard({ insight, spark, sparkKind, onAsk, onDoctor, eyebrow = false }) {
   const [open, setOpen] = useState(false);
   const state = insight.card_state;
@@ -46,7 +46,7 @@ export function WhyCard({ insight, spark, sparkKind, onAsk, onDoctor, eyebrow = 
       {eyebrow && (
         <div className="why-eyebrow">
           <Mascot size={20} />
-          <span>Nocta Coach · Last night</span>
+          <span>Nox · Last night</span>
         </div>
       )}
       <h2 className="headline">
@@ -111,7 +111,7 @@ export function WhyCard({ insight, spark, sparkKind, onAsk, onDoctor, eyebrow = 
       {onAsk && (
         <button className="ask-row" type="button" onClick={onAsk}>
           <Mascot size={22} />
-          <span>Ask Nocta about last night</span>
+          <span>Ask Nox about last night</span>
           <Icon name="chevronRight" size={15} className="ask-chev" />
         </button>
       )}

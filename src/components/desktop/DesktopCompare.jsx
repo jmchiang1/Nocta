@@ -5,6 +5,7 @@
  * is a neutral, per-metric note in the established sage = in-range language. */
 import { useState } from 'react';
 import { FIXTURES } from '../../data/fixtures.js';
+import { NIGHTS as HISTORY, dateForFixture } from '../../data/history.js';
 import { useStore } from '../../lib/store.jsx';
 import { Icon } from '../Icons.jsx';
 import { Rich } from '../Rich.jsx';
@@ -21,20 +22,21 @@ const STATE_LABEL = {
   steady: 'Steady',
   win: 'Better night',
   escalation: 'Worth watching',
-  insufficient: 'Not enough data',
+  insufficient_data: 'Not enough data',
 };
 
-/* comparable numbers pulled from a fixture; strings parsed to floats so the
- * "steadier side" note can compare them. null AHI (insufficient) stays null. */
+/* comparable numbers for a night, read from the nightly history (the same
+ * source as Trends) so the two never disagree. An unscored night (too short)
+ * shows no AHI or event count, so it can't read as the "steadier" side. */
 function metricsOf(fx) {
-  const sec = (k) => fx.secondary.find((s) => s.key === k);
-  const num = (v) => (v == null || v === '' ? null : parseFloat(v));
+  const night = HISTORY.find((x) => x.date === dateForFixture(fx.id));
+  const scored = fx.ahi.value != null;
   return {
     ahi: fx.ahi.value,
-    events: fx.timeline?.eventCount ?? null,
-    leak: num(sec('leak')?.value),
-    hours: num(sec('hours')?.value) ?? fx.session.durationHours,
-    pressure: num(sec('pressure')?.value),
+    events: scored ? (fx.timeline?.eventCount ?? null) : null,
+    leak: night?.leak ?? null,
+    hours: night?.hours ?? fx.session.durationHours,
+    pressure: night?.pressure ?? null,
   };
 }
 
@@ -145,11 +147,11 @@ export function DesktopCompare() {
       {/* each night's verdict headline, so the numbers carry a narrative */}
       <div className="cmp2-verdicts">
         <div className="cmp2-verdict">
-          <span className="cmp2-verdict-k">That night, Nocta said</span>
+          <span className="cmp2-verdict-k">That night, Nox said</span>
           <p><Rich text={a.insight?.headline ?? 'No insight for this night.'} /></p>
         </div>
         <div className="cmp2-verdict">
-          <span className="cmp2-verdict-k">That night, Nocta said</span>
+          <span className="cmp2-verdict-k">That night, Nox said</span>
           <p><Rich text={b.insight?.headline ?? 'No insight for this night.'} /></p>
         </div>
       </div>

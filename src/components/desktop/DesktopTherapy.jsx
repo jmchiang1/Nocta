@@ -29,10 +29,13 @@ export function DesktopTherapy() {
   const elapsed = PROJECTION.nights.filter((n) => n !== 'future');
   const metNights = elapsed.filter((n) => n === 'met').length;
   const targetDay = PROJECTION.scale[1].split(' ·')[0]; // 'Night 24 · earliest'
-  const nextDue = EQUIPMENT.reduce((a, e) =>
-    e.lifespanDays - e.ageDays < a.lifespanDays - a.ageDays ? e : a
-  );
-  const dueDays = nextDue.lifespanDays - nextDue.ageDays;
+  // every part due soonest (two can share a date), as the mobile page lists them
+  const daysLeft = (e) => e.lifespanDays - e.ageDays;
+  const dueDays = Math.min(...EQUIPMENT.map(daysLeft));
+  const nextParts = EQUIPMENT.filter((e) => daysLeft(e) === dueDays).map((e) => e.name);
+  const nextName = nextParts.length > 1
+    ? `${nextParts.slice(0, -1).join(', ')} and ${nextParts.at(-1).toLowerCase()}`
+    : nextParts[0];
 
   return (
     <>
@@ -69,7 +72,7 @@ export function DesktopTherapy() {
         </div>
         <div className="stat-mini">
           <div className="sm-k">Next replacement</div>
-          <div className="sm-v">{nextDue.name}</div>
+          <div className="sm-v">{nextName}</div>
           <div className="sm-sub">due in {dueDays} {dueDays === 1 ? 'day' : 'days'}</div>
         </div>
         <div className="stat-mini">

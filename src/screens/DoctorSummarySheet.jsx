@@ -66,7 +66,7 @@ export function DoctorSummarySheet() {
         </p>
 
         <section className="doc-block" aria-labelledby="doc-why">
-          <h4 id="doc-why">Why Nocta suggested this</h4>
+          <h4 id="doc-why">Why Nox suggested this</h4>
           <dl className="doc-reasons">
             {reasons.map((r) => (
               <div key={r.k}>

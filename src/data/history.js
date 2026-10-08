@@ -41,9 +41,11 @@ export const NIGHTS = [
 
 export const NIGHTS_ON_THERAPY = NIGHTS.length;
 
-/* the date a night-detail fixture describes (falls back to last night) */
+/* the date a night-detail fixture describes (falls back to last night).
+ * Guard the lookup: most nights have no `fixture`, so searching for an
+ * undefined id would match night 1. */
 export const dateForFixture = (fixtureId) =>
-  NIGHTS.find((x) => x.fixture === fixtureId)?.date ?? LAST_NIGHT;
+  (fixtureId && NIGHTS.find((x) => x.fixture === fixtureId)?.date) || LAST_NIGHT;
 
 /* ---- derived helpers ---- */
 export const ahiTotal = (night) =>

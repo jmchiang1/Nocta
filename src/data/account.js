@@ -75,6 +75,33 @@ export const CONNECTED_DEVICES = [
     lastSync: null,
   },
   {
+    key: 'fitbit',
+    icon: 'heart',
+    title: 'Fitbit',
+    short: 'Wrist data',
+    blurb: 'Heart rate, sleep stages, and breathing rate from your Fitbit.',
+    reads: ['Heart rate', 'Heart-rate variability', 'Sleep stages', 'Blood oxygen', 'Respiratory rate'],
+    lastSync: null,
+  },
+  {
+    key: 'garmin',
+    icon: 'exercise',
+    title: 'Garmin',
+    short: 'Wrist data',
+    blurb: 'Heart rate, Pulse Ox, and sleep from your Garmin watch.',
+    reads: ['Heart rate', 'Heart-rate variability', 'Sleep stages', 'Blood oxygen', 'Respiratory rate'],
+    lastSync: null,
+  },
+  {
+    key: 'samsung',
+    icon: 'clock',
+    title: 'Samsung Galaxy Watch',
+    short: 'Wrist data',
+    blurb: 'Heart rate, blood oxygen, and sleep from your Galaxy Watch.',
+    reads: ['Heart rate', 'Sleep stages', 'Blood oxygen'],
+    lastSync: null,
+  },
+  {
     key: 'whoop',
     icon: 'exercise',
     title: 'Whoop',
@@ -85,13 +112,29 @@ export const CONNECTED_DEVICES = [
   },
 ];
 
-export const DEFAULT_DEVICE_CONNECTIONS = { watch: true, health: false, oura: false, whoop: false };
+export const DEFAULT_DEVICE_CONNECTIONS = {
+  watch: true,
+  health: false,
+  oura: false,
+  fitbit: false,
+  garmin: false,
+  samsung: false,
+  whoop: false,
+};
 
 /* Master enable map — independent of the OAuth connection. Lets the user
  * temporarily pause a device's contribution to Nocta without revoking access
  * or losing their per-read permissions. Defaults to all on; a disabled-but-
  * connected device keeps the OAuth tie but stops feeding the home screen. */
-export const DEFAULT_DEVICE_ENABLED = { watch: true, health: true, oura: true, whoop: true };
+export const DEFAULT_DEVICE_ENABLED = {
+  watch: true,
+  health: true,
+  oura: true,
+  fitbit: true,
+  garmin: true,
+  samsung: true,
+  whoop: true,
+};
 
 /* Per-device permission map — which of a device's `reads` Nocta is allowed
  * to pull. Defaults to all-on; the device-detail sheet lets users opt out
@@ -107,8 +150,11 @@ export const deviceByKey = (key) => CONNECTED_DEVICES.find((d) => d.key === key)
  * CONNECTED_DEVICES.icon. Apple Watch maps to the Apple Health badge
  * because on iOS, Watch data flows in through HealthKit. */
 export const DEVICE_PHOTO = {
-  watch: '/applehealth.png',
-  health: '/applehealth.png',
-  oura: '/ouraring.jpg',
-  whoop: '/whoop.png',
+  watch: '/brands/applehealth.png',
+  health: '/brands/applehealth.png',
+  oura: '/brands/oura.png',
+  fitbit: '/brands/fitbit.svg',
+  garmin: '/brands/garmin.svg',
+  samsung: '/brands/samsung.svg',
+  whoop: '/brands/whoop.png',
 };

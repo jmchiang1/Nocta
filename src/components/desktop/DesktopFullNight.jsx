@@ -4,14 +4,14 @@
 import { useState } from 'react';
 import { useStore } from '../../lib/store.jsx';
 import { FIXTURES, EPISODES } from '../../data/fixtures.js';
-import { TAG_LABELS } from '../../data/journal.js';
-import { genBreathing, genSeries } from '../../lib/format.js';
+import { allCheckinTags, TAG_LABELS } from '../../data/journal.js';
+import { nightSeries } from '../../lib/nightSeries.js';
+import { TimeAxis } from '../TimeAxis.jsx';
 import { Icon } from '../Icons.jsx';
 import { SleepStages } from '../SleepStages.jsx';
 import { LineChart, Waveform, Bars, EventWave } from '../Charts.jsx';
 
 const WAVE_COLOR = { CSA: 'alert', OSA: 'data', Hypopnea: 'data' };
-const AXIS = ['12AM', '2AM', '4AM', '6AM'];
 
 function Episode({ ep }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +37,7 @@ function Episode({ ep }) {
   );
 }
 
-function ChartPanel({ title, meta, children }) {
+function ChartPanel({ title, meta, session, children }) {
   return (
     <div className="panel">
       <div className="panel-head">
@@ -45,7 +45,7 @@ function ChartPanel({ title, meta, children }) {
         <span className="panel-meta">{meta}</span>
       </div>
       {children}
-      <div className="chart-axis">{AXIS.map((a) => <span key={a}>{a}</span>)}</div>
+      <TimeAxis session={session} />
     </div>
   );
 }
@@ -54,12 +54,11 @@ export function DesktopFullNight() {
   const { fixtureId, closeSheet, checkin, openSheet } = useStore();
   const fx = FIXTURES[fixtureId];
   const episodes = EPISODES[fixtureId] || [];
-  const tags = [...checkin.tags.feel, ...checkin.tags.lastnight, ...checkin.tags.yesterday];
+  const tags = allCheckinTags(checkin.tags);
 
-  const flow = genBreathing(fixtureId + 'flow', 96);
-  const pressure = genSeries(fixtureId + 'pr', 72, 6.2, 1.6);
-  const leak = genSeries(fixtureId + 'lk', 60, 10, 14);
-  const snore = genSeries(fixtureId + 'sn', 52, 2.4, 3).map((v) => Math.min(10, v));
+  // the same series the mobile full-night page and metric pages draw
+  const { flow, pressure, leak, snore } = nightSeries(fixtureId);
+  const s = fx.session;
 
   return (
     <div className="dfn">
@@ -89,10 +88,16 @@ export function DesktopFullNight() {
       </div>
 
       <div className="dfn-charts">
-        <ChartPanel title="Flow rate" meta="breath by breath"><Waveform amps={flow} color="data" height={120} /></ChartPanel>
-        <ChartPanel title="Pressure" meta="cmH₂O"><LineChart values={pressure} color="data" height={120} /></ChartPanel>
-        <ChartPanel title="Leak rate" meta="L/min · 24 threshold"><LineChart values={leak} color="data" threshold={24} height={120} /></ChartPanel>
-        <ChartPanel title="Snore index" meta="0 – 10"><Bars values={snore} color="data" height={120} /></ChartPanel>
+        <ChartPanel title="Flow rate" meta="breath by breath" session={s}><Waveform amps={flow} color="data" height={120} /></ChartPanel>
+        <ChartPanel title="Pressure" meta="cmH₂O" session={s}><LineChart values={pressure} color="data" height={120} /></ChartPanel>
+        <ChartPanel title="Leak rate" meta="L/min · 24 threshold" session={s}>
+          {leak ? (
+            <LineChart values={leak} color="data" threshold={24} height={120} />
+          ) : (
+            <span className="fn-nodata">No leak recorded this night</span>
+          )}
+        </ChartPanel>
+        <ChartPanel title="Snore index" meta="0 – 10" session={s}><Bars values={snore} color="data" height={120} /></ChartPanel>
       </div>
 
       <div className="dfn-lower">
@@ -124,7 +129,14 @@ export function DesktopFullNight() {
         </div>
 
         <div className="dfn-col">
-          <div className="section-head"><h3>Episodes</h3><span className="meta">{episodes.length} shown</span></div>
+          <div className="section-head">
+            <h3>{episodes.length < fx.timeline.eventCount ? 'Longest events' : 'Events'}</h3>
+            <span className="meta tnum">
+              {episodes.length < fx.timeline.eventCount
+                ? `${episodes.length} of ${fx.timeline.eventCount}`
+                : `all ${episodes.length}`}
+            </span>
+          </div>
           {episodes.length > 0 ? (
             episodes.map((ep, i) => <Episode key={i} ep={ep} />)
           ) : (

@@ -1,9 +1,12 @@
-/* Nocta — full-night detail. Morning check-in + time-aligned chart stack + episodes. */
+/* Nocta — full-night detail: events by type, then the time-aligned chart
+ * stack + episodes. (The morning
+ * check-in lives on Tonight now, under the night's suggestion.) */
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { FIXTURES, EPISODES } from '../data/fixtures.js';
-import { TAG_LABELS } from '../data/journal.js';
-import { genBreathing, genSeries } from '../lib/format.js';
+import { TimeAxis } from '../components/TimeAxis.jsx';
+import { NightTimeline } from '../components/NightTimeline.jsx';
+import { nightSeries } from '../lib/nightSeries.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { SleepStages } from '../components/SleepStages.jsx';
@@ -49,19 +52,13 @@ function Episode({ ep }) {
 }
 
 export function FullNightSheet() {
-  const { fixtureId, closeSheet, checkin, openSheet } = useStore();
+  const { fixtureId, closeSheet, pushSheet } = useStore();
   const fx = FIXTURES[fixtureId];
   const episodes = EPISODES[fixtureId] || [];
-  const tags = [
-    ...checkin.tags.feel,
-    ...checkin.tags.lastnight,
-    ...checkin.tags.yesterday,
-  ];
 
-  const flow = genBreathing(fixtureId + 'flow', 72);
-  const pressure = genSeries(fixtureId + 'pr', 60, 6.2, 1.6);
-  const leak = genSeries(fixtureId + 'lk', 48, 10, 14);
-  const snore = genSeries(fixtureId + 'sn', 40, 2.4, 3).map((v) => Math.min(10, v));
+  const { flow, pressure, leak, snore } = nightSeries(fixtureId);
+  // each machine graph opens its own full page (MetricDetailSheet)
+  const open = (metric) => pushSheet('metricDetail', { metric });
 
   return (
     <Sheet
@@ -72,52 +69,35 @@ export function FullNightSheet() {
     >
       {() => (
         <>
-          <div className="fn-summary">
-            <div className="fn-stat">
-              <div className="fs-k">AHI</div>
-              <div className="fs-v">
-                {fx.ahi.value != null ? fx.ahi.value.toFixed(1) : '—'}
-              </div>
+          {/* the night in three numbers, one quiet card */}
+          <div className="fn-summary-card tnum">
+            <div>
+              <b>{fx.ahi.value != null ? fx.ahi.value.toFixed(1) : '—'}</b>
+              <span>AHI</span>
             </div>
-            <div className="fn-stat">
-              <div className="fs-k">Events</div>
-              <div className="fs-v">{fx.timeline.eventCount}</div>
+            <div>
+              <b>{fx.timeline.eventCount}</b>
+              <span>events</span>
             </div>
-            <div className="fn-stat">
-              <div className="fs-k">Hours</div>
-              <div className="fs-v">{fx.session.durationHours}</div>
+            <div>
+              <b>{fx.session.durationHours}</b>
+              <span>hours</span>
             </div>
           </div>
 
+          {/* events split by type: obstructive vs central matters most on a
+           * doctor-worthy night, so it leads the detail */}
           <div className="section-head">
-            <h3>Morning check-in</h3>
-            <span className="meta">{checkin.done ? 'logged' : 'not done'}</span>
+            <h3>Events by type</h3>
           </div>
-          {checkin.done ? (
-            <div className="fn-checkin">
-              {tags.length > 0 ? (
-                <div className="ci-tags">
-                  {tags.map((t) => (
-                    <span key={t} className="ci-tag">
-                      {TAG_LABELS[t] || t}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="fn-checkin-empty">No tags logged for last night.</p>
-              )}
-            </div>
-          ) : (
-            <div className="connect-cta">
-              <p>
-                Tell Nocta how you slept and what shaped your night. It sharpens
-                tonight's insight.
-              </p>
-              <button className="btn ghost" onClick={() => openSheet('checkin')}>
-                Do morning check-in
-              </button>
-            </div>
-          )}
+          <NightTimeline
+            timeline={fx.timeline}
+            session={fx.session}
+            ahi={fx.ahi.value}
+            escalated={fx.insight.escalation_flag === 'hard'}
+            fixtureId={fixtureId}
+            sleepStages={fx.bodyResponse?.stages}
+          />
 
           <div className="section-head">
             <h3>Sleep stages</h3>
@@ -133,62 +113,83 @@ export function FullNightSheet() {
             </div>
           )}
 
-          <div className="section-head">
-            <h3>Flow rate</h3>
-            <span className="meta">breath by breath</span>
-          </div>
-          <div className="chart-card">
-            <Waveform amps={flow} color="data" />
-            <div className="chart-axis">
-              <span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span>
-            </div>
-          </div>
+          <button className="fn-metric" type="button" onClick={() => open('flow')}>
+            <span className="section-head">
+              <h3>Flow rate</h3>
+              <span className="meta">
+                breath by breath
+                <Icon name="chevronRight" size={14} />
+              </span>
+            </span>
+            <span className="chart-card">
+              <Waveform amps={flow} color="data" />
+              <TimeAxis session={fx.session} />
+            </span>
+          </button>
+
+          <button className="fn-metric" type="button" onClick={() => open('pressure')}>
+            <span className="section-head">
+              <h3>Pressure</h3>
+              <span className="meta">
+                cmH₂O
+                <Icon name="chevronRight" size={14} />
+              </span>
+            </span>
+            <span className="chart-card">
+              <LineChart values={pressure} color="data" />
+              <TimeAxis session={fx.session} />
+            </span>
+          </button>
+
+          <button className="fn-metric" type="button" onClick={() => open('leak')}>
+            <span className="section-head">
+              <h3>Leak rate</h3>
+              <span className="meta">
+                L/min · 24 threshold
+                <Icon name="chevronRight" size={14} />
+              </span>
+            </span>
+            <span className="chart-card">
+              {leak ? (
+                <LineChart values={leak} color="data" threshold={24} />
+              ) : (
+                <span className="fn-nodata">No leak recorded this night</span>
+              )}
+              <TimeAxis session={fx.session} />
+            </span>
+          </button>
+
+          <button className="fn-metric" type="button" onClick={() => open('snore')}>
+            <span className="section-head">
+              <h3>Snore index</h3>
+              <span className="meta">
+                0 – 10
+                <Icon name="chevronRight" size={14} />
+              </span>
+            </span>
+            <span className="chart-card">
+              <Bars values={snore} color="data" />
+              <TimeAxis session={fx.session} />
+            </span>
+          </button>
 
           <div className="section-head">
-            <h3>Pressure</h3>
-            <span className="meta">cmH₂O</span>
-          </div>
-          <div className="chart-card">
-            <LineChart values={pressure} color="data" />
-            <div className="chart-axis">
-              <span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span>
-            </div>
-          </div>
-
-          <div className="section-head">
-            <h3>Leak rate</h3>
-            <span className="meta">L/min · 24 threshold</span>
-          </div>
-          <div className="chart-card">
-            <LineChart values={leak} color="data" threshold={24} />
-            <div className="chart-axis">
-              <span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span>
-            </div>
-          </div>
-
-          <div className="section-head">
-            <h3>Snore index</h3>
-            <span className="meta">0 – 10</span>
-          </div>
-          <div className="chart-card">
-            <Bars values={snore} color="data" />
-            <div className="chart-axis">
-              <span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span>
-            </div>
-          </div>
-
-          <div className="section-head">
-            <h3>Episodes</h3>
-            <span className="meta">{episodes.length} shown</span>
+            {/* a hand-picked sample, so say plainly how it relates to the total */}
+            <h3>{episodes.length < fx.timeline.eventCount ? 'Longest events' : 'Events'}</h3>
+            <span className="meta">
+              {episodes.length < fx.timeline.eventCount
+                ? `${episodes.length} of ${fx.timeline.eventCount}`
+                : `all ${episodes.length}`}
+            </span>
           </div>
           {episodes.map((ep, i) => (
             <Episode key={i} ep={ep} />
           ))}
 
-          <p className="disclaimer">
+          {/* <p className="disclaimer">
             Charts show what your machine recorded. Tap any episode to see the breath
             trace.
-          </p>
+          </p> */}
         </>
       )}
     </Sheet>

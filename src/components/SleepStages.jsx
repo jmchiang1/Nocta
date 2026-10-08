@@ -12,12 +12,13 @@ const STAGE_ORDER = [
   { key: 'deep', label: 'Deep' },
 ];
 
+/* the night's stage sequence; the night chart's scrub readout uses the same one */
+export const hypnogramFor = (stages) =>
+  genHypnogram(`hyp-${stages.deep}-${stages.rem}-${stages.light}-${stages.awake}`, stages);
+
 export function SleepStages({ stages, session }) {
   const totalH = stages.deep + stages.rem + stages.light + stages.awake;
-  const samples = genHypnogram(
-    `hyp-${stages.deep}-${stages.rem}-${stages.light}-${stages.awake}`,
-    stages
-  );
+  const samples = hypnogramFor(stages);
   /* share of the whole night (including awake), so the four bars sum to 100 */
   const pct = (h) => (totalH > 0 ? Math.round((h / totalH) * 100) : 0);
 

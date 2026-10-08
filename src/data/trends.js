@@ -43,7 +43,7 @@ const NIGHT_NOTES = {
   '2026-10-04': 'Side sleeping · in bed before midnight',
   '2026-10-05': 'Side sleeping · exercised that day',
   '2026-10-06': 'Central events through the night',
-  '2026-10-10': 'Stomach sleeping · wine + late meal · leak after 3 a.m.',
+  '2026-10-10': 'Stomach sleeping · wine + late meal · leak after 2 a.m.',
 };
 
 /* Early journal signal — stomach nights vs the rest, using only nights up to
@@ -72,7 +72,7 @@ function stomachSignal(anchor) {
     stats: [
       { v: `${ratio}×`, k: 'average AHI' },
       { v: `${above} / ${stomach.length}`, k: 'stomach nights above range' },
-      { v: String(scored.length), k: 'nights so far' },
+      { v: String(scored.length), k: 'scored nights' },
     ],
   };
 }
@@ -151,25 +151,49 @@ function lastNightLine(last, before) {
   return `Your AHI was **${t}** last night, ${rel} your average of **${before.ahi}** before it.`;
 }
 
-function centralLine(last, priorNights) {
-  if (!last.ahi || last.ahi.csa <= 5) return null;
-  const usual = round1(
-    priorNights.filter((x) => x.ahi).reduce((a, x) => a + x.ahi.csa, 0) /
-      Math.max(1, priorNights.filter((x) => x.ahi).length)
-  );
-  return `Central events reached **${last.ahi.csa}** an hour last night. It’s usually about **${usual}**.`;
+/* the window's AHI in one line: average, range, and how many nights ran
+ * above the user's usual. About the stretch of nights, never just last night
+ * (Tonight owns last night's verdict). */
+function weekAhiLine(nights, before) {
+  const scored = nights.filter((x) => x.ahi);
+  if (!scored.length) return null;
+  const totals = scored.map(ahiTotal);
+  const avg = round1(totals.reduce((a, b) => a + b, 0) / totals.length);
+  if (scored.length === 1) return `Only one night this week was scored, at an AHI of **${totals[0]}**.`;
+  const usual = before.ahi;
+  const above = usual != null ? totals.filter((t) => t >= usual * 1.4).length : 0;
+  const tail = above
+    ? ` **${above}** ${above === 1 ? 'night ran' : 'nights ran'} well above your usual.`
+    : ' Every scored night stayed close to your usual.';
+  return `This week your AHI averaged **${avg}**, from **${Math.min(...totals)}** to **${Math.max(...totals)}**.${tail}`;
 }
 
-function leakLine(last, nights, scope) {
-  const others = nights.filter((x) => x.leak != null && x.date !== last.date);
-  const typical = others.length ? Math.round(averages(others).leak) : null;
-  if (last.leak != null && typical && last.leak >= typical * 2) {
-    return scope === 'week'
-      ? `Leak reached **${last.leak} L/min** last night, after a week that mostly stayed near **${typical}**.`
-      : `Leak stayed near **${typical} L/min** on most nights; last night’s **${last.leak}** was the outlier.`;
-  }
-  const w = averages(nights).leak;
-  return w == null ? null : `Leak has stayed near **${Math.round(w)} L/min**${scope === 'week' ? ' this week' : ''}.`;
+/* central events across the window: only worth a line when they ran high */
+function centralLine(nights, priorNights) {
+  const high = nights.filter((x) => x.ahi && x.ahi.csa > 5);
+  if (!high.length) return null;
+  // "usual" = the nights before the first high one (what Tonight and Nox quote)
+  const base = NIGHTS.filter((x) => x.ahi && x.date < high[0].date);
+  const usual = base.length ? round1(base.reduce((a, x) => a + x.ahi.csa, 0) / base.length) : null;
+  const n = `**${high.length}** ${high.length === 1 ? 'night' : 'nights'}`;
+  return usual != null
+    ? `Central events went above **5** an hour on ${n} this week. They usually sit near **${usual}**.`
+    : `Central events went above **5** an hour on ${n} this week.`;
+}
+
+/* leak across the window: its usual level, and how many nights ran past the
+ * 24 L/min line drawn on the chart */
+const LEAK_LINE = 24;
+function leakLine(nights, scope) {
+  const withLeak = nights.filter((x) => x.leak != null);
+  if (!withLeak.length) return null;
+  const sorted = withLeak.map((x) => x.leak).sort((a, b) => a - b);
+  const typical = Math.round(sorted[Math.floor((sorted.length - 1) / 2)]); // median: not pulled by one bad night
+  const high = withLeak.filter((x) => x.leak > LEAK_LINE).length;
+  const span = scope === 'week' ? ' this week' : '';
+  return high
+    ? `Leak stayed near **${typical} L/min** on most nights${span}; **${high}** ${high === 1 ? 'night ran' : 'nights ran'} above **${LEAK_LINE}**.`
+    : `Leak stayed near **${typical} L/min**${span}, under **${LEAK_LINE}** every night.`;
 }
 
 function coverageLine(nights, days) {
@@ -193,9 +217,13 @@ function insights(scope, nights, anchor, days) {
   const before = averages(priorAll);
   const lines = [];
   if (scope === 'week') {
-    const central = centralLine(last, priorAll);
-    lines.push({ icon: 'ahi', text: central || lastNightLine(last, before) });
-    const leak = leakLine(last, nights, 'week');
+    const firstNight = nights[0]?.date ?? last.date;
+    const beforeWeek = averages(NIGHTS.filter((x) => x.date < firstNight));
+    const central = centralLine(nights, NIGHTS.filter((x) => x.date < firstNight));
+    const ahi = weekAhiLine(nights, beforeWeek.ahi != null ? beforeWeek : before);
+    lines.push({ icon: 'ahi', text: ahi || lastNightLine(last, before) });
+    if (central) lines.push({ icon: 'ahi', text: central });
+    const leak = leakLine(nights, 'week');
     if (leak) lines.push({ icon: 'leak', text: leak });
     lines.push({ icon: 'spark', text: coverageLine(nights, days) });
     return lines;
@@ -210,7 +238,7 @@ function insights(scope, nights, anchor, days) {
   } else {
     lines.push({ icon: 'ahi', text: lastNightLine(last, before) });
   }
-  const leak = leakLine(last, nights, 'all');
+  const leak = leakLine(nights, 'all');
   if (leak) lines.push({ icon: 'leak', text: leak });
   const sofar = NIGHTS.filter((x) => x.date <= anchor).length;
   lines.push({

@@ -9,13 +9,31 @@ const STROKE = {
 };
 
 const PATHS = {
-  tonight: <path d="M3 12l9-9 9 9M5 10v10h14V10" />,
-  trends: <path d="M4 19V5M8 19v-9M12 19V8M16 19v-6M20 19V3" />,
-  therapy: (
+  /* tab glyphs: outline here; the selected tab uses the *On variants */
+  tonight: <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />,
+  tonightOn: <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor" />,
+  trends: (
     <>
-      <path d="M4 8c0-2 2-4 8-4s8 2 8 4-2 8-8 8-8-6-8-8z" />
-      <circle cx="12" cy="9" r="1.5" />
+      <path d="M3.5 17.5l4.5-5 4 3 4.5-6" />
+      <circle cx="19" cy="7" r="2.2" />
     </>
+  ),
+  trendsOn: (
+    <>
+      <path d="M3.5 17.5l4.5-5 4 3 4.5-6V20.5H3.5z" fill="currentColor" fillOpacity="0.3" stroke="none" />
+      <path d="M3.5 17.5l4.5-5 4 3 4.5-6" />
+      <circle cx="19" cy="7" r="2.3" fill="currentColor" />
+    </>
+  ),
+  // airflow — what CPAP does
+  therapy: (
+    <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" />
+  ),
+  therapyOn: (
+    <path
+      d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"
+      strokeWidth="2.6"
+    />
   ),
   you: (
     <>

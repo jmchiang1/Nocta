@@ -1,6 +1,6 @@
-/* Nocta — secondary metrics: a 3-column row of compact cards with sparklines.
- * Read-only readouts — not tappable. (Coach lives on the why-card instead.) */
-import { MetricSpark } from './Charts.jsx';
+/* Nocta — secondary metrics: a 3-column row of compact readouts. Each carries
+ * its own reference line ("Usually about 11"), so no extra mini-graph.
+ * Read-only — not tappable. */
 import { CountUp } from '../lib/motion.jsx';
 
 export function MetricSecondary({ items }) {
@@ -14,7 +14,6 @@ export function MetricSecondary({ items }) {
             {m.unit && <span className="u">{m.unit}</span>}
           </div>
           <div className="m-unit">{m.sub}</div>
-          <MetricSpark values={m.spark} hot={m.hot} />
         </section>
       ))}
     </div>

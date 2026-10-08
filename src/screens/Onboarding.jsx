@@ -6,11 +6,14 @@ import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Rich } from '../components/Rich.jsx';
 import { Sheet } from '../components/Sheet.jsx';
-import { SwirlLogo } from '../components/SwirlLogo.jsx';
-import { WhyCard } from '../components/WhyCard.jsx';
+import { ConstellationReveal } from '../components/ConstellationReveal.jsx';
+import { NightSky } from '../components/NightSky.jsx';
+import { WhyHorizon } from '../components/WhyHorizon.jsx';
 import { FIXTURES } from '../data/fixtures.js';
 import { prefersReducedMotion } from '../lib/motion.jsx';
 import { MEDICAL_NOTE } from '../data/account.js';
+import { Welcome } from './Welcome.jsx';
+import { MeetCoach } from './MeetCoach.jsx';
 import {
   GOALS,
   BIRTH_YEARS,
@@ -35,11 +38,12 @@ const BRAND_LABEL = Object.fromEntries(MASK_BRANDS.map((b) => [b.id, b.label]));
 const TYPE_LABEL = Object.fromEntries(MASK_TYPES.map((t) => [t.id, t.label]));
 
 /* ---- intro: a swirl that forms the logo, then settles into the welcome ----
- * 'swirl': palette lines fill the screen and spiral into the logo (SwirlLogo).
+ * 'swirl': the logo's constellation is found in the night sky — its stars
+ *          light up one by one and join (ConstellationReveal).
  * 'dawn':  the logo glides up into a small lockup, a warm glow rises from the
  *          bottom, and the headline + CTA come in. */
 
-const HOLD_MS = 1500; // stay on the formed logo a while before it moves
+const HOLD_MS = 900; // a beat on the joined constellation before it rises to the top
 
 function Intro({ onDone }) {
   const [phase, setPhase] = useState(() => (prefersReducedMotion() ? 'dawn' : 'swirl'));
@@ -57,7 +61,7 @@ function Intro({ onDone }) {
     <div ref={stageRef} className={`ob-intro ${phase}`}>
       <StatusBar />
       <div className="ob-intro-dawn" aria-hidden="true" />
-      <SwirlLogo
+      <ConstellationReveal
         className="ob-intro-logo"
         stageRef={stageRef}
         onResolve={onResolve}
@@ -360,7 +364,7 @@ function PairVisual({ logo, state }) {
   return (
     <div className={`ob-pair ${state}`} aria-hidden="true">
       <span className="ob-pair-tile nocta">
-        <img src="/Nocta-logo.svg" alt="" />
+        <img src="/Nocta-constellation-sm.svg" alt="" />
       </span>
       <span className="ob-pair-link">
         <i />
@@ -472,6 +476,10 @@ function Pairing({ data, update, next }) {
     <Step
       foot={
         <>
+          <p className="ob-foot-note">
+            No SleepHQ account yet? Explore Nocta with sample data and connect whenever
+            you're ready.
+          </p>
           <button
             className="btn primary"
             onClick={() => {
@@ -492,10 +500,6 @@ function Pairing({ data, update, next }) {
       <p className="ob-copy">
         Nocta reads your nightly therapy data through SleepHQ. It works with ResMed,
         Philips, and most modern machines.
-      </p>
-      <p className="ob-note">
-        No SleepHQ account yet? Explore Nocta with sample data and connect whenever you're
-        ready.
       </p>
     </Step>
   );
@@ -611,8 +615,8 @@ function Compliance({ data, update, next }) {
     <Step foot={<SkipFoot next={next} />}>
       <h1 className="ob-title">Insurance &amp; compliance</h1>
       <p className="ob-copy">
-        Many insurers want proof of use, often 4+ hours on most nights for the first
-        90 days. Nocta can track it so you don't have to.
+        Many insurers want proof of use, often 4+ hours on at least 21 nights out of 30.
+        Nocta can track it so you don't have to.
       </p>
       <Field label="Are you in a compliance window?">
         <ChipGroup
@@ -663,21 +667,23 @@ function Compliance({ data, update, next }) {
  * rises, the verdict arrives a word at a time, the night's bars grow in, then
  * the one action lands. Choreography lives in onboarding.css (.ob-why-stage). */
 function Expectations({ next }) {
+  // the same sky-first insight Tonight leads with (WhyHorizon), on a real night
   const example = FIXTURES.anomaly;
   return (
     <Step foot={<button className="btn primary" onClick={next}>Got it</button>}>
       <h1 className="ob-title">Tomorrow morning</h1>
       <p className="ob-copy">
-        After your first full night, you'll wake up to a card like this: what happened, why,
-        and one thing to try. No 0–100 scores. No jargon.
+        Each morning you'll wake up to this. Once Nocta knows your usual, it shows how
+        last night compared. No 0–100 scores. No jargon.
       </p>
       <div className="ob-why-stage">
         <span className="ob-example-tag">Example</span>
-        <WhyCard
+        <WhyHorizon
           insight={example.insight}
-          spark={example.spark}
-          sparkKind={example.sparkKind}
-          eyebrow
+          timeline={example.timeline}
+          session={example.session}
+          usual={example.ahi.avgSoFar}
+          fixtureId="anomaly"
         />
       </div>
     </Step>
@@ -720,7 +726,7 @@ function Notifications({ update, next }) {
         <div className="ob-lock-time tnum">7:02</div>
         <div className="ob-notif">
           <span className="ob-notif-icon">
-            <img src="/Nocta-logo.svg" alt="" />
+            <img src="/Nocta-constellation-sm.svg" alt="" />
           </span>
           <span className="ob-notif-body">
             <span className="ob-notif-head">
@@ -748,6 +754,7 @@ const STEPS = [
   Equipment,
   Compliance,
   Expectations,
+  MeetCoach,
   Notifications,
 ];
 
@@ -755,7 +762,7 @@ function Disclaimer({ onAccept }) {
   return (
     <div className="ob-disclaimer">
       <div className="ob-disc-card">
-        <img className="ob-disc-logo" src="/Nocta-logo.svg" alt="" />
+        <img className="ob-disc-logo" src="/Nocta-constellation.svg" alt="" />
         <h2>One important thing</h2>
         <p>{MEDICAL_NOTE}</p>
         <button className="btn primary" onClick={onAccept}>
@@ -774,6 +781,7 @@ export function Onboarding() {
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState('fwd'); // which way the step content slides in
   const [disclaimer, setDisclaimer] = useState(false);
+  const [welcome, setWelcome] = useState(false);
   const [infoTip, setInfoTip] = useState(null);
   const [data, setData] = useState({
     goals: [],
@@ -809,12 +817,26 @@ export function Onboarding() {
     setStep((s) => Math.max(0, s - 1));
   };
 
-  if (intro) return <Intro onDone={() => setIntro(false)} />;
-  if (disclaimer) return <Disclaimer onAccept={completeOnboarding} />;
+  // one night sky behind the whole flow, so it carries unbroken from the
+  // splash through every step to the welcome (and on into Tonight's sky)
+  // the splash and the welcome get the full show: more stars twinkling and
+  // the occasional comet; the setup steps keep the sky calm
+  const showcase = intro || welcome;
+  const withSky = (screen) => (
+    <div className="ob-root">
+      <NightSky condition="clear" twinkle={showcase ? 0.7 : 0.35} comets={showcase} />
+      {screen}
+    </div>
+  );
+
+  if (intro) return withSky(<Intro onDone={() => setIntro(false)} />);
+  // first run ends on a welcome moment, then hands off to the home screen
+  if (welcome) return withSky(<Welcome data={data} onDone={completeOnboarding} />);
+  if (disclaimer) return withSky(<Disclaimer onAccept={() => setWelcome(true)} />);
 
   const Current = STEPS[step];
 
-  return (
+  return withSky(
     <div className={`ob-screen ${dir}`}>
       <div className="ob-ambient" aria-hidden="true" />
       <StatusBar />

@@ -58,8 +58,8 @@ The visual language is documented as design tokens. The reference implementation
 
 ### Color usage rules
 
-- **Peach is sacred.** It appears on: hero why-card accent rail, hero CTA chip, the "Ask Nocta" Coach rows,
-  "Ask Nocta" chips, journal icons, AI Coach voice italics. It does **not** appear on
+- **Peach is sacred.** It appears on: hero why-card accent rail, hero CTA chip, the "Ask Nox" Coach rows,
+  "Ask Nox" chips, journal icons, AI Coach voice italics. It does **not** appear on
   charts, on neutral CTAs, or as decoration.
 - **Semantic colors only signal state.** Sage = in-range / win. Amber = watch / mild.
   Coral = alert / out-of-range.
@@ -173,7 +173,7 @@ wall of text.
 
 **Structure (consistent across all five states), top to bottom:**
 
-1. **Eyebrow** — who / when, e.g. "Nocta Coach · Last night". State-coloured.
+1. **Eyebrow** — who / when, e.g. "Nox · Last night". State-coloured.
 2. **Headline** — one idea, the verdict. DM Sans 30px. ≤ 9 words ideal, ≤ 14 hard max.
    Single italic emphasis via `<em>` (`accent-soft`, weight 500).
 3. **Sparkline** — 32px tall. Carries timing/shape visually so the headline doesn't have to.
@@ -188,7 +188,7 @@ wall of text.
 ("Prepare doctor summary") that opens the doctor summary sheet: the insight's cited numbers,
 what the PDF contains, and a numbers-only PDF with no AI commentary.
 
-**No chip row.** The card ends with a single "Ask Nocta about last night" row instead (see Coach entry); the in-card chip was
+**No chip row.** The card ends with a single "Ask Nox about last night" row instead (see Coach entry); the in-card chip was
 redundant.
 
 **Per-state styling:**
@@ -247,19 +247,22 @@ visualization. It replaces all donut gauges.
   *lighter* `.glass` variant: a clear lens with a faint white lift and no dimming.
 - The active tab sits on a lighter glass "lens" capsule that glides between tabs.
 - Icon-only, 62px tall. Labels stay in the DOM visually hidden, so VoiceOver still reads them.
+- Icons: Tonight = crescent moon, Trends = line with an end dot, Therapy = airflow, You = the
+  profile photo. Outline at rest, filled when selected (Trends' area fills, Airflow's strokes
+  thicken); the selected photo gets a peach ring with a see-through gap.
 - Active tab uses `var(--accent)`, inactive `var(--text-secondary)` (legible on glass).
 - Compacts (scales to 80%, anchored to the bottom edge) after a sustained scroll down; returns
   to full size on scroll up / at the top or bottom / on tab change. It never leaves the screen.
 - Glass surfaces carry no outer drop shadow — depth comes from the rim light and inner shadow.
 - 4 tabs: Tonight / Trends / Therapy / You
 
-### Coach entry — contextual "Ask Nocta" rows
+### Coach entry — contextual "Ask Nox" rows
 
 Coach appears where there is something to ask about, not as global chrome:
 
-- **Why-card (Tonight)** — the card's last row: "Ask Nocta about last night". This is the
+- **Why-card (Tonight)** — the card's last row: "Ask Nox about last night". This is the
   primary entry; right after reading the verdict is when "why?" comes up.
-- **Insights card (Trends)** — "Ask Nocta about these trends".
+- **Insights card (Trends)** — "Ask Nox about these trends".
 
 Rows are 48px tall, peach text + the 22px mascot + chevron, separated by a hairline. There is
 no floating button and nothing in the nav bar: a bottom-right FAB sat where a resting thumb
@@ -271,7 +274,7 @@ lands, and a header button put Coach on screens (Therapy, You) where nobody need
 face of the Coach. It is Nocta itself, with no separate name or persona. Inline SVG
 coloured from the peach tokens, because the mascot *is* the AI.
 
-- **Where:** the "Ask Nocta" rows (22px), the desktop "Ask Nocta" button (34px), the Coach
+- **Where:** the "Ask Nox" rows (22px), the desktop "Ask Nox" button (34px), the Coach
   sheet greeting (64px) and beside each reply (24px), and the Dynamic Island during sync.
 - **Optical sizes:** at 24px and below the eyes widen, the craters drop out and the bite
   grows, so it still reads at glyph size.

@@ -154,6 +154,8 @@ export function DesktopTonight() {
         session={fx.session}
         ahi={fx.ahi.value}
         escalated={fx.insight.escalation_flag === 'hard'}
+        fixtureId={fixtureId}
+        sleepStages={fx.bodyResponse?.stages}
         onOpen={() => openSheet('fullnight')}
       />
 
@@ -168,7 +170,7 @@ export function DesktopTonight() {
             {hasAhi && fx.ahi.delta != null && (
               <span className={`delta-pill ${fx.ahi.dir === 'down' ? 'good' : ''}`}>
                 {fx.ahi.dir !== 'flat' && <Icon name={fx.ahi.dir === 'down' ? 'triDown' : 'triUp'} size={9} />}
-                {fx.ahi.delta}
+                {fx.ahi.delta.toFixed(1)}
               </span>
             )}
           </div>

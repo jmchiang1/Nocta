@@ -1,5 +1,6 @@
 /* Nocta — app state. Onboarding + tab + active fixture + check-in + active sheet.
  * onboarded & checkin persist to localStorage. */
+import { EMPTY_CHECKIN_TAGS } from '../data/journal.js';
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { DEFAULT_FIXTURE, WEEK } from '../data/fixtures.js';
 import { DEFAULT_MACHINE_ID } from '../data/therapy.js';
@@ -15,7 +16,7 @@ const StoreContext = createContext(null);
 const CHECKIN_KEY = 'nocta.checkin.v1';
 const ONBOARD_KEY = 'nocta.onboarded.v1';
 const DEVPANEL_KEY = 'nocta.devpanel.v1';
-const EMPTY_CHECKIN = { done: false, tags: { feel: [], lastnight: [], yesterday: [] } };
+const EMPTY_CHECKIN = { done: false, tags: EMPTY_CHECKIN_TAGS };
 const TAB_ORDER = ['tonight', 'trends', 'therapy', 'you'];
 /* how long the mock "pulling last night from SleepHQ" sync takes */
 const SYNC_MS = 1700;
@@ -97,7 +98,11 @@ export function StoreProvider({ children }) {
    * dashboard. Toggled from the DevPanel; both share the same underlying state
    * (tab, fixture, devices) so switching keeps you on the same data. */
   const [viewMode, setViewMode] = useState('mobile');
-  const [sheet, setSheet] = useState(null); // { kind, ...params }
+  /* open sheets, bottom → top ({ kind, ...params }). openSheet replaces the
+   * stack; pushSheet layers one over the current (e.g. the check-in over the
+   * full-night page), and closing it returns to the one beneath. */
+  const [sheets, setSheets] = useState([]);
+  const sheet = sheets.length ? sheets[sheets.length - 1] : null;
   /* true from the moment a sheet starts its exit animation until it unmounts,
    * so the app layer behind it can start settling back in sync */
   const [sheetLeaving, setSheetLeaving] = useState(false);
@@ -179,11 +184,15 @@ export function StoreProvider({ children }) {
 
   const openSheet = useCallback((kind, params = {}) => {
     setSheetLeaving(false);
-    setSheet({ kind, ...params });
+    setSheets([{ kind, ...params }]);
+  }, []);
+  const pushSheet = useCallback((kind, params = {}) => {
+    setSheetLeaving(false);
+    setSheets((st) => [...st, { kind, ...params }]);
   }, []);
   const closeSheet = useCallback(() => {
     setSheetLeaving(false);
-    setSheet(null);
+    setSheets((st) => st.slice(0, -1));
   }, []);
 
   const completeCheckin = useCallback((tags) => {
@@ -197,7 +206,7 @@ export function StoreProvider({ children }) {
   }, [onboarded, startSync]);
   const resetOnboarding = useCallback(() => {
     setTab('tonight');
-    setSheet(null);
+    setSheets([]);
     setOnboarded(false);
   }, []);
 
@@ -231,7 +240,9 @@ export function StoreProvider({ children }) {
     viewMode,
     setViewMode,
     sheet,
+    sheets,
     openSheet,
+    pushSheet,
     closeSheet,
     checkin,
     completeCheckin,

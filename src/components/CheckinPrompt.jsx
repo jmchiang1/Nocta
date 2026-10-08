@@ -1,48 +1,53 @@
-/* Nocta — Morning Check-In entry card. Two states: not-done / done. */
-import { Icon } from './Icons.jsx';
-import { TAG_LABELS } from '../data/journal.js';
+/* Nocta — the morning check-in on Tonight. It sits right under the night's
+ * suggestion, because the check-in is half of what Nox learns from: the
+ * first question is answerable right here (tap "Tired" and the full check-in
+ * opens with it already picked). Once logged it folds to one slim line: done,
+ * how many notes, and Edit. The tags themselves live where Nox uses them
+ * (the full-night page), not repeated back on the home screen. */
+import { CHECKIN_SCREENS, allCheckinTags } from '../data/journal.js';
+import { Mascot } from './Mascot.jsx';
+
+const FIRST = CHECKIN_SCREENS[0];
+const QUICK = FIRST.options.slice(0, 5); // the five most common answers, inline
 
 export function CheckinPrompt({ checkin, onStart }) {
   if (checkin.done) {
-    const all = [
-      ...checkin.tags.feel,
-      ...checkin.tags.lastnight,
-      ...checkin.tags.yesterday,
-    ];
+    const n = allCheckinTags(checkin.tags).filter((id) => !id.startsWith('nothing_')).length;
     return (
-      <button className="checkin done card-enter" onClick={onStart}>
-        <div>
-          <div className="ci-eyebrow">Morning check-in · logged</div>
-          <h4>Thanks. Nocta has today's context.</h4>
-          {all.length > 0 ? (
-            <div className="ci-tags">
-              {all.map((t) => (
-                <span key={t} className="ci-tag">
-                  {TAG_LABELS[t] || t}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p>No tags logged for last night.</p>
-          )}
+      <section className="tn-module ck-card done" aria-label="Morning check-in, done">
+        <div className="ck-card-head">
+          <Mascot size={26} />
+          <span className="ck-card-done tnum">
+            Checked in
+            <span className="ck-card-count"> · {n === 0 ? 'nothing unusual' : `${n} ${n === 1 ? 'note' : 'notes'}`}</span>
+          </span>
+          <button className="ck-card-edit" type="button" onClick={() => onStart(checkin.tags)}>
+            Edit
+          </button>
         </div>
-        <div className="ci-go">
-          <Icon name="check" size={20} />
-        </div>
-      </button>
+      </section>
     );
   }
 
   return (
-    <button className="checkin todo card-enter" onClick={onStart}>
-      <div>
-        <div className="ci-eyebrow">Morning check-in</div>
-        <h4>How do you feel today?</h4>
-        <p>A few quick tags help Nocta find what shapes your nights. Takes 20 seconds.</p>
+    <section className="tn-module ck-card" aria-label="Morning check-in">
+      <div className="ck-card-head">
+        <Mascot size={34} state="idle" />
+        <div className="ck-card-titles">
+          <span className="ck-card-eyebrow">Morning check-in · 20 seconds</span>
+          <h3 className="ck-card-q">{FIRST.question}</h3>
+        </div>
       </div>
-      <div className="ci-go">
-        <Icon name="chevronRight" size={20} />
+      <div className="ck-card-quick">
+        {QUICK.map((o) => (
+          <button key={o.id} type="button" className="ob-pill" onClick={() => onStart({ [FIRST.id]: [o.id] })}>
+            {o.label}
+          </button>
+        ))}
+        <button type="button" className="ob-pill ck-card-more" onClick={() => onStart()}>
+          More…
+        </button>
       </div>
-    </button>
+    </section>
   );
 }

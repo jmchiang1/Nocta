@@ -16,8 +16,6 @@ export function DevPanel() {
     resetOnboarding,
     fixtureId,
     setFixtureId,
-    tonightLayout,
-    setTonightLayout,
     viewMode,
     setViewMode,
     devPanelOpen,
@@ -87,28 +85,6 @@ export function DevPanel() {
       </button>
       <button className={viewMode === 'desktop' ? 'on' : ''} onClick={() => setViewMode('desktop')}>
         Desktop
-      </button>
-
-      <span className="dp-sep" aria-hidden="true" />
-
-      <span className="dp-label">Tonight</span>
-      <button
-        className={tonightLayout === 'current' ? 'on' : ''}
-        onClick={() => {
-          setTonightLayout('current');
-          setTab('tonight');
-        }}
-      >
-        Current
-      </button>
-      <button
-        className={tonightLayout === 'proposed' ? 'on' : ''}
-        onClick={() => {
-          setTonightLayout('proposed');
-          setTab('tonight');
-        }}
-      >
-        Proposed
       </button>
 
       <span className="dp-sep" aria-hidden="true" />

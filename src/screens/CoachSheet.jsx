@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { SUGGESTED_PROMPTS, contextOpener, coachReply } from '../data/coach.js';
+import { FIXTURES } from '../data/fixtures.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Mascot } from '../components/Mascot.jsx';
@@ -39,13 +40,14 @@ function CoachMessage({ text, stream, onTick }) {
 }
 
 export function CoachSheet() {
-  const { sheet, closeSheet } = useStore();
+  const { sheet, closeSheet, fixtureId } = useStore();
   const context = sheet.context;
+  // opened from a card, Nox starts with what you were looking at
+  const [opener] = useState(() => contextOpener(context, FIXTURES[fixtureId]));
 
-  const [messages, setMessages] = useState(() => {
-    const opener = contextOpener(context);
-    return opener ? [{ role: 'coach', text: opener, stream: true }] : [];
-  });
+  const [messages, setMessages] = useState(() =>
+    opener ? [{ role: 'coach', text: opener.text, stream: true }] : []
+  );
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const bottomRef = useRef(null);
@@ -63,7 +65,7 @@ export function CoachSheet() {
     setMessages((m) => [...m, { role: 'user', text: q }]);
     setInput('');
     setTyping(true);
-    const reply = coachReply(q);
+    const reply = coachReply(q, FIXTURES[fixtureId]);
     setTimeout(() => {
       setMessages((m) => [...m, { role: 'coach', text: reply, stream: true }]);
       setTyping(false);
@@ -74,7 +76,7 @@ export function CoachSheet() {
 
   return (
     <Sheet
-      eyebrow="Nocta Coach"
+      eyebrow="Nox"
       title="Ask anything"
       onClose={closeSheet}
       className="tall"
@@ -91,7 +93,7 @@ export function CoachSheet() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about a metric or a night…"
-            aria-label="Message Nocta Coach"
+            aria-label="Message Nox"
           />
           <button type="submit" className="send" disabled={!input.trim() || typing} aria-label="Send">
             <Icon name="send" size={18} />
@@ -105,7 +107,7 @@ export function CoachSheet() {
             <div className="ci-avatar">
               <Mascot size={64} />
             </div>
-            <h4>Hi, I'm your Nocta Coach.</h4>
+            <h4>Hi, I'm Nox.</h4>
             <p>I read your CPAP data each night. Ask me what changed, or why.</p>
             <div className="suggest-row">
               {SUGGESTED_PROMPTS.map((p, i) => (
@@ -130,10 +132,22 @@ export function CoachSheet() {
           )
         )}
 
+        {/* the opener's follow-ups, until you ask something */}
+        {opener?.prompts && messages.length === 1 && !typing && (
+          <div className="suggest-row after-opener">
+            {opener.prompts.map((p, i) => (
+              <button key={p} className="suggest" style={{ '--i': i }} onClick={() => send(p)}>
+                {p}
+                <Icon name="chevronRight" size={15} />
+              </button>
+            ))}
+          </div>
+        )}
+
         {typing && (
           <div className="msg-row">
             <Mascot size={24} state="thinking" />
-            <div className="typing" aria-label="Nocta is typing">
+            <div className="typing" aria-label="Nox is typing">
               <span />
               <span />
               <span />

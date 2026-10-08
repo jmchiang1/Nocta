@@ -43,18 +43,19 @@ const anomaly = {
   dayName: 'Saturday',
   dateLabel: 'October 10 · Night 11 of 30',
   dayState: 'logged',
-  session: { start: '11:42 PM', end: '6:08 AM', durationHours: 6.2 },
+  session: { start: '11:42 PM', end: '5:54 AM', durationHours: 6.2 },
   ahi: { value: 10.5, avgSoFar: 4.6, delta: 5.9, dir: 'up', rangePct: [6, 34], markerPct: 35 },
   secondary: [
     { key: 'leak', label: 'Leak', value: '32', unit: 'L/m', sub: 'Usually about 11',
       spark: [0.3, 0.4, 0.35, 0.5, 0.9, 0.82, 0.45], hot: [4, 5] },
-    { key: 'pressure', label: 'Pressure', value: '5.6', unit: 'cmH₂O', sub: 'Steady all night',
+    { key: 'pressure', label: 'Pressure', value: '5.6', unit: 'cmH₂O', sub: 'Median · peaked at 9.1',
       spark: [0.6, 0.55, 0.62, 0.58, 0.6, 0.64, 0.58], hot: [] },
     { key: 'hours', label: 'Hours', value: '6.2', unit: 'h', sub: '0.6 h more than usual',
       spark: [0.7, 0.75, 0.65, 0.8, 0.88, 0.7, 0.75], hot: [4] },
   ],
   insight: {
     card_state: 'anomaly',
+    glance: { headline: 'AHI *doubled.*', detail: '10.5 an hour, up from your usual 4.6', peak_window: '2–5 a.m.', peak_position: 'stomach' },
     headline: 'Your AHI more than *doubled* last night.',
     receipts: '**10.5** events an hour · mostly on your stomach · 2–5 a.m.',
     observation:
@@ -141,17 +142,18 @@ const steady = {
   secondary: [
     { key: 'leak', label: 'Leak', value: '9', unit: 'L/m', sub: 'Close to your usual',
       spark: [0.3, 0.35, 0.28, 0.32, 0.3, 0.34, 0.3], hot: [] },
-    { key: 'pressure', label: 'Pressure', value: '7.0', unit: 'cmH₂O', sub: 'Steady all night',
+    { key: 'pressure', label: 'Pressure', value: '7.0', unit: 'cmH₂O', sub: 'Median · peaked at 8.4',
       spark: [0.6, 0.62, 0.6, 0.64, 0.6, 0.62, 0.6], hot: [] },
     { key: 'hours', label: 'Hours', value: '7.1', unit: 'h', sub: '1.6 h more than usual',
       spark: [0.7, 0.72, 0.7, 0.74, 0.78, 0.76, 0.8], hot: [6] },
   ],
   insight: {
     card_state: 'steady',
+    glance: { headline: 'Your *usual* night.', detail: '3.2 an hour, close to your usual', peak_window: null, peak_position: null },
     headline: 'Last night looked like *your usual*.',
-    receipts: '**3.2** events an hour · within your normal range',
+    receipts: '**3.2** events an hour · close to your usual',
     observation:
-      'Your AHI held at **3.2**, comfortably inside the range of your first **4** nights. Leak stayed low at **9 L/min** and you slept **7.1 hours**.',
+      'Your AHI held at **3.2**, a touch below your first **4** nights (**3.4** to **5.6**). Leak stayed low at **9 L/min** and you slept **7.1 hours**.',
     time_window: { nights_analyzed: 5, nights_matching: 4 },
     likely_causes: [],
     recommended_action: {
@@ -220,13 +222,14 @@ const win = {
   secondary: [
     { key: 'leak', label: 'Leak', value: '7', unit: 'L/m', sub: 'Close to your usual',
       spark: [0.3, 0.28, 0.3, 0.26, 0.3, 0.28, 0.26], hot: [] },
-    { key: 'pressure', label: 'Pressure', value: '6.8', unit: 'cmH₂O', sub: 'Steady all night',
+    { key: 'pressure', label: 'Pressure', value: '6.8', unit: 'cmH₂O', sub: 'Median · peaked at 7.9',
       spark: [0.58, 0.6, 0.58, 0.6, 0.62, 0.58, 0.6], hot: [] },
     { key: 'hours', label: 'Hours', value: '7.6', unit: 'h', sub: '1.7 h more than usual',
       spark: [0.66, 0.7, 0.72, 0.78, 0.84, 0.9, 0.94], hot: [5, 6] },
   ],
   insight: {
     card_state: 'win',
+    glance: { headline: 'Your *best* night.', detail: '2.1 an hour, your lowest so far', peak_window: null, peak_position: null },
     headline: 'Your *best night* so far.',
     receipts: '**2.1** events an hour · your lowest since you started',
     observation:
@@ -292,18 +295,19 @@ const escalation = {
   dayName: 'Tuesday',
   dateLabel: 'October 6 · Night 7 of 30',
   dayState: 'escalation',
-  session: { start: '11:30 PM', end: '6:02 AM', durationHours: 6.4 },
+  session: { start: '11:30 PM', end: '5:54 AM', durationHours: 6.4 },
   ahi: { value: 9.4, avgSoFar: 3.8, delta: 5.6, dir: 'up', rangePct: [6, 34], markerPct: 31 },
   secondary: [
     { key: 'cai', label: 'Central', value: '6.8', unit: '/h', sub: 'Usually 1.2',
       spark: [0.2, 0.28, 0.4, 0.55, 0.7, 0.85, 0.95], hot: [4, 5, 6] },
-    { key: 'pressure', label: 'Pressure', value: '6.1', unit: 'cmH₂O', sub: 'Steady all night',
+    { key: 'pressure', label: 'Pressure', value: '6.1', unit: 'cmH₂O', sub: 'Median · peaked at 8.2',
       spark: [0.58, 0.6, 0.58, 0.62, 0.6, 0.58, 0.6], hot: [] },
     { key: 'hours', label: 'Hours', value: '6.4', unit: 'h', sub: 'Close to your usual',
       spark: [0.7, 0.72, 0.7, 0.74, 0.7, 0.72, 0.7], hot: [] },
   ],
   insight: {
     card_state: 'escalation',
+    glance: { headline: 'Central events *jumped.*', detail: '6.8 central events an hour, usually 1.2', peak_window: null, peak_position: null },
     headline: 'Central events *jumped* last night.',
     receipts: '**6.8** central events an hour · usually 1.2 · first night above 5',
     observation:
@@ -346,7 +350,7 @@ const escalation = {
   pattern: null,
   bodyResponse: {
     source: 'Apple Watch',
-    note: 'Your heart rate ran elevated through the night, in step with the rising events.',
+    note: 'Your heart rate ran elevated through the night, in step with the events.',
     hr: {
       dir: 'up',
       series: genHeartRate('escalation-hr', {
@@ -385,13 +389,14 @@ const insufficient = {
   secondary: [
     { key: 'leak', label: 'Leak', value: '—', unit: '', sub: 'too little data',
       spark: [0.2, 0.2, 0.2], hot: [] },
-    { key: 'pressure', label: 'Pressure', value: '5.8', unit: 'cmH₂O', sub: 'Typical for you',
+    { key: 'pressure', label: 'Pressure', value: '5.8', unit: 'cmH₂O', sub: 'Median · peaked at 6.9',
       spark: [0.5, 0.52, 0.5], hot: [] },
     { key: 'hours', label: 'Hours', value: '1.7', unit: 'h', sub: 'Under the 2 h needed',
       spark: [0.2, 0.2, 0.2], hot: [] },
   ],
   insight: {
     card_state: 'insufficient_data',
+    glance: { headline: 'Too short *to read.*', detail: '1.7 hours recorded, too short to score', peak_window: null, peak_position: null },
     headline: 'Last night was too short to read.',
     receipts: '**1.7 h** recorded · too short to score reliably',
     observation:

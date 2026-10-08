@@ -5,11 +5,16 @@
  * AHI, no frown for a leak — a mood face would be a red/green score with eyes.
  *
  * States (motion only for genuine in-progress moments, per DESIGN_SYSTEM › Motion):
- *   still     default — no motion (Ask Nocta rows, chat history)
+ *   still     default — no motion (Ask Nox rows, chat history)
  *   thinking  the Coach is typing — eyes drift up, small bob
  *   talking   a reply is streaming in
  *   asleep    last night is syncing — eyes closed, slow breath
  *   waking    one-shot: eyes open with a blink (sync finished)
+ *   idle      every so often the eyes glance around and blink, then rest
+ *             (the Coach entry on Tonight, so it reads as present, not a logo)
+ *   pleased   one-shot: a little hop and happy ^ ^ eyes. For finishing
+ *             something the *user* did (a logged check-in), never as a
+ *             verdict on the night.
  *
  * At 24px and below it switches to a simpler optical size — wider eyes, no
  * craters, a bigger bite — so it never turns into a smudge. */
@@ -43,6 +48,7 @@ export function Mascot({ size = 24, state = 'still', label, className = '' }) {
           <stop offset="0.55" className="mc-stop-mid" />
           <stop offset="1" className="mc-stop-lo" />
         </radialGradient>
+
         <mask id={`mb${id}`}>
           <rect width="100" height="100" fill="#fff" />
           <circle cx={small ? 82 : 84} cy={small ? 20 : 19} r={small ? 25 : 22} fill="#000" />
@@ -69,6 +75,13 @@ export function Mascot({ size = 24, state = 'still', label, className = '' }) {
               <path key={x} d={`M${x - aw / 2} ${ay} q${aw / 2} ${aw * 0.55} ${aw} 0`} />
             ))}
           </g>
+          {state === 'pleased' && (
+            <g className="mc-happy" strokeWidth={small ? 5 : 3.6}>
+              {EYE_X.map((x) => (
+                <path key={x} d={`M${x - aw / 2} ${ay + 2} q${aw / 2} ${-aw * 0.75} ${aw} 0`} />
+              ))}
+            </g>
+          )}
         </g>
       </g>
     </svg>

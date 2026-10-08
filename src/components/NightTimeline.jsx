@@ -6,6 +6,9 @@
 import { useRef, useState } from 'react';
 import { Icon } from './Icons.jsx';
 import { StackedBars } from './Charts.jsx';
+import { TimeAxis } from './TimeAxis.jsx';
+import { hypnogramFor } from './SleepStages.jsx';
+import { nightBins } from '../lib/nightSeries.js';
 
 const BUCKETS = 9;
 const STAGE_NAME = { rem: 'REM', deep: 'Deep sleep', light: 'Light sleep', awake: 'Awake' };
@@ -24,7 +27,7 @@ function fmtMin(min) {
 /* Scrub layer: hover (mouse) or drag sideways (touch) across the night to
  * read any moment — clock time, sleep stage, and the events in that slice.
  * The other slices dim so the one you're on stands out. */
-function Scrubber({ bins, stages, session }) {
+function Scrubber({ bins, stageAt, session }) {
   const ref = useRef(null);
   const [f, setF] = useState(null); // 0..1 across the night, or null
   const start = toMin(session.start);
@@ -40,9 +43,10 @@ function Scrubber({ bins, stages, session }) {
   if (f != null) {
     const i = Math.floor(f * BUCKETS);
     const b = bins[i];
-    const stage = stages.find((s) => f * 100 >= s.l && f * 100 < s.l + s.w);
+    const stage = stageAt(f);
     const parts = [
       b.osa && `${b.osa} obstructive`,
+      b.hyp && `${b.hyp} hypopnea`,
       b.csa && `${b.csa} central`,
       b.leak && 'leak',
     ].filter(Boolean);
@@ -50,7 +54,7 @@ function Scrubber({ bins, stages, session }) {
       i,
       x: f,
       time: fmtMin(start + f * (end - start)),
-      stage: stage ? STAGE_NAME[stage.stage] : null,
+      stage: stage ? STAGE_NAME[stage] : null,
       events: parts.length ? parts.join(' · ') : 'No breathing events',
     };
   }
@@ -94,7 +98,7 @@ function Scrubber({ bins, stages, session }) {
  * stores a sample of event positions; scale the breathing events so the bins
  * add up to the night's real total (AHI × hours). Leak spells stay as-is —
  * they aren't breathing events and aren't in the count. */
-function binEvents(events, total, buckets = BUCKETS) {
+export function binEvents(events, total, buckets = BUCKETS) {
   const bins = Array.from({ length: buckets }, () => ({ csa: 0, osa: 0, leak: 0 }));
   events.forEach((e) => {
     const i = Math.min(buckets - 1, Math.max(0, Math.floor((e.l / 100) * buckets)));
@@ -118,15 +122,32 @@ function binEvents(events, total, buckets = BUCKETS) {
   return bins;
 }
 
-export function NightTimeline({ timeline, session, ahi, escalated = false, onOpen }) {
-  const bins = binEvents(timeline.events, timeline.eventCount);
+/* fixtureId: build the bars from the night's shared event data (per-type
+ * totals from history, placed around its episodes) so they match the horizon
+ * and the episode list. sleepStages: the watch's stages, for the readout. */
+export function NightTimeline({ timeline, session, ahi, escalated = false, onOpen, fixtureId, sleepStages }) {
+  const bins = fixtureId
+    ? nightBins(fixtureId, BUCKETS)
+    : binEvents(timeline.events, timeline.eventCount);
+  const hyp = sleepStages ? hypnogramFor(sleepStages) : null;
+  const stageAt = (f) => {
+    if (hyp) return hyp[Math.min(hyp.length - 1, Math.floor(f * hyp.length))];
+    const s = timeline.stages?.find((x) => f * 100 >= x.l && f * 100 < x.l + x.w);
+    return s ? s.stage : null;
+  };
   const central = escalated ? 'alert' : 'dataLight';
   const layers = [
     { key: 'osa', color: 'data', label: 'Obstructive' },
+    { key: 'hyp', color: 'dataDeep', label: 'Hypopnea' },
     { key: 'csa', color: central, label: 'Central' },
     { key: 'leak', color: 'muted', label: 'Leak' },
   ];
-  const swatch = { obstructive: 'data-1', central: escalated ? 'alert' : 'stage-rem', leak: 'text-tertiary' };
+  const swatch = {
+    obstructive: 'data-1',
+    hypopnea: 'data-deep',
+    central: escalated ? 'alert' : 'stage-rem',
+    leak: 'text-tertiary',
+  };
 
   return (
     <section className="night-card card-enter" aria-label="Overnight timeline">
@@ -141,19 +162,16 @@ export function NightTimeline({ timeline, session, ahi, escalated = false, onOpe
 
       <div className="scrub-wrap">
         <StackedBars series={bins} height={104} layers={layers} />
-        <Scrubber bins={bins} stages={timeline.stages} session={session} />
+        <Scrubber bins={bins} stageAt={stageAt} session={session} />
       </div>
-      <div className="axis">
-        <span>11PM</span>
-        <span>1AM</span>
-        <span>3AM</span>
-        <span>5AM</span>
-        <span>7AM</span>
-      </div>
+      <TimeAxis session={session} />
 
       <div className="legend">
         <span>
           <span className="swatch" style={{ background: `var(--${swatch.obstructive})` }} /> Obstructive
+        </span>
+        <span>
+          <span className="swatch" style={{ background: `var(--${swatch.hypopnea})` }} /> Hypopnea
         </span>
         <span>
           <span className="swatch" style={{ background: `var(--${swatch.central})` }} /> Central
@@ -161,15 +179,14 @@ export function NightTimeline({ timeline, session, ahi, escalated = false, onOpe
         <span>
           <span className="swatch" style={{ background: `var(--${swatch.leak})` }} /> Leak
         </span>
-        <span className="legend-hint" aria-hidden="true">
-          Drag to explore
-        </span>
       </div>
 
-      <button className="row-cta" onClick={onOpen}>
-        <span>Open full-night view</span>
-        <Icon name="chevronRight" size={16} />
-      </button>
+      {onOpen && (
+        <button className="row-cta" onClick={onOpen}>
+          <span>Open full-night view</span>
+          <Icon name="chevronRight" size={16} />
+        </button>
+      )}
     </section>
   );
 }

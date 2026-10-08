@@ -3,7 +3,7 @@
  * untouched so the two can be compared side by side.
  *
  * What changes vs. the current layout:
- *  - why-card gets its "Nocta Coach · Last night" byline and drops the
+ *  - why-card gets its "Nox · Last night" byline and drops the
  *    sparkline (the night chart below shows the same shape)
  *  - the morning check-in sits right under the why-card until it's done —
  *    it feeds the patterns, so it shouldn't hide inside the full-night view
@@ -95,6 +95,8 @@ export function TonightProposedScreen() {
             session={fx.session}
             ahi={fx.ahi.value}
             escalated={escalated}
+            fixtureId={fixtureId}
+            sleepStages={fx.bodyResponse?.stages}
             onOpen={() => openSheet('fullnight')}
           />
 

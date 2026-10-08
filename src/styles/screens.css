@@ -130,8 +130,51 @@
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   padding: 14px 14px 12px;
-  /* let grid tracks shrink so the Chart.js spark canvas can't push the row wide */
   min-width: 0;
+  /* tiles are tabs for the chart below */
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) ease,
+    background var(--dur-fast) ease,
+    transform var(--dur-press) ease;
+}
+.trend-tile:active {
+  transform: scale(0.98);
+}
+.trend-tile.on {
+  border-color: color-mix(in srgb, var(--data-1) 60%, transparent);
+  background: color-mix(in srgb, var(--data-1) 10%, var(--surface-1));
+}
+.trend-tile.on .tt-label {
+  color: var(--data-1);
+}
+/* the one chart the tiles switch */
+.trend-chart {
+  margin-top: 12px;
+  margin-bottom: 16px;
+  animation: riseIn 0.4s var(--ease-out) backwards;
+}
+.trend-chart .tc-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.trend-chart .tc-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+}
+.trend-chart .tc-head .meta {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
 }
 .trend-tile .tt-label {
   font-size: 10px;
@@ -140,12 +183,28 @@
   text-transform: uppercase;
   color: var(--text-tertiary);
 }
+.trend-tile .tt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 4px;
+}
 .trend-tile .tt-value {
   font-family: var(--font-display);
   font-size: 26px;
   font-weight: 500;
   font-feature-settings: 'tnum' 1;
-  margin: 4px 0 8px;
+  white-space: nowrap;
+}
+.trend-tile .delta-pill {
+  flex-shrink: 1;
+  min-width: 0;
+  padding: 3px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .trend-tile .tt-value .u {
   font-size: 12px;
@@ -577,73 +636,390 @@
   margin-top: 3px;
 }
 
-/* ============ CHECK-IN FLOW ============ */
-.checkin-flow {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+/* ============ MORNING CHECK-IN (screens/CheckinSheet.jsx) ============
+ * A tall modal over a dawn-lit night sky: the stars stay up top, a warm glow
+ * rises at the bottom, the way a morning check-in actually feels. Options
+ * reuse onboarding's .ob-option cards. */
+.sheet.ck-sheet {
+  height: 92%;
+  overflow: hidden;
+  background:
+    radial-gradient(70% 34% at 12% 4%, color-mix(in srgb, var(--data-deep) 55%, transparent), transparent 72%),
+    radial-gradient(52% 28% at 94% 12%, color-mix(in srgb, var(--stage-rem) 20%, transparent), transparent 70%),
+    radial-gradient(120% 42% at 50% 118%, color-mix(in srgb, var(--accent-soft) 34%, transparent), color-mix(in srgb, var(--accent) 10%, transparent) 50%, transparent 75%),
+    linear-gradient(180deg, var(--bg-grad-top), var(--bg-base) 60%, var(--bg-grad-bottom));
 }
-.ci-progress {
-  display: flex;
-  gap: 6px;
-  padding: 4px 0 22px;
+/* a still field of stars across the top of the sheet */
+.sheet.ck-sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 45% 0;
+  pointer-events: none;
+  opacity: 0.8;
+  background-image:
+    radial-gradient(1.4px 1.4px at 9% 9%, var(--text-primary), transparent),
+    radial-gradient(1px 1px at 24% 22%, color-mix(in srgb, var(--text-primary) 70%, transparent), transparent),
+    radial-gradient(1.5px 1.5px at 41% 6%, var(--text-primary), transparent),
+    radial-gradient(1px 1px at 57% 18%, color-mix(in srgb, var(--text-primary) 60%, transparent), transparent),
+    radial-gradient(1.2px 1.2px at 73% 4%, var(--text-primary), transparent),
+    radial-gradient(1px 1px at 88% 24%, color-mix(in srgb, var(--text-primary) 55%, transparent), transparent),
+    radial-gradient(1px 1px at 14% 40%, color-mix(in srgb, var(--text-primary) 45%, transparent), transparent),
+    radial-gradient(1.2px 1.2px at 66% 36%, color-mix(in srgb, var(--text-primary) 55%, transparent), transparent),
+    radial-gradient(1px 1px at 93% 52%, color-mix(in srgb, var(--text-primary) 40%, transparent), transparent),
+    radial-gradient(1px 1px at 33% 58%, color-mix(in srgb, var(--text-primary) 35%, transparent), transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 40%, transparent);
+  mask-image: linear-gradient(180deg, #000 40%, transparent);
 }
-.ci-progress span {
+.sheet.ck-sheet > * {
+  position: relative;
+}
+.sheet.ck-sheet .sheet-body {
+  flex: 1;
+}
+
+.ck-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 26px;
+}
+.ck-progress {
   flex: 1;
   height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  overflow: hidden;
 }
-.ci-progress span.on {
-  background: var(--accent);
+.ck-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent-soft));
+  transition: width var(--dur-slow) var(--ease-ios);
 }
-.ci-question {
-  font-family: var(--font-display);
+.ck-count {
+  font-size: 15px;
   font-weight: 500;
-  font-size: 23px;
-  line-height: 1.28;
-  margin: 0 0 4px;
-}
-.ci-hint {
-  font-size: 13px;
   color: var(--text-tertiary);
-  margin: 0 0 20px;
 }
-.ci-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
+
+.ck-step {
+  animation: ckStepIn var(--dur-slow) var(--ease-out) backwards;
 }
-.ci-grid .chip {
-  min-height: 48px;
-  font-size: 14px;
+.ck-step.back {
+  animation-name: ckStepBack;
 }
-.ci-done {
-  text-align: center;
-  padding: 40px 10px;
+@keyframes ckStepBack {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
 }
-.ci-done .cd-mark {
-  width: 70px;
-  height: 70px;
+/* back to the previous question: same round glass button as onboarding */
+.ck-back {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin: -8px 0 -8px -4px;
   border-radius: 50%;
-  margin: 0 auto 20px;
   display: grid;
   place-items: center;
-  background: rgba(125, 201, 154, 0.14);
-  color: var(--good);
-}
-.ci-done h3 {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 23px;
-  margin: 0 0 8px;
-}
-.ci-done p {
-  font-size: 14px;
+  border: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
   color: var(--text-secondary);
-  line-height: 1.55;
-  margin: 0 auto;
-  max-width: 280px;
+}
+.ck-back:active {
+  transform: scale(0.94);
+}
+.ck-question {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.12;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.ck-hint {
+  margin: 0 0 24px;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+/* short answers sit two to a row; any long one switches the step to rows */
+.ck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.ck-grid.wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+.ck-grid .ob-option {
+  animation: riseIn 0.4s var(--ease-out) backwards;
+  animation-delay: calc(120ms + var(--i, 0) * 35ms);
+}
+@keyframes ckStepIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+/* done: a drawn check in a soft peach glow, then what was logged */
+.ck-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 8px 12px;
+}
+.ck-nox {
+  margin-bottom: 22px;
+  filter: drop-shadow(0 0 26px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+.ck-done-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  animation: riseIn 0.5s 0.4s var(--ease-out) backwards;
+}
+.ck-done-copy {
+  margin: 0;
+  max-width: 310px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  animation: riseIn 0.5s 0.5s var(--ease-out) backwards;
+}
+.ck-logged {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.ck-logged li {
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  font-size: 15px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  border: 1px solid var(--hairline-strong);
+  animation: popIn 0.4s var(--ease-spring) backwards;
+  animation-delay: calc(650ms + var(--i, 0) * 60ms);
+}
+
+/* ---- the check-in card on Tonight (components/CheckinPrompt.jsx) ----
+ * A module like the others, with a faint peach edge because it's Nox asking. */
+.tn-module.ck-card {
+  padding: 18px 16px 16px;
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+    color-mix(in srgb, var(--surface-1) 56%, transparent);
+}
+.ck-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ck-card-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ck-card-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+.ck-card-q {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.ck-card-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.ck-card-more {
+  color: var(--accent-soft);
+}
+.tn-module.ck-card.done {
+  padding: 6px 10px 6px 14px;
+}
+.ck-card.done .ck-card-head {
+  gap: 10px;
+}
+.ck-card-done {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.ck-card-count {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+.ck-card-edit {
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-soft);
+}
+/* the full night in three numbers: one quiet card, centred columns */
+.fn-summary-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 2px 0 6px;
+  padding: 14px 6px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--surface-1) 70%, transparent);
+  border: 1px solid var(--hairline);
+}
+.fn-summary-card > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.fn-summary-card > div + div {
+  border-left: 1px solid var(--hairline);
+}
+.fn-summary-card b {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.fn-summary-card span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* each machine graph on the full night opens its own page */
+.fn-metric {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.fn-metric > .chart-card {
+  display: block;
+  transition:
+    border-color var(--dur-fast) ease,
+    transform var(--dur-press) ease;
+}
+.fn-metric:active > .chart-card {
+  transform: scale(0.99);
+}
+.fn-metric:hover > .chart-card {
+  border-color: var(--hairline-strong);
+}
+.fn-metric .meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- metric detail page (screens/MetricDetailSheet.jsx), Apple Health style ---- */
+.md {
+  display: flex;
+  flex-direction: column;
+}
+.md-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 4px 18px;
+}
+.md-k {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.md-v {
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+}
+.md-u {
+  margin-left: 6px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+}
+.md-sub {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.md-chart {
+  padding-top: 14px;
+}
+.md-note {
+  margin: 8px 4px 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.md-about {
+  margin-top: 26px;
+  padding: 18px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--surface-1) 70%, transparent);
+  border: 1px solid var(--hairline);
+}
+.md-about h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.md-about p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.md-ask {
+  margin-top: 14px;
+}
+
+.sheet .night-card {
+  /* padding-top: 4px; */
 }
 
 /* ============ FULL-NIGHT SHEET ============ */
@@ -1124,4 +1500,70 @@
 }
 .tonight-proposed .disclaimer {
   font-size: 14px;
+}
+
+/* ---- Therapy equipment: a one-line summary that expands to the parts ---- */
+.equip-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text-primary);
+}
+.equip.open .equip-summary {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 4px;
+}
+.es-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* sized like the list rows around it (mask card, export row) */
+.es-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.es-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.equip-summary.alert .es-title {
+  color: var(--alert);
+}
+.es-chev {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform var(--dur-fast) ease;
+}
+.equip.open .es-chev {
+  transform: rotate(180deg);
+}
+.equip.open .equip-row {
+  animation: riseIn 0.3s var(--ease-out) backwards;
+}
+
+/* You: the profile's one milestone line, under name + condition */
+.ph-meta {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* Nox's follow-up questions under a context opener: they wait for the opener
+ * to finish arriving, then rise in */
+.suggest-row.after-opener {
+  margin: 2px 0 0 34px;
+}
+.phone .suggest-row.after-opener .suggest {
+  animation-delay: calc(2.2s + var(--i, 0) * 90ms);
 }

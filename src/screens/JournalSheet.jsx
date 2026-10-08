@@ -3,7 +3,7 @@
  * month is open by default, older months collapsed. Scales cleanly as the
  * journal grows without turning into a wall of rows. */
 import { useStore } from '../lib/store.jsx';
-import { JOURNAL_HISTORY, TAG_LABELS } from '../data/journal.js';
+import { journalHistory, TAG_LABELS } from '../data/journal.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 
@@ -19,8 +19,8 @@ function groupByMonth(entries) {
 }
 
 export function JournalSheet() {
-  const { closeSheet } = useStore();
-  const groups = groupByMonth(JOURNAL_HISTORY);
+  const { closeSheet, checkin } = useStore();
+  const groups = groupByMonth(journalHistory(checkin));
 
   return (
     <Sheet title="Sleep journal" onClose={closeSheet} variant="page">

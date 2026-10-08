@@ -21,7 +21,7 @@ const STATE_WORD = { low: 'low data', escalation: 'worth showing your doctor' };
 /* shared with the desktop calendar: what a night's moon should say */
 export function nightMarks(fx) {
   const suggests = SUGGESTS.has(fx.insight.card_state);
-  const words = [STATE_WORD[fx.dayState], suggests && 'Nocta has a suggestion'].filter(Boolean);
+  const words = [STATE_WORD[fx.dayState], suggests && 'Nox has a suggestion'].filter(Boolean);
   return { suggests, a11y: words.length ? `, ${words.join(', ')}` : '' };
 }
 

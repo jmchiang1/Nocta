@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from './StatusBar.jsx';
 import { Icon } from './Icons.jsx';
+import { NightSky } from './NightSky.jsx';
 
 const COMPACT_AT = 64; // px scrolled before the compact title appears
 /* tab bar compact/full: compacting needs a deliberate, sustained scroll down
@@ -26,9 +27,10 @@ const HOLD_AT = 58;
 // diminishing returns the further you pull, like a rubber band
 const rubber = (d) => PULL_MAX * (1 - Math.exp(-d / (PULL_MAX * 1.4)));
 
-/* `sky`: Tonight's ambient twilight backdrop — fixed behind the content,
- * drifting slowly, fading (with a little parallax) as you scroll. The same
- * every night: it sets a mood, it never encodes how the night went. */
+/* `sky`: Tonight's night-sky backdrop (components/NightSky.jsx), pinned to
+ * the top of the screen behind the content. Pass a weather condition
+ * ('clear' | 'bright' | 'hazy' | 'overcast' | 'faint') — it reflects the
+ * night as weather, never as a red/green grade — or `true` for 'clear'. */
 export function ScreenFrame({ title, children, onRefresh, refreshing = false, className = '', sky = false }) {
   const { setTabBarHidden } = useStore();
   const scrollRef = useRef(null);
@@ -40,8 +42,9 @@ export function ScreenFrame({ title, children, onRefresh, refreshing = false, cl
   function onScroll(e) {
     const el = e.currentTarget;
     const y = el.scrollTop;
-    // drives the sky's fade/parallax in CSS without re-rendering
-    el.parentElement.style.setProperty('--sy', String(Math.min(y, 600)));
+    // 0 → 1 over the first COMPACT_AT px; on sky screens it fades content out
+    // under the clear title bar (CSS mask) without re-rendering
+    el.style.setProperty('--k', Math.min(1, y / COMPACT_AT).toFixed(3));
     setCompact(y > COMPACT_AT);
     const delta = y - prevY.current;
     prevY.current = y;
@@ -152,14 +155,7 @@ export function ScreenFrame({ title, children, onRefresh, refreshing = false, cl
 
   return (
     <div className={`screen framed${compact ? ' scrolled' : ''}${className ? ` ${className}` : ''}`}>
-      {sky && (
-        <div className="sky" aria-hidden="true">
-          <span className="sky-glow a" />
-          <span className="sky-glow b" />
-          <span className="sky-glow c" />
-          <span className="sky-stars" />
-        </div>
-      )}
+      {sky && <NightSky condition={sky === true ? 'clear' : sky} />}
       <StatusBar />
       <div className="compact-bar" aria-hidden={!compact}>
         <span className="cb-title">{title}</span>

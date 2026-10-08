@@ -4,7 +4,7 @@
  * neighbouring night as you go, and past the threshold it lands on that
  * night. Left = the next (later) night, right = the previous one. At the
  * first/last night it rubber-bands instead.
- * Taps inside the card (receipts, Ask Nocta) still work — a click that ends
+ * Taps inside the card (receipts, Ask Nox) still work — a click that ends
  * a real drag is swallowed. */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
