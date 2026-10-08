@@ -5,6 +5,7 @@ import './styles/base.css';
 import './styles/components.css';
 import './styles/screens.css';
 import './styles/onboarding.css';
+import './styles/motion.css';
 import './styles/desktop.css';
 import { App } from './App.jsx';
 

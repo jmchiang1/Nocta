@@ -13,7 +13,7 @@ import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 
 export function MaskPickerSheet() {
-  const { closeSheet, maskId, setMaskId } = useStore();
+  const { closeSheet, maskId, setMaskId, showToast } = useStore();
   const [brand, setBrand] = useState('');
   const [type, setType] = useState('');
   const [query, setQuery] = useState('');
@@ -92,6 +92,7 @@ export function MaskPickerSheet() {
                     onClick={() => {
                       setMaskId(m.id);
                       close();
+                      if (m.id !== maskId) showToast(`Mask set to ${m.name}`, 'check');
                     }}
                   >
                     <div className="lr-main">

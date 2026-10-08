@@ -42,6 +42,8 @@ const HEX = {
   watch: '#e6b85c',
   good: '#7dc99a',
   alert: '#e07a6a',
+  dataLight: '#a3b7df', // --stage-rem
+  muted: '#6b7396', // --text-tertiary
 };
 const FAINT = 'rgba(123,149,216,0.28)';
 
@@ -392,7 +394,14 @@ export function LineChart({ values, color = 'data', height = 110, threshold, yMi
  * the coral attention hue, because per the safety rails their *appearance*
  * is a clinical escalation signal — keeping them visually distinct lets the
  * eye catch the pattern across the row without colouring every night red. */
-export function StackedBars({ series, height = 132 }) {
+/* layers: optional [{ key, color (HEX name), label }] — defaults to the
+ * Trends breakdown (central / obstructive / hypopnea) */
+const DEFAULT_LAYERS = [
+  { key: 'csa', color: 'alert', label: 'Central' },
+  { key: 'osa', color: 'dataDeep', label: 'Obstructive' },
+  { key: 'hyp', color: 'dataSoft', label: 'Hypopnea' },
+];
+export function StackedBars({ series, height = 132, layers = DEFAULT_LAYERS }) {
   const mk = (key, hex, label) => ({
     label,
     data: series.map((d) => d[key]),
@@ -404,11 +413,9 @@ export function StackedBars({ series, height = 132 }) {
   });
   const data = {
     labels: emptyLabels(series.length),
-    datasets: [
-      mk('csa', HEX.alert, 'Central'),
-      mk('osa', HEX.dataDeep, 'Obstructive'),
-      mk('hyp', rgba(HEX.data, 0.55), 'Hypopnea'),
-    ],
+    datasets: layers.map((l) =>
+      mk(l.key, l.color === 'dataSoft' ? rgba(HEX.data, 0.55) : HEX[l.color], l.label)
+    ),
   };
   const options = {
     responsive: true,
@@ -561,7 +568,7 @@ export function ProgressBar({ pct, color = 'accent', gradient = false, marker, h
   );
 }
 
-/* ---- AHI baseline: horizontal bar on a 0..max scale with a 14-day-avg marker ---- */
+/* ---- AHI baseline: horizontal bar on a 0..max scale with a marker at your average so far ---- */
 export function BaselineBar({ value, avg, max = 32, height = 18 }) {
   const trackPlugin = {
     id: 'baselineTrack',

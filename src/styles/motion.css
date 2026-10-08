@@ -1,0 +1,1662 @@
+/* Nocta — motion + interaction layer for the mobile shell.
+ * Everything is scoped under .phone so the desktop dashboard is untouched.
+ * Principles (DESIGN_SYSTEM.md › Motion): calm, not flashy. Things arrive
+ * with --ease-out, settle with --ease-ios, and only *selection* moments get
+ * the soft --ease-spring overshoot. No looping attention-grabbers except
+ * genuine in-progress states (sync, preparing). */
+
+/* =================================================================
+ * Shared keyframes
+ * ================================================================= */
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes hostInRight {
+  from {
+    transform: translateX(26px);
+  }
+}
+@keyframes hostInLeft {
+  from {
+    transform: translateX(-26px);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* =================================================================
+ * Phone hardware — Dynamic Island
+ * The island is also the system feedback surface: sync live activity and
+ * toasts both expand out of it.
+ * ================================================================= */
+.phone:has(> .app-layer) {
+  /* what shows around the app when it shrinks behind a sheet */
+  background: var(--hw-black);
+}
+.island {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  z-index: 90;
+  width: 124px;
+  height: 36px;
+  border-radius: 20px;
+  background: var(--hw-black);
+  transform: translateX(-50%);
+  overflow: hidden;
+  transition:
+    width var(--dur-slow) var(--ease-spring),
+    height var(--dur-slow) var(--ease-spring),
+    border-radius var(--dur-slow) var(--ease-spring);
+}
+.island.wide {
+  width: 316px;
+  height: 40px;
+  border-radius: 22px;
+}
+.island.tall {
+  width: 362px;
+  height: 64px;
+  border-radius: 32px;
+}
+/* iOS hides the status items while the island is expanded */
+.phone .statusbar > * {
+  transition: opacity 0.25s ease;
+}
+.phone:has(.island.wide, .island.tall) .statusbar > * {
+  opacity: 0;
+}
+.di-content {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 100%;
+  padding: 0 16px 0 7px;
+  white-space: nowrap;
+  animation: diIn 0.38s 0.12s var(--ease-out) backwards;
+}
+.island.tall .di-content {
+  padding-left: 12px;
+}
+@keyframes diIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: scale(0.94);
+  }
+}
+.di-lead {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+.island.tall .di-lead {
+  width: 40px;
+  height: 40px;
+  background: rgba(123, 149, 216, 0.14);
+}
+.di-lead.good {
+  background: rgba(125, 201, 154, 0.18);
+  color: var(--good);
+}
+.di-lead.mascot-lead,
+.island.tall .di-lead.mascot-lead {
+  background: none;
+}
+.di-lead.info {
+  background: rgba(123, 149, 216, 0.16);
+  color: var(--data-1);
+}
+.di-lead svg {
+  animation: popIn 0.4s 0.18s var(--ease-spring) backwards;
+}
+.di-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(123, 149, 216, 0.22);
+  border-top-color: var(--data-1);
+  animation: spin 0.9s linear infinite;
+}
+.di-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.di-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.di-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+/* =================================================================
+ * App layer — iOS depth cues behind sheets
+ * ================================================================= */
+.app-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  /* the phone's own background moves onto the layer, so the hardware black
+   * only shows when the layer shrinks */
+  background:
+    radial-gradient(120% 55% at 50% 0%, rgba(240, 164, 122, 0.1) 0%, rgba(240, 164, 122, 0) 52%),
+    linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 38%, var(--bg-grad-bottom) 100%);
+  transform-origin: 50% 0%;
+  transition:
+    transform 0.46s var(--ease-ios),
+    border-radius 0.46s var(--ease-ios),
+    filter 0.46s var(--ease-ios);
+}
+/* a modal sheet shrinks the app into a card behind it */
+.app-layer.behind {
+  transform: translateY(18px) scale(0.93);
+  border-radius: 34px;
+  filter: brightness(0.62);
+}
+/* a pushed page slides the app left underneath it */
+.app-layer.pushed {
+  transform: translateX(-26%);
+  filter: brightness(0.55);
+}
+
+/* each tab screen mounts into a host; dir-1 / dir--1 = arrived from the
+ * left/right neighbour, so content slides in from the direction of travel */
+.screen-host {
+  position: absolute;
+  inset: 0;
+}
+.phone .screen-host.dir-1 .scroll-content {
+  animation: hostInRight 0.48s var(--ease-out) backwards;
+}
+.phone .screen-host.dir--1 .scroll-content {
+  animation: hostInLeft 0.48s var(--ease-out) backwards;
+}
+
+/* =================================================================
+ * Screen chrome — content scrolls under the status bar; a compact title
+ * bar fades in once the large title has scrolled away
+ * ================================================================= */
+.screen.framed .statusbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 22;
+}
+.screen.framed .scroll {
+  padding-top: 56px;
+}
+.compact-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 21;
+  height: 96px;
+  padding-top: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 1px solid var(--hairline);
+  opacity: 0;
+  transition: opacity 0.24s ease;
+}
+.compact-bar .cb-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
+  transform: translateY(8px);
+  opacity: 0;
+  transition:
+    transform 0.34s var(--ease-out),
+    opacity 0.24s ease;
+}
+.screen.scrolled .compact-bar,
+.screen.scrolled .compact-bar .cb-title {
+  opacity: 1;
+}
+.screen.scrolled .compact-bar .cb-title {
+  transform: none;
+}
+
+/* staggered arrival — every top-level block on a screen rises in a beat
+ * after the one above it. `backwards` fill so the settled element's own
+ * :active / hover transforms aren't overridden afterwards. */
+.phone .scroll-content > * {
+  animation: riseIn 0.56s var(--ease-out) backwards;
+}
+.phone .scroll-content > :nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.phone .scroll-content > :nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.phone .scroll-content > :nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.phone .scroll-content > :nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.phone .scroll-content > :nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+.phone .scroll-content > :nth-child(7) { animation-delay: calc(var(--stagger) * 6); }
+.phone .scroll-content > :nth-child(8) { animation-delay: calc(var(--stagger) * 7); }
+.phone .scroll-content > :nth-child(9) { animation-delay: calc(var(--stagger) * 8); }
+.phone .scroll-content > :nth-child(10) { animation-delay: calc(var(--stagger) * 9); }
+.phone .scroll-content > :nth-child(n + 11) { animation-delay: calc(var(--stagger) * 10); }
+
+/* =================================================================
+ * Pull to refresh (Tonight)
+ * ================================================================= */
+.scroll-content {
+  transition: transform 0.5s var(--ease-spring);
+}
+.scroll-content.dragging {
+  transition: none;
+}
+.scroll.pulling {
+  user-select: none;
+  cursor: grabbing;
+}
+.ptr {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  z-index: 19;
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+  display: grid;
+  place-items: center;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  transform: translateY(calc(var(--ptr-y, 0px) / 2 - 17px));
+  transition:
+    transform 0.5s var(--ease-spring),
+    opacity 0.25s ease,
+    color 0.2s ease;
+}
+.ptr.dragging {
+  transition: color 0.2s ease;
+}
+.ptr-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--data-1) calc(var(--p, 0) * 360deg), rgba(255, 255, 255, 0.08) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+}
+.ptr.armed,
+.ptr.refreshing {
+  color: var(--data-1);
+}
+.ptr.refreshing .ptr-ring {
+  background: conic-gradient(var(--data-1) 100deg, rgba(255, 255, 255, 0.08) 0);
+  animation: spin 0.9s linear infinite;
+}
+.ptr-moon {
+  display: grid;
+  transition: transform 0.2s ease;
+}
+.ptr.armed .ptr-moon {
+  animation: popIn 0.3s var(--ease-spring);
+}
+
+/* =================================================================
+ * Skeletons — while last night syncs
+ * ================================================================= */
+.bone {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.045) 0%,
+    rgba(255, 255, 255, 0.095) 50%,
+    rgba(255, 255, 255, 0.045) 100%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 140% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+.sk-card {
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  padding: 22px;
+  margin-bottom: 22px;
+}
+.sk-why {
+  border-radius: var(--r-xl);
+  padding: 26px 24px 20px;
+  margin-top: 22px;
+}
+.sk-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 32px;
+  margin-top: 22px;
+}
+.sk-bars .bone {
+  flex: 1;
+  border-radius: 3px;
+}
+.sk-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.sk-row .sk-metric {
+  min-width: 0;
+  padding: 14px 13px;
+  border-radius: var(--r-md);
+  margin-bottom: 0;
+}
+
+/* =================================================================
+ * Press + hover feedback — everything tappable answers the finger
+ * ================================================================= */
+.phone :is(.metric, .suggest, .cmp-card, .icon-btn, .sheet-close, .connect-btn, .ob-back) {
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    border-color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
+}
+.phone .suggest:active {
+  transform: scale(0.97);
+}
+.phone :is(.icon-btn, .sheet-close):active {
+  transform: scale(0.9);
+}
+
+/* list rows highlight edge-to-edge (iOS cell press) rather than scaling */
+.phone .list {
+  overflow: hidden;
+}
+.phone .list-row {
+  position: relative;
+}
+.phone .list-row::before {
+  content: '';
+  position: absolute;
+  inset: 0 -18px;
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.phone button.list-row:active::before {
+  opacity: 1;
+  transition-duration: 0s;
+}
+.phone .list-row > svg:last-child {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .phone button.list-row:hover::before {
+    opacity: 0.55;
+  }
+  .phone button.list-row:hover > svg:last-child {
+    transform: translateX(2px);
+  }
+  .phone .suggest:hover {
+    border-color: var(--hairline-strong);
+  }
+  .phone .icon-btn:hover,
+  .phone .sheet-close:hover {
+    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  .phone .row-cta:hover svg {
+    transform: translateX(3px);
+  }
+}
+.phone .row-cta svg {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.phone .btn {
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    filter var(--dur-fast) ease;
+}
+.phone .btn:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) {
+  .phone .btn.primary:hover {
+    filter: brightness(1.06);
+  }
+}
+.phone :focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
+/* =================================================================
+ * Tab bar — one gliding pill + icon settle
+ * ================================================================= */
+.phone .tabbar {
+  padding: 0 7px;
+  animation: tabbarIn 0.6s 0.15s var(--ease-out) backwards;
+}
+@keyframes tabbarIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+.tab-indicator {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 7px;
+  width: calc((100% - 14px) / 4);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hairline);
+  transition: transform 0.5s var(--ease-ios);
+  pointer-events: none;
+}
+.phone .tab {
+  position: relative;
+  z-index: 1;
+  transition: color 0.3s ease;
+}
+.phone .tab:active .tab-icon {
+  transform: scale(0.88);
+}
+.tab-icon {
+  display: block;
+  transition: transform var(--dur-press) var(--ease-out);
+}
+.tab.active .tab-icon {
+  animation: tabSettle 0.5s var(--ease-spring);
+}
+@keyframes tabSettle {
+  from {
+    transform: scale(0.78) translateY(2px);
+  }
+}
+@media (hover: hover) {
+  .phone .tab:not(.active):hover {
+    color: var(--text-secondary);
+  }
+}
+
+/* =================================================================
+ * Liquid glass — iOS 26 material, dark appearance. Floating chrome (tab bar)
+ * and the circular back / close buttons. In dark mode the glass reads as a
+ * smoky lens: it blurs and *dims* the content behind it, and light only
+ * catches along the rim. Layers:
+ *   1. backdrop: blur + a little saturation, brightness pulled down
+ *   2. dark tint (--glass-fill)
+ *   3. specular rim — a 1px gradient ring, brightest top-left, a fainter
+ *      return on the bottom-right edge (mask-composite cuts out the middle)
+ *   4. inner shadow at the base so the surface has thickness
+ * ================================================================= */
+.glass {
+  position: relative;
+}
+/* shared material structure */
+.glass,
+.phone .tabbar {
+  isolation: isolate;
+  border: 0;
+}
+/* dark glass — the tab bar only: floats over scrolling content, so it dims
+ * what passes under it to keep the icons legible */
+.phone .tabbar {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(22px) saturate(160%) brightness(0.64);
+  backdrop-filter: blur(22px) saturate(160%) brightness(0.64);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -10px 18px -10px rgba(0, 0, 0, 0.45);
+}
+/* light glass — every other glass control (back / close buttons, segmented
+ * control): a clear lens with a faint white lift, no dimming */
+.glass {
+  background: var(--glass-fill-light);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -6px 12px -8px rgba(0, 0, 0, 0.3);
+}
+.glass::before,
+.phone .tabbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0.04) 80%,
+    rgba(255, 255, 255, 0.16) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+.glass::after,
+.phone .tabbar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  /* faint sheen only along the top edge */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0) 35%);
+  pointer-events: none;
+}
+
+/* Chromium: real refraction. The SVG filters from <LiquidGlassFilters>
+ * bend the backdrop around each surface's rim (see LiquidGlass.jsx). With
+ * the lens doing the work, the tint drops so the bending stays visible, and
+ * brightness() keeps the dark-mode "smoky" read. */
+.lg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+.lg-svg .phone .tabbar {
+  --glass-fill: rgba(10, 12, 20, 0.42);
+  -webkit-backdrop-filter: url(#lg-bar) saturate(160%) brightness(0.68);
+  backdrop-filter: url(#lg-bar) saturate(160%) brightness(0.68);
+}
+.lg-svg .phone :is(.sheet-close, .sheet-back, .ob-back).glass {
+  -webkit-backdrop-filter: url(#lg-circle) saturate(150%);
+  backdrop-filter: url(#lg-circle) saturate(150%);
+}
+
+/* tab bar — a floating glass capsule, icon-only (labels are visually
+ * hidden but still announced). Height must match the #lg-bar map. */
+.phone .tabbar {
+  height: 62px;
+  border-radius: 31px;
+}
+.phone .tab-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.phone .tab {
+  color: var(--text-secondary);
+}
+.phone .tab.active {
+  color: var(--accent);
+}
+/* the active "lens" — a lighter glass capsule that glides between tabs
+ * (the one place the material lifts rather than dims, as in iOS) */
+.phone .tab-indicator {
+  top: 6px;
+  bottom: 6px;
+  border: 0;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* circular glass buttons — back (pages) and close (modals) */
+.phone .sheet-close.glass,
+.phone .sheet-back.glass,
+.phone .ob-back {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-primary);
+}
+/* 38px visible, 48px tap target */
+.phone .sheet-close.glass > svg,
+.phone .sheet-back.glass > svg {
+  position: relative;
+}
+.phone .sheet-back.glass {
+  margin-left: -4px;
+}
+.phone .sheet-back > svg {
+  transform: translateX(-1px);
+}
+/* press/hover feedback for standalone glass *buttons* only — a glass
+ * container (the segmented control) must not resize when a child is tapped */
+@media (hover: hover) {
+  .phone button.glass:hover {
+    background: var(--glass-fill-light-hover);
+  }
+}
+.phone button.glass:active {
+  transform: scale(0.9);
+}
+
+/* full-height pages: their own status bar replaces the 2rem top inset */
+.phone .sheet.full,
+.phone .sheet.page {
+  padding-top: 0;
+}
+.desktop-modal-wrap .sheet > .statusbar {
+  display: none;
+}
+
+/* page header: back button leads, title follows (desktop modal fallback) */
+.sheet-head.with-back {
+  justify-content: flex-start;
+  gap: 12px;
+}
+.sheet-head .sheet-title {
+  min-width: 0;
+}
+.sheet-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ---- pushed-page nav bar (phone) ----
+ * iOS-style: glass back button on the leading edge, title centred, and the
+ * bar floats over the content with no fill of its own — just a dark
+ * gradient + light blur so rows scrolling underneath fade out legibly. */
+.phone .sheet.page {
+  background: var(--bg-base);
+}
+.phone .sheet.page > .statusbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+}
+.phone .sheet.page .sheet-drag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding-top: 52px;
+  isolation: isolate;
+}
+.phone .sheet.page .sheet-drag::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -28px;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-base) 94%, transparent) 0%,
+    color-mix(in srgb, var(--bg-base) 78%, transparent) 62%,
+    color-mix(in srgb, var(--bg-base) 0%, transparent) 100%
+  );
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  pointer-events: none;
+}
+.phone .sheet-head.with-back {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 0;
+  padding: 6px 14px 10px;
+}
+.phone .sheet-head.with-back .sheet-back {
+  justify-self: start;
+  margin-left: 0;
+}
+.phone .sheet-head.with-back .sheet-title {
+  grid-column: 2;
+  text-align: center;
+}
+.phone .sheet-head.with-back h3 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.phone .sheet.page .sheet-body {
+  padding-top: 112px;
+}
+
+/* =================================================================
+ * Contextual Coach entry — "Ask Nocta about …" rows at the end of the
+ * why-card (Tonight) and the insights card (Trends). Coach appears where
+ * there's something to ask about, not as global chrome.
+ * ================================================================= */
+.ask-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 48px;
+  padding: 4px 0 0;
+  border-top: 1px solid var(--hairline);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: left;
+}
+.ask-row .ask-chev {
+  margin-left: auto;
+  color: var(--accent);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.ask-row:active {
+  opacity: 0.7;
+}
+@media (hover: hover) {
+  .ask-row:hover .ask-chev {
+    transform: translateX(3px);
+  }
+}
+.phone .why-card .ask-row {
+  animation: riseIn 0.5s 0.95s var(--ease-out) backwards;
+}
+.insight-list .ask-row {
+  border-top: 0;
+  margin-top: 2px;
+}
+
+/* =================================================================
+ * Tab bar compacts on scroll-down, returns to full size on scroll-up.
+ * It never leaves the screen (iOS 26 style): it just shrinks toward the
+ * bottom edge so content gets more room while navigation stays one tap away.
+ * ================================================================= */
+.phone .tabbar {
+  transform-origin: 50% 100%;
+  transition: transform 0.42s var(--ease-ios);
+}
+.phone .tabbar.tucked {
+  transform: translateY(8px) scale(0.8);
+}
+
+/* =================================================================
+ * Secondary metrics — three equal columns that fit the screen
+ * (design spec: "3-column row"), replacing the edge-bleeding carousel
+ * ================================================================= */
+.phone .metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+.phone .metric {
+  min-width: 0;
+  padding: 13px 12px 11px;
+}
+.phone .metric .m-value {
+  font-size: 21px;
+  white-space: nowrap;
+}
+.phone .metric .m-value .u {
+  font-size: 11px;
+}
+.phone .metric .m-unit {
+  line-height: 1.35;
+  min-height: 2.7em; /* two lines, so all three cards keep the same height */
+}
+
+/* =================================================================
+ * Week strip — gliding selection, honest "no data" nudge
+ * ================================================================= */
+.phone .week {
+  position: relative;
+}
+.week-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(100% / 7);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  transition:
+    transform 0.5s var(--ease-ios),
+    background-color 0.4s ease;
+  pointer-events: none;
+}
+.week-indicator.logged {
+  background: rgba(123, 149, 216, 0.12);
+}
+.week-indicator.escalation {
+  background: rgba(224, 122, 106, 0.12);
+}
+.week-indicator.low {
+  background: rgba(255, 255, 255, 0.06);
+}
+/* the indicator owns the selected background now */
+.phone .day,
+.phone .day.selected,
+.phone .day:hover:not(.selected):not(.empty) {
+  background: transparent;
+  position: relative;
+}
+.phone .day .d-label {
+  transition: color 0.3s ease;
+}
+@media (hover: hover) {
+  .phone .day:not(.selected):hover .day-moon {
+    transform: translateY(-2px);
+  }
+}
+.phone .day-moon {
+  transition: transform 0.3s var(--ease-out);
+}
+.phone .day.selected .day-moon {
+  animation: moonSettle 0.55s var(--ease-spring);
+}
+@keyframes moonSettle {
+  from {
+    transform: scale(0.7) rotate(-25deg);
+  }
+}
+.phone .day.empty {
+  cursor: pointer;
+}
+.phone .day.nudge .day-moon {
+  animation: nudge 0.42s ease;
+}
+@keyframes nudge {
+  20% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  80% {
+    transform: translateX(-1px);
+  }
+}
+
+/* =================================================================
+ * Why-card — the AI verdict arrives a word at a time, then the rest
+ * of the card follows in reading order
+ * ================================================================= */
+.reveal-word {
+  display: inline-block;
+  animation: wordIn 0.62s var(--ease-out) backwards;
+  animation-delay: calc(140ms + var(--i) * 55ms);
+}
+@keyframes wordIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.32em);
+    filter: blur(6px);
+  }
+}
+/* one slow sheen across the emphasised word once it lands */
+.phone .why-card .headline em {
+  --em: var(--accent-soft);
+  --em-hi: var(--accent-hi);
+  padding-right: 0.06em;
+  /* 300% wide and positioned 0–100% so the gradient always covers the
+   * whole word; the bright band sweeps left → right */
+  background: linear-gradient(105deg, var(--em) 40%, var(--em-hi) 50%, var(--em) 60%) 0% 0 / 300% 100%
+    no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sheen 1.6s 1.1s ease-in-out backwards;
+}
+.phone .why-card.state-steady .headline em,
+.phone .why-card.state-win .headline em {
+  --em: var(--good);
+  --em-hi: var(--good-hi);
+}
+.phone .why-card.state-escalation .headline em {
+  --em: var(--alert);
+  --em-hi: var(--alert-hi);
+}
+@keyframes sheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+.phone .why-card .why-spark {
+  animation: riseIn 0.5s 0.5s var(--ease-out) backwards;
+}
+.phone .why-card .action {
+  animation: riseIn 0.55s 0.68s var(--ease-out) backwards;
+}
+.phone .why-card .receipts {
+  animation: riseIn 0.5s 0.82s var(--ease-out) backwards;
+  transition: color var(--dur-fast) ease;
+}
+.phone .why-card .receipts:active {
+  color: var(--text-primary);
+}
+.phone .why-card .receipts-detail-inner {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.32s var(--ease-out);
+}
+.phone .why-card .receipts-collapse.open .receipts-detail-inner {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.08s;
+}
+
+/* =================================================================
+ * Trends — segmented control with a sliding thumb
+ * ================================================================= */
+.segmented:has(.seg-thumb) {
+  position: relative;
+}
+/* Trends range control in light glass; the thumb is a brighter glass lens,
+ * same language as the tab bar's active capsule */
+.phone .segmented.glass {
+  border: 0;
+}
+.phone .segmented.glass .seg-thumb {
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+.seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px - (var(--seg-n) - 1) * 3px) / var(--seg-n));
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  transition: transform 0.45s var(--ease-ios);
+  pointer-events: none;
+}
+.segmented:has(.seg-thumb) button {
+  position: relative;
+  z-index: 1;
+  transition:
+    color 0.3s ease,
+    transform var(--dur-press) var(--ease-out);
+}
+.segmented:has(.seg-thumb) button.on {
+  background: transparent;
+}
+.segmented:has(.seg-thumb) button:active {
+  transform: scale(0.95);
+}
+@media (hover: hover) {
+  .segmented:has(.seg-thumb) button:not(.on):hover {
+    color: var(--text-secondary);
+  }
+}
+.phone .insight-list .il-row {
+  animation: riseIn 0.5s var(--ease-out) backwards;
+}
+.phone .insight-list .il-row:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.phone .insight-list .il-row:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+/* =================================================================
+ * Sheets — gestures + polish
+ * ================================================================= */
+.phone .sheet.entered:not(.closing) {
+  animation: none;
+}
+.sheet-drag {
+  flex-shrink: 0;
+  touch-action: none;
+  cursor: grab;
+}
+.sheet-drag:active {
+  cursor: grabbing;
+}
+.sheet-drag .sheet-close {
+  cursor: pointer;
+}
+.phone .sheet.dragging {
+  user-select: none;
+}
+.sheet-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 22px;
+  z-index: 5;
+  touch-action: none;
+}
+.phone .sheet-grip {
+  transition:
+    width 0.25s var(--ease-out),
+    background-color 0.25s ease;
+}
+@media (hover: hover) {
+  .phone .sheet-drag:hover .sheet-grip {
+    width: 48px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+.phone .sheet .sheet-body > * {
+  animation: riseIn 0.45s 0.12s var(--ease-out) backwards;
+}
+
+/* =================================================================
+ * Coach — streaming replies
+ * ================================================================= */
+.msg {
+  display: flex;
+  flex-direction: column;
+}
+.msg.user {
+  align-items: flex-end;
+}
+.msg.user .bubble {
+  transform-origin: 100% 100%;
+  animation: bubbleIn 0.4s var(--ease-spring) backwards;
+}
+.msg.coach .bubble,
+.typing {
+  transform-origin: 0% 100%;
+  animation: bubbleIn 0.36s var(--ease-out) backwards;
+}
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+}
+.msg-foot {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin: 5px 0 0 4px;
+  animation: fade 0.5s ease backwards;
+}
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.18em;
+  border-radius: 1px;
+  background: var(--accent);
+  animation: caretBlink 0.9s steps(1) infinite;
+}
+@keyframes caretBlink {
+  50% {
+    opacity: 0;
+  }
+}
+.phone .suggest {
+  animation: riseIn 0.45s var(--ease-out) backwards;
+  animation-delay: calc(220ms + var(--i, 0) * 70ms);
+}
+.phone .suggest svg {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) {
+  .phone .suggest:hover {
+    border-color: rgba(240, 164, 122, 0.3);
+  }
+  .phone .suggest:hover svg {
+    transform: translateX(3px);
+  }
+}
+.phone .coach-intro .ci-avatar {
+  animation: popIn 0.6s 0.1s var(--ease-spring) backwards;
+}
+.phone .coach-intro h4,
+.phone .coach-intro p {
+  animation: riseIn 0.45s 0.16s var(--ease-out) backwards;
+}
+.phone .coach-input input {
+  transition:
+    border-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+}
+.phone .coach-input input:focus {
+  border-color: rgba(240, 164, 122, 0.4);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.phone .coach-input .send {
+  transition:
+    transform 0.3s var(--ease-spring),
+    opacity var(--dur-fast) ease;
+}
+.phone .coach-input .send:disabled {
+  transform: scale(0.88);
+}
+.phone .coach-input .send:not(:disabled):active {
+  transform: scale(0.86);
+}
+
+/* =================================================================
+ * Morning check-in
+ * ================================================================= */
+.ci-step {
+  animation: stepIn 0.42s var(--ease-out) backwards;
+}
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+.ci-grid .chip {
+  animation: riseIn 0.4s var(--ease-out) backwards;
+  animation-delay: calc(140ms + var(--i, 0) * 35ms);
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
+}
+.ci-grid .chip:active {
+  transform: scale(0.94);
+}
+.chip-check {
+  margin-left: -2px;
+  animation: popIn 0.32s var(--ease-spring);
+}
+.ci-progress span {
+  position: relative;
+  overflow: hidden;
+}
+.ci-progress span.on {
+  background: rgba(255, 255, 255, 0.08);
+}
+.ci-progress span::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+.ci-progress span.on::after {
+  transform: scaleX(1);
+}
+.ci-done .cd-mark {
+  position: relative;
+  animation: popIn 0.55s var(--ease-spring) backwards;
+}
+.ci-done .cd-mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(125, 201, 154, 0.45);
+  opacity: 0;
+  animation: ripple 1.1s 0.35s ease-out;
+}
+@keyframes ripple {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+.draw-check path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: draw 0.5s 0.3s var(--ease-out) forwards;
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.ci-done h3 {
+  animation: riseIn 0.5s 0.4s var(--ease-out) backwards;
+}
+.ci-done p {
+  animation: riseIn 0.5s 0.5s var(--ease-out) backwards;
+}
+
+/* =================================================================
+ * Therapy
+ * ================================================================= */
+.dc-dot.live {
+  position: relative;
+  flex-shrink: 0;
+}
+.dc-dot.live::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--good);
+  animation: breathe 2.8s ease-out infinite;
+}
+@keyframes breathe {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+.phone .device-card .dc-top {
+  gap: 8px;
+}
+.compliance-dot {
+  animation: popIn 0.4s var(--ease-spring) backwards;
+  animation-delay: calc(350ms + var(--i, 0) * 16ms);
+}
+.export-row .lr-sub {
+  animation: fade 0.3s ease;
+}
+.export-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  animation: popIn 0.36s var(--ease-spring);
+}
+.export-row.ready .export-icon {
+  color: var(--good);
+}
+.mini-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--data-1);
+  animation: spin 0.8s linear infinite;
+}
+
+/* =================================================================
+ * You — profile card
+ * ================================================================= */
+.profile-card {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--hairline);
+  background: linear-gradient(180deg, var(--surface-1) 0%, var(--bg-base) 140%);
+  padding: 18px 18px 16px;
+}
+.profile-card .profile-head {
+  padding: 0 0 16px;
+}
+.profile-card .avatar {
+  box-shadow:
+    0 0 0 3px var(--surface-1),
+    0 0 0 4px rgba(240, 164, 122, 0.35);
+}
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+.ps-stat {
+  min-width: 0;
+}
+.ps-stat + .ps-stat {
+  padding-left: 14px;
+  border-left: 1px solid var(--hairline);
+}
+.ps-stat strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.ps-stat span {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-tertiary);
+}
+
+/* the Coach sheet keeps one height so it doesn't jump as the intro gives
+ * way to messages and replies stream in */
+.phone .sheet.tall {
+  height: 86%;
+}
+
+/* profile photo inside the avatar circle (initials remain the CSS fallback
+ * colour behind it) */
+.avatar,
+.dash-avatar {
+  overflow: hidden;
+}
+.avatar img,
+.dash-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* confidence + disclaimer now sit under the observation in the expanded
+ * receipts, separated by a hairline */
+.why-card .receipts-detail-inner .trust {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
+}
+
+/* =================================================================
+ * Tonight — modern pass
+ *  1. twilight sky backdrop     2. swipe between nights
+ *  3. scrubbable night chart    4. one hero, open (borderless) sections
+ * ================================================================= */
+
+/* ---- 1. sky: three slow-drifting glows in the app's own blues + REM
+ * lavender (peach stays reserved for Nocta's AI). Fixed behind the content,
+ * fading out with a little parallax as you scroll (--sy set by ScreenFrame).
+ * Identical every night — mood, not a score. ---- */
+.sky {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 480px;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: calc(1 - min(var(--sy, 0), 380) / 380);
+  transform: translateY(calc(var(--sy, 0) * -0.35px));
+  -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
+}
+.screen.framed:has(> .sky) .scroll {
+  position: relative;
+  z-index: 1;
+}
+.sky-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(36px);
+}
+.sky-glow.a {
+  width: 380px;
+  height: 260px;
+  left: -110px;
+  top: -70px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--data-deep) 70%, transparent), transparent);
+  animation: skyDriftA 28s ease-in-out infinite alternate;
+}
+.sky-glow.b {
+  width: 300px;
+  height: 230px;
+  right: -100px;
+  top: 0;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--stage-rem) 34%, transparent), transparent);
+  animation: skyDriftB 34s ease-in-out infinite alternate;
+}
+.sky-glow.c {
+  width: 440px;
+  height: 200px;
+  left: -20px;
+  top: 170px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--data-1) 22%, transparent), transparent);
+  animation: skyDriftC 40s ease-in-out infinite alternate;
+}
+@keyframes skyDriftA {
+  to {
+    transform: translate(60px, 30px) scale(1.12);
+  }
+}
+@keyframes skyDriftB {
+  to {
+    transform: translate(-70px, 40px) scale(0.92);
+  }
+}
+@keyframes skyDriftC {
+  to {
+    transform: translate(40px, -30px) scale(1.08);
+  }
+}
+/* a sparse, static field of faint stars */
+.sky-stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 28% 9%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.2px 1.2px at 46% 22%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 63% 12%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 78% 26%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1.2px 1.2px at 88% 8%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 8% 36%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 36% 40%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 70% 44%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 93% 38%, rgba(255, 255, 255, 0.35), transparent);
+}
+
+/* ---- 2. swipe between nights ---- */
+.night-swiper {
+  touch-action: pan-y;
+  cursor: grab;
+  transition:
+    transform 0.5s var(--ease-spring),
+    opacity 0.3s ease;
+}
+.night-swiper.dragging {
+  cursor: grabbing;
+  user-select: none;
+  transition: none;
+}
+.night-swiper .why-card {
+  /* the card is a drag surface; its buttons keep the pointer cursor */
+  cursor: inherit;
+}
+.phone .scroll-content > .night-swiper.enter-next,
+.phone .scroll-content > .night-swiper.enter-prev {
+  animation: none;
+}
+.night-swiper.enter-next .why-card {
+  animation: swipeInNext 0.5s var(--ease-out) backwards;
+}
+.night-swiper.enter-prev .why-card {
+  animation: swipeInPrev 0.5s var(--ease-out) backwards;
+}
+@keyframes swipeInNext {
+  from {
+    opacity: 0;
+    transform: translateX(56px);
+  }
+}
+@keyframes swipeInPrev {
+  from {
+    opacity: 0;
+    transform: translateX(-56px);
+  }
+}
+/* the week strip highlight tracks the finger 1:1 while dragging */
+.week-indicator.following {
+  transition: none;
+}
+
+/* ---- 3. scrubbable night chart ---- */
+.scrub-wrap {
+  position: relative;
+}
+.scrub {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.scrub-dim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--bg-base) 62%, transparent);
+  pointer-events: none;
+}
+.scrub-line {
+  position: absolute;
+  top: -6px;
+  bottom: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+.scrub-readout {
+  position: absolute;
+  top: -52px;
+  transform: translateX(-50%);
+  padding: 6px 11px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--hairline-strong);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+  animation: fade 0.15s ease both;
+}
+.scrub-readout b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.scrub-readout .sr-events {
+  display: block;
+  color: var(--text-primary);
+}
+.night-card:has(.scrub.active) .night-meta {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* ---- 4. one hero, open sections (current Tonight layout only) ----
+ * The why-card is the only card. Everything under "Last night" sits on the
+ * page itself — big numerals, hairline dividers, no boxes-in-boxes. */
+.tonight-open .why-card .action:not(.doctor) {
+  background: transparent;
+  border: 0;
+  border-left: 2px solid var(--accent);
+  border-radius: 0;
+  padding: 2px 0 2px 14px;
+}
+.tonight-open .why-card.state-win .action:not(.doctor) {
+  border-left-color: var(--good);
+}
+.tonight-open .why-card .action:not(.doctor) .action-text {
+  font-size: 17px;
+}
+.tonight-open .ahi-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 2px 4px 18px;
+  margin-bottom: 0;
+}
+.tonight-open .ahi-card .ahi-value {
+  font-size: 76px;
+}
+.tonight-open .metrics-row {
+  gap: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+.tonight-open .metric {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 2px 12px 0;
+}
+.tonight-open .metric:first-child {
+  padding-left: 4px;
+}
+.tonight-open .metric + .metric {
+  border-left: 1px solid var(--hairline);
+}
+.tonight-open .night-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 4px 4px 0;
+}
+.tonight-open .pattern {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  border-radius: 0;
+  padding: 20px 4px 4px;
+  margin-bottom: 8px;
+}
+
+/* quiet affordance for the scrub layer */
+.legend .legend-hint {
+  margin-left: auto;
+  color: var(--text-tertiary);
+}

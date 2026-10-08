@@ -1,24 +1,49 @@
-/* Nocta — first-run onboarding flow */
+/* Nocta — first-run onboarding flow.
+ * The steps carry the welcome screen's language forward: a low dawn glow,
+ * top-anchored editorial titles, option cards with a radio/checkbox mark,
+ * and step content that slides in the direction you're moving. */
 
 .ob-screen {
   position: absolute;
   inset: 0;
+  isolation: isolate; /* lets .ob-ambient sit behind the content at z-index -1 */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(180deg, var(--bg-grad-top), var(--bg-grad-bottom));
 }
 
-/* ---- top nav: back + progress ---- */
+/* the welcome screen's dawn, kept low and quiet behind every step */
+.ob-ambient {
+  position: absolute;
+  left: 50%;
+  bottom: -62%;
+  width: 210%;
+  height: 100%;
+  transform: translateX(-50%);
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--accent-soft) 26%, transparent),
+    color-mix(in srgb, var(--accent) 10%, transparent) 50%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ---- top nav: back + progress + count ---- */
 .ob-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   padding: 6px 20px 8px;
   flex-shrink: 0;
 }
 .ob-back,
 .ob-back-spacer {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
 }
 .ob-back {
@@ -34,18 +59,24 @@
 }
 .ob-progress {
   flex: 1;
-  display: flex;
-  gap: 5px;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
 }
 .ob-progress span {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  transition: background 0.3s ease;
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent-soft));
+  transition: width var(--dur-slow) var(--ease-ios);
 }
-.ob-progress span.on {
-  background: var(--accent);
+.ob-count {
+  min-width: 40px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-tertiary);
 }
 
 /* ---- body ---- */
@@ -55,156 +86,202 @@
   display: flex;
   flex-direction: column;
   scrollbar-width: none;
+  /* long steps fade out as they scroll under the footer */
+  mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent);
 }
 .ob-body::-webkit-scrollbar {
   display: none;
 }
+/* top-anchored, so every title lands in the same place step to step */
 .ob-content {
-  margin: auto 0;
-  padding: 14px 26px 28px;
+  padding: 28px 24px 28px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   text-align: left;
-  animation: obIn 0.32s ease-out both;
+  animation: obIn var(--dur-slow) var(--ease-out) both;
 }
-/* brand / status screens stay centred */
+.ob-screen.back .ob-content {
+  animation-name: obInBack;
+}
+/* status screens (connecting / connected) stay centred */
 .ob-content.center {
+  margin: auto 0;
   align-items: center;
   text-align: center;
 }
 @keyframes obIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateX(28px);
+  }
+}
+@keyframes obInBack {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
   }
 }
 
-.ob-wordmark {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 12px;
-  padding-left: 0.32em;
-}
-
 .ob-title {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 26px;
-  line-height: 1.22;
-  letter-spacing: -0.01em;
+  font-size: 32px;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
   color: var(--text-primary);
 }
 .ob-copy {
   margin: 0;
-  max-width: 330px;
-  font-size: 14.5px;
-  line-height: 1.6;
+  max-width: 340px;
+  font-size: 17px;
+  line-height: 1.5;
   color: var(--text-secondary);
 }
 .ob-note {
-  margin: 14px 0 0;
-  max-width: 320px;
-  font-size: 12.5px;
+  margin: 16px 0 0;
+  max-width: 330px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--text-tertiary);
 }
 
-/* ---- labelled chip groups ---- */
+/* ---- labelled fields ---- */
 .ob-field {
   width: 100%;
-  margin-top: 22px;
+  margin-top: 28px;
 }
 .ob-field-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 11px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
 }
+.ob-stack-gap {
+  margin-top: 10px;
+}
+.ob-filters {
+  margin-top: 28px;
+}
+
+/* ---- option cards ---- */
 .ob-chips {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  margin-top: 18px;
+  margin-top: 28px;
 }
 .ob-field .ob-chips {
   margin-top: 0;
 }
-.ob-chips .chip {
-  width: 100%;
+.ob-option {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  min-height: 56px;
-  padding: 15px 18px;
-  font-size: 15px;
-}
-.ob-chips .chip > span {
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 16px 18px;
+  border-radius: var(--r-lg);
+  background: var(--glass-fill);
+  border: 1px solid var(--hairline-strong);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
   text-align: left;
+  color: var(--text-primary);
+  transition:
+    border-color var(--dur-fast) ease,
+    background var(--dur-fast) ease,
+    transform var(--dur-press) ease;
+}
+.ob-option:active {
+  transform: scale(0.985);
+}
+.ob-option.selected {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.ob-option > svg {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
 }
 
-/* ---- sleep-condition option with an inline info icon ---- */
+/* radio dot (single choice) / rounded checkbox (multi choice) */
+.ob-tick {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--text-tertiary);
+  color: var(--text-on-accent);
+  transition:
+    background var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
+}
+.ob-tick.multi {
+  border-radius: 7px;
+}
+.ob-tick.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---- sleep-condition card with an inline info button ---- */
 .ob-cond-chip {
   display: flex;
   align-items: stretch;
   width: 100%;
-  min-height: 56px;
-  background: rgba(255, 255, 255, 0.06);
+  min-height: 60px;
+  border-radius: var(--r-lg);
+  background: var(--glass-fill);
   border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-pill);
   overflow: hidden;
-  transition: transform 0.12s ease;
+  transition:
+    border-color var(--dur-fast) ease,
+    background var(--dur-fast) ease,
+    transform var(--dur-press) ease;
 }
 .ob-cond-chip:active {
   transform: scale(0.99);
 }
 .ob-cond-chip.selected {
-  background: var(--accent);
-  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 .ob-cond-main {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 14px 6px 14px 18px;
-  font-size: 15px;
+  gap: 14px;
+  padding: 16px 6px 16px 18px;
+  font-family: inherit;
+  font-size: 17px;
   font-weight: 500;
   text-align: left;
   color: var(--text-primary);
   background: none;
 }
-.ob-cond-chip.selected .ob-cond-main {
-  color: var(--text-on-accent);
-  font-weight: 600;
-}
 .ob-info-inline {
   flex-shrink: 0;
+  width: 52px;
   display: grid;
   place-items: center;
-  padding: 0 16px 0 4px;
   background: none;
   color: var(--text-tertiary);
-}
-.ob-cond-chip.selected .ob-info-inline {
-  color: var(--text-on-accent);
-  opacity: 0.65;
 }
 /* condition explanation — body text inside the slide-up sheet */
 .ob-tip-body {
   margin: 0;
   padding-bottom: 8px;
-  font-size: 14.5px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.55;
   color: var(--text-secondary);
 }
 
@@ -214,20 +291,21 @@
   width: 100%;
   height: 56px;
   border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--glass-fill);
   border: 1px solid var(--hairline-strong);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 17px;
   padding: 0 16px;
   outline: none;
+  transition: border-color var(--dur-fast) ease;
 }
 .ob-input::placeholder {
   color: var(--text-tertiary);
 }
 .ob-input:focus,
 .ob-select:focus {
-  border-color: rgba(240, 164, 122, 0.45);
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
 }
 .ob-select {
   appearance: none;
@@ -254,7 +332,7 @@
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-tertiary);
   pointer-events: none;
 }
@@ -270,18 +348,19 @@
 /* ---- mask picker results ---- */
 .ob-mask-results {
   border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.02);
-  max-height: 296px;
+  border-radius: var(--r-lg);
+  background: var(--glass-fill);
+  max-height: 312px;
   overflow-y: auto;
 }
 .ob-mask-row {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   width: 100%;
+  min-height: 56px;
   text-align: left;
-  padding: 13px 14px;
+  padding: 14px 16px;
   border: 0;
   border-bottom: 1px solid var(--hairline);
   background: none;
@@ -290,7 +369,7 @@
   border-bottom: 0;
 }
 .ob-mask-row.selected {
-  background: rgba(240, 164, 122, 0.1);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .ob-mask-row svg {
   color: var(--accent);
@@ -298,7 +377,7 @@
 }
 .ob-mask-name {
   flex: 1;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -307,45 +386,18 @@
 }
 .ob-mask-type {
   flex-shrink: 0;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-tertiary);
   background: rgba(255, 255, 255, 0.05);
-  padding: 4px 9px;
+  padding: 4px 10px;
   border-radius: var(--r-pill);
 }
 .ob-mask-empty {
-  padding: 26px 14px;
+  padding: 28px 16px;
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-tertiary);
-}
-
-/* ---- health: wearable connect simulation ---- */
-.ob-spinner {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 3px solid rgba(240, 164, 122, 0.18);
-  border-top-color: var(--accent);
-  animation: obSpin 0.9s linear infinite;
-  margin-bottom: 24px;
-}
-@keyframes obSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.ob-connect-mark {
-  width: 66px;
-  height: 66px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--good);
-  background: radial-gradient(circle, rgba(125, 201, 154, 0.2), transparent 70%);
-  border: 1px solid rgba(125, 201, 154, 0.32);
-  margin-bottom: 24px;
 }
 
 /* ---- footer buttons ---- */
@@ -353,67 +405,386 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 14px 22px calc(16px + env(safe-area-inset-bottom));
+  gap: 4px;
+  padding: 12px 22px calc(16px + env(safe-area-inset-bottom));
+}
+.ob-foot .btn.subtle {
+  font-size: 15px;
 }
 
-/* ---- "tomorrow" mini why-card preview ---- */
-.ob-mini {
-  width: 100%;
-  margin-top: 24px;
-  text-align: left;
-  border-radius: var(--r-lg);
-  padding: 17px 17px 15px;
-  background:
-    radial-gradient(140% 100% at 0% 0%, rgba(240, 164, 122, 0.14), transparent 58%),
-    linear-gradient(180deg, #1c1e35 0%, #161a30 100%);
-  border: 1px solid rgba(240, 164, 122, 0.18);
+/* ---- device + partner logos ---- */
+.ob-option-logo {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  object-fit: cover;
 }
-.ob-mini-eyebrow {
-  display: inline-flex;
+.ob-option-label {
+  flex: 1;
+}
+
+/* Nocta ··· partner: dots pulse while connecting, a solid link draws once done */
+.ob-pair {
+  display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 10px;
+  gap: 14px;
+  margin-bottom: 26px;
 }
-.ob-mini-title {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 18px;
-  line-height: 1.3;
-  margin-bottom: 7px;
+.ob-pair-tile {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline-strong);
+  box-shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.7);
 }
-.ob-mini-title em {
-  font-style: italic;
+.ob-pair-tile.nocta img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+.ob-pair-tile.brand img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ob-pair-link {
+  position: relative;
+  width: 56px;
+  height: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ob-pair-link i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: opacity var(--dur-fast) ease;
+}
+.ob-pair.connecting .ob-pair-link i {
+  background: var(--accent-soft);
+  animation: pairPulse 1.1s ease-in-out infinite;
+}
+.ob-pair.connecting .ob-pair-link i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.ob-pair.connecting .ob-pair-link i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.ob-pair-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-soft), var(--accent));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.ob-pair.done .ob-pair-link::before {
+  transform: scaleX(1);
+}
+.ob-pair.done .ob-pair-link i {
+  opacity: 0;
+}
+.ob-pair.done .ob-pair-tile.brand {
+  animation: pairPop 0.6s var(--ease-spring) 0.3s both;
+}
+@keyframes pairPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+@keyframes pairPop {
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+/* ---- pills: mask-type filter + size ---- */
+.ob-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ob-pill {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  background: var(--glass-fill);
+  border: 1px solid var(--hairline-strong);
+  font-family: inherit;
+  font-size: 15px;
   font-weight: 500;
-  color: var(--accent-soft);
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
 }
-.ob-mini-text {
-  margin: 0 0 12px;
-  font-size: 12.5px;
-  line-height: 1.5;
+/* the mask-type filter is one row */
+.ob-filters {
+  flex-wrap: nowrap;
+}
+.ob-filters .ob-pill {
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.ob-pill.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+
+/* the mask step reveals one stage at a time */
+.ob-reveal {
+  animation: obRise var(--dur-slow) var(--ease-out) both;
+}
+@keyframes obRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.ob-mask-chosen {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 12px 10px 12px 18px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.ob-mask-chosen-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ob-mask-sub {
+  font-size: 15px;
   color: var(--text-secondary);
 }
-.ob-mini-action {
+.ob-link {
+  min-height: 48px;
+  padding: 0 10px;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-soft);
+}
+
+/* ---- "tomorrow morning": the real why-card, played in ----
+ * card rises → byline → verdict word by word → the night's bars wipe in →
+ * the one action lands with a soft pulse → receipts. Selectors carry
+ * .ob-screen so they outrank the card's own entrance in motion.css. */
+.ob-why-stage {
+  position: relative;
+  margin-top: 30px;
+}
+.ob-why-stage::before {
+  content: '';
+  position: absolute;
+  inset: -36px -12px;
+  z-index: -1;
+  background: radial-gradient(
+    60% 55% at 50% 45%,
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    transparent 70%
+  );
+  animation: whyHalo 1.8s var(--ease-out) 0.3s backwards;
+}
+.ob-example-tag {
+  position: absolute;
+  z-index: 2;
+  top: -12px;
+  right: 16px;
+  padding: 4px 11px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--hairline-strong);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  animation: riseIn 0.5s var(--ease-out) 0.9s backwards;
+}
+.ob-screen .ob-why-stage .why-card {
+  animation: whyRise 0.8s var(--ease-out) 0.25s backwards;
+}
+.ob-screen .ob-why-stage .why-card .why-eyebrow {
+  animation: riseIn 0.5s var(--ease-out) 0.6s backwards;
+}
+.ob-screen .ob-why-stage .why-card .reveal-word {
+  animation-delay: calc(800ms + var(--i) * 70ms);
+}
+.ob-screen .ob-why-stage .why-card .headline em {
+  animation-delay: 1.7s;
+}
+.ob-screen .ob-why-stage .why-card .why-spark {
+  animation: sparkWipe 1s var(--ease-out) 1.4s backwards;
+}
+.ob-screen .ob-why-stage .why-card .action {
+  animation:
+    actionIn 0.6s var(--ease-spring) 2.2s backwards,
+    actionPulse 1.4s ease-out 2.7s backwards;
+}
+.ob-screen .ob-why-stage .why-card .receipts {
+  animation: riseIn 0.5s var(--ease-out) 2.5s backwards;
+}
+@keyframes whyHalo {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes whyRise {
+  from {
+    opacity: 0;
+    transform: translateY(36px) scale(0.96);
+    filter: blur(6px);
+  }
+}
+@keyframes sparkWipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes actionIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+}
+@keyframes actionPulse {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+/* ---- "morning nudge": a Nocta notification on the lock screen ---- */
+.ob-lock {
+  margin: 28px 0 0;
+  height: 270px;
+  padding: 24px 14px 0;
+  border-radius: 38px 38px 0 0;
+  border: 1px solid var(--hairline-strong);
+  border-bottom: 0;
+  overflow: hidden;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 11px;
-  border-radius: var(--r-md);
-  background: rgba(240, 164, 122, 0.07);
-  border: 1px solid rgba(240, 164, 122, 0.16);
-  font-size: 12.5px;
-  line-height: 1.4;
+  flex-direction: column;
+  align-items: center;
+  background:
+    radial-gradient(
+      120% 90% at 50% 115%,
+      color-mix(in srgb, var(--accent-soft) 55%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(180deg, var(--surface-2), var(--bg-grad-bottom));
+  mask-image: linear-gradient(to bottom, black 72%, transparent);
+}
+.ob-lock-date {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.ob-lock-time {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
-.ob-mini-action svg {
+.ob-notif {
+  width: 100%;
+  margin-top: 22px;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 13px;
+  border-radius: 20px;
+  text-align: left;
+  background: color-mix(in srgb, var(--surface-3) 72%, transparent);
+  border: 1px solid var(--hairline-strong);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  animation: notifIn 0.7s var(--ease-spring) 0.9s backwards;
+}
+.ob-notif-icon {
   flex-shrink: 0;
-  margin-top: 1px;
-  color: var(--accent);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-base);
+}
+.ob-notif-icon img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.ob-notif-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ob-notif-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.ob-notif-head span:first-child {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ob-notif-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ob-notif-text {
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+@keyframes notifIn {
+  from {
+    opacity: 0;
+    transform: translateY(-26px) scale(0.96);
+  }
 }
 
 /* ---- medical disclaimer (closing modal) ---- */
@@ -425,104 +796,210 @@
   align-items: center;
   justify-content: center;
   padding: 28px;
-  background: linear-gradient(180deg, var(--bg-grad-top), var(--bg-grad-bottom));
+  background:
+    radial-gradient(130% 55% at 50% 112%, color-mix(in srgb, var(--accent-soft) 28%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--bg-grad-top), var(--bg-grad-bottom));
   animation: fade 0.3s ease-out both;
 }
 .ob-disc-card {
-  max-width: 320px;
+  max-width: 330px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   animation: obIn 0.4s ease-out both;
 }
-.ob-disc-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--accent);
-  background: radial-gradient(circle, rgba(240, 164, 122, 0.18), transparent 70%);
-  border: 1px solid rgba(240, 164, 122, 0.2);
-  margin-bottom: 18px;
+.ob-disc-logo {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  margin-bottom: 22px;
 }
 .ob-disc-card h2 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 23px;
+  font-size: 30px;
+  letter-spacing: -0.03em;
 }
 .ob-disc-card p {
-  margin: 0 0 24px;
-  font-size: 14px;
-  line-height: 1.6;
+  margin: 0 0 28px;
+  font-size: 17px;
+  line-height: 1.5;
   color: var(--text-secondary);
 }
 .ob-disc-card .btn {
   width: 100%;
 }
 
-/* ---- intro: a splash that morphs into the welcome screen ---- */
+/* ---- intro: a swirl that forms the logo, then settles into the welcome ----
+ * .swirl → palette lines fill the screen and spiral into the logo (see
+ * components/SwirlLogo.jsx). .dawn → the logo glides up into the top-left
+ * lockup, a warm glow rises from the bottom, and the headline + CTA come in. */
 .ob-intro {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, var(--bg-grad-top), var(--bg-grad-bottom));
 }
+
+/* the horizon — a soft dawn rising behind the welcome copy */
+.ob-intro-dawn {
+  position: absolute;
+  left: 50%;
+  bottom: -52%;
+  width: 210%;
+  height: 125%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--accent-soft) 62%, transparent),
+    color-mix(in srgb, var(--accent) 28%, transparent) 45%,
+    color-mix(in srgb, var(--accent-deep) 8%, transparent) 75%,
+    transparent
+  );
+  opacity: 0;
+  transform: translate(-50%, 30%);
+  transition:
+    opacity 1s var(--ease-out),
+    transform 1.6s var(--ease-out);
+  pointer-events: none;
+}
+.ob-intro.dawn .ob-intro-dawn {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* the logo: one box that moves from center stage to the lockup. It animates
+ * layout (not transform) so the swirl canvas can track its size each frame. */
+.ob-intro-logo {
+  position: absolute;
+  z-index: 1;
+  width: 176px;
+  height: 176px;
+  left: calc(50% - 88px);
+  top: calc(42% - 88px);
+  transition:
+    left 0.8s var(--ease-ios),
+    top 0.8s var(--ease-ios),
+    width 0.8s var(--ease-ios),
+    height 0.8s var(--ease-ios);
+}
+.ob-intro.dawn .ob-intro-logo {
+  left: 24px;
+  top: 66px;
+  width: 42px;
+  height: 42px;
+}
+
+/* swirl → artwork handoff. The canvas is sized and offset in JS to cover the
+ * whole screen; the artwork fades in over the drawn ribbon as the logo moves.
+ * 700ms total matches HANDOFF in SwirlLogo.jsx. */
+.swirl-logo-canvas {
+  position: absolute;
+  pointer-events: none;
+  animation: swirlIn 300ms var(--ease-out) backwards;
+  transition: opacity 450ms var(--ease-in) 200ms;
+}
+.swirl-logo.handoff .swirl-logo-canvas {
+  opacity: 0;
+}
+.swirl-logo-img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 450ms var(--ease-out);
+}
+.swirl-logo.handoff .swirl-logo-img {
+  opacity: 1;
+}
+@keyframes swirlIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.ob-intro-wordmark {
+  position: absolute;
+  z-index: 1;
+  left: 76px;
+  top: 66px;
+  line-height: 42px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
 .ob-intro-main {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  text-align: center;
+  justify-content: flex-end;
+  padding: 0 26px 12px;
 }
-.ob-intro-logo {
-  object-fit: contain;
-  filter: drop-shadow(0 14px 44px rgba(240, 164, 122, 0.42));
-  transition:
-    width 0.9s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.9s cubic-bezier(0.4, 0, 0.2, 1),
-    margin-bottom 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+.ob-intro-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
 }
-.ob-intro-logo.lg {
-  width: 220px;
-  height: 220px;
-  margin-bottom: 24px;
-  animation: splashLogo 0.95s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+.ob-intro-title span {
+  display: block;
 }
-.ob-intro-logo.sm {
-  width: 108px;
-  height: 108px;
-  margin-bottom: 14px;
+.ob-intro-accent {
+  color: var(--accent-soft);
 }
-@keyframes splashLogo {
-  from {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-.ob-intro-tag {
-  max-width: 250px;
-  font-size: 14px;
+.ob-intro-copy {
+  margin: 16px 0 0;
+  max-width: 320px;
+  font-size: 17px;
   line-height: 1.5;
   color: var(--text-secondary);
-  animation: obIn 0.5s ease-out both;
-}
-.ob-intro-welcome {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: obIn 0.45s ease-out both;
 }
 .ob-intro-foot {
+  position: relative;
   flex-shrink: 0;
-  padding: 14px 22px calc(20px + env(safe-area-inset-bottom));
+  padding: 28px 22px calc(20px + env(safe-area-inset-bottom));
+}
+
+/* welcome copy waits for dawn, then rises in a short stagger after the logo moves */
+.ob-intro :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot) {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.ob-intro.dawn :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot) {
+  opacity: 1;
+  transform: none;
+}
+.ob-intro:not(.dawn) .ob-intro-foot {
+  pointer-events: none;
+}
+.ob-intro.dawn .ob-intro-wordmark {
+  transition-delay: 0.45s;
+}
+.ob-intro.dawn .ob-intro-title span:first-child {
+  transition-delay: 0.3s;
+}
+.ob-intro.dawn .ob-intro-title span:last-child {
+  transition-delay: 0.38s;
+}
+.ob-intro.dawn .ob-intro-copy {
+  transition-delay: 0.48s;
+}
+.ob-intro.dawn .ob-intro-foot {
+  transition-delay: 0.58s;
 }

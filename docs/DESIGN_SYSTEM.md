@@ -58,13 +58,20 @@ The visual language is documented as design tokens. The reference implementation
 
 ### Color usage rules
 
-- **Peach is sacred.** It appears on: hero why-card accent rail, hero CTA chip, Coach FAB,
+- **Peach is sacred.** It appears on: hero why-card accent rail, hero CTA chip, the "Ask Nocta" Coach rows,
   "Ask Nocta" chips, journal icons, AI Coach voice italics. It does **not** appear on
   charts, on neutral CTAs, or as decoration.
 - **Semantic colors only signal state.** Sage = in-range / win. Amber = watch / mild.
   Coral = alert / out-of-range.
 - **Charts default to a single muted blue.** Color bars semantically only when the value
   crosses a threshold. Never a rainbow palette.
+- **No red/amber/green on clinical numbers or nights.** The week strip moons are data
+  blue for a logged night and coral only for an escalation night. AHI delta pills are
+  neutral (the arrow carries direction). Night-chart event types are shades of blue, with
+  central events turning coral only on an escalation night. Week-strip nights differ by
+  shape instead: solid blue moon = logged, dim outline moon = low data, coral moon =
+  escalation, small peach dot = the why-card has a suggested step. Pattern-card stats are
+  `--text-primary`; the sage eyebrow marks "a learned pattern", not good news.
 - **Event markers use shape AND color** so they're distinguishable to colorblind users:
   CSA = triangle, OSA = diamond, leak = circle.
 
@@ -177,7 +184,11 @@ wall of text.
    observation paragraph.
 6. **Trust footer** — one line, two halves: confidence bars + "Not medical advice".
 
-**No chip row.** The Coach FAB carries the chat affordance globally; the in-card chip was
+**Doctor path.** When `escalation_flag` is `hard`, the action box becomes a button
+("Prepare doctor summary") that opens the doctor summary sheet: the insight's cited numbers,
+what the PDF contains, and a numbers-only PDF with no AI commentary.
+
+**No chip row.** The card ends with a single "Ask Nocta about last night" row instead (see Coach entry); the in-card chip was
 redundant.
 
 **Per-state styling:**
@@ -225,19 +236,51 @@ visualization. It replaces all donut gauges.
 
 ### Tab bar
 
-- Floating, 16px from screen edges, 14px from bottom
-- 72px tall, `--r-xl` radius
-- `rgba(20,26,46,0.78)` background with `backdrop-filter: blur(28px) saturate(140%)`
-- Active tab uses `var(--accent)`, inactive uses `var(--text-tertiary)`
+- Floating liquid-glass capsule, 16px from screen edges, 14px from bottom, 62px tall,
+  31px radius.
+- Liquid glass (dark appearance) = a smoky tint (`--glass-fill`) that dims what's behind,
+  a 1px specular rim (bright top-left), and an inner shadow at the base. In Chromium the
+  backdrop is also **refracted**: `backdrop-filter: url(#lg-bar)` runs an SVG
+  feDisplacementMap with a generated rounded-rect normal map (`LiquidGlass.jsx`), so
+  content bends around the rim while the centre stays clear. Other browsers fall back to
+  `blur(22px) saturate(160%) brightness(0.64)`. Other glass controls (back / close buttons, the Trends range control) use a
+  *lighter* `.glass` variant: a clear lens with a faint white lift and no dimming.
+- The active tab sits on a lighter glass "lens" capsule that glides between tabs.
+- Icon-only, 62px tall. Labels stay in the DOM visually hidden, so VoiceOver still reads them.
+- Active tab uses `var(--accent)`, inactive `var(--text-secondary)` (legible on glass).
+- Compacts (scales to 80%, anchored to the bottom edge) after a sustained scroll down; returns
+  to full size on scroll up / at the top or bottom / on tab change. It never leaves the screen.
+- Glass surfaces carry no outer drop shadow — depth comes from the rim light and inner shadow.
 - 4 tabs: Tonight / Trends / Therapy / You
 
-### Coach FAB
+### Coach entry — contextual "Ask Nocta" rows
 
-- 48px circle, peach background, dark icon
-- Bottom-right, clears the tab bar
-- Static — no pulsing ring. The peach fill + glow shadow carry it; a flashing
-  control reads as an alert, which is the wrong tone for a calm sleep app.
-- Tap = opens Coach chat sheet (modal slide-up)
+Coach appears where there is something to ask about, not as global chrome:
+
+- **Why-card (Tonight)** — the card's last row: "Ask Nocta about last night". This is the
+  primary entry; right after reading the verdict is when "why?" comes up.
+- **Insights card (Trends)** — "Ask Nocta about these trends".
+
+Rows are 48px tall, peach text + the 22px mascot + chevron, separated by a hairline. There is
+no floating button and nothing in the nav bar: a bottom-right FAB sat where a resting thumb
+lands, and a header button put Coach on screens (Therapy, You) where nobody needs it.
+
+### Mascot — the moon
+
+`components/Mascot.jsx`. A small full moon with a bite out of the top-right corner: the
+face of the Coach. It is Nocta itself, with no separate name or persona. Inline SVG
+coloured from the peach tokens, because the mascot *is* the AI.
+
+- **Where:** the "Ask Nocta" rows (22px), the desktop "Ask Nocta" button (34px), the Coach
+  sheet greeting (64px) and beside each reply (24px), and the Dynamic Island during sync.
+- **Optical sizes:** at 24px and below the eyes widen, the craters drop out and the bite
+  grows, so it still reads at glyph size.
+- **States follow the conversation, never the night.** `still` (default), `thinking`
+  (Coach typing), `talking` (reply streaming), `asleep` (syncing), `waking` (one blink
+  when the sync lands). No smiling at a low AHI and no frowning at a leak: a mood face
+  would be a red/green score with eyes.
+- Only the in-progress states move, in line with the motion rules below. The global
+  reduced-motion rule stops all of it.
 
 ### Sparklines
 
@@ -268,15 +311,58 @@ visualization. It replaces all donut gauges.
 
 ## Motion
 
-Minimal but intentional. Calm, not flashy.
+Minimal but intentional. Calm, not flashy. Tokens live in `tokens.css`; the mobile
+interaction layer lives in `styles/motion.css` (scoped to `.phone`).
 
-- **Card entry**: 200ms ease-out, 8px translateY + opacity 0→1
-- **Chip tap**: 100ms scale 0.97 in, 200ms scale 1 out
-- **Sheet slide-up**: 300ms ease-out from bottom
+```css
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);     /* anything arriving */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);     /* sheets, pushes, indicators */
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1); /* selection moments only */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);          /* anything leaving */
+  --dur-press: 120ms; --dur-fast: 200ms; --dur-base: 320ms; --dur-slow: 520ms;
+  --stagger: 45ms;
+}
+```
 
-Honor `prefers-reduced-motion: reduce` — disable all non-essential animation.
+- **Screen arrival**: top-level blocks rise in 14px with a 45ms stagger; tab switches
+  slide content in from the direction of travel.
+- **Why-card**: the headline arrives word by word (the one expressive entrance, because
+  it is the AI speaking), the emphasis word gets one slow sheen, then sparkline → action
+  → receipts follow in reading order.
+- **Numbers count up** to their value on arrival (`<CountUp>` in `lib/motion.jsx`).
+- **Selection** uses one gliding indicator (tab bar pill, week-strip highlight, segmented
+  thumb) rather than each item toggling its own background.
+- **Press**: cards scale to 0.97; list rows highlight edge-to-edge like an iOS cell.
+- **Sheets**: slide up 340ms; the app behind shrinks to a card (pushed pages parallax
+  left). Drag the grip/header down to dismiss; swipe a page right to go back; Esc closes.
+- **System feedback** (sync progress, confirmations) expands out of the Dynamic Island
+  rather than a separate toast banner. Tonight shows shape-matched skeletons while syncing
+  and supports pull-to-refresh (drag or trackpad).
+- **Coach** replies stream in a few words at a time with a peach caret.
+- **Looping motion only for genuine in-progress states** (sync spinner, preparing an
+  export, the device "live" dot). Nothing loops to grab attention.
+
+Honor `prefers-reduced-motion: reduce`: all durations and delays collapse to zero, numbers
+land on their final value, streamed text appears whole.
 
 ---
+
+### Tonight — interaction patterns
+
+- **One hero.** The why-card is the only card on Tonight. "Last night" (AHI + leak /
+  pressure / hours), the night chart and the early-signal pattern sit open on the page:
+  big numerals, hairline dividers, no boxes-in-boxes. The non-doctor action reads as a
+  sentence with a 2px state-coloured rule, not a box.
+- **Swipe between nights.** Drag the why-card sideways (or two-finger swipe on a trackpad):
+  it follows the finger with a slight tilt, the week-strip highlight slides toward the
+  neighbouring night 1:1, and past ~24% of the card width (or a flick) it commits. The new
+  night slides in from the side you swiped. Ends rubber-band. Taps inside still work.
+- **Scrub the night.** Hover / drag across the night chart for a guide line, the other time
+  slices dimmed, and a readout: clock time · sleep stage · events in that slice.
+- **Twilight sky.** A static-palette backdrop (data blues + REM lavender, never peach) of
+  three slowly drifting glows and faint stars, fading with slight parallax on scroll. The
+  same every night — atmosphere, never a score.
 
 ## Accessibility floors
 

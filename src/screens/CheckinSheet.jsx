@@ -46,9 +46,12 @@ export function CheckinSheet() {
         )}>
         <div className="ci-done">
           <div className="cd-mark">
-            <Icon name="check" size={32} />
+            {/* the check draws itself once — a quiet "received", not a celebration */}
+            <svg className="draw-check" width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
           </div>
-          <h3>Logged — thank you.</h3>
+          <h3>Logged. Thank you.</h3>
           <p>
             Nocta will fold this into how it reads tonight. A couple of weeks of check-ins is
             when the patterns start to show.
@@ -81,21 +84,27 @@ export function CheckinSheet() {
           <span key={s.id} className={i <= step ? 'on' : ''} />
         ))}
       </div>
-      <h2 className="ci-question">{screen.question}</h2>
-      <p className="ci-hint">{screen.hint}</p>
-      <div className="ci-grid">
-        {screen.options.map((opt) => {
-          const on = picks[screen.id].includes(opt.id);
-          return (
-            <button
-              key={opt.id}
-              className={`chip${on ? ' selected' : ''}`}
-              onClick={() => toggle(opt)}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
+      {/* keyed on step so each question slides in fresh */}
+      <div className="ci-step" key={step}>
+        <h2 className="ci-question">{screen.question}</h2>
+        <p className="ci-hint">{screen.hint}</p>
+        <div className="ci-grid">
+          {screen.options.map((opt, i) => {
+            const on = picks[screen.id].includes(opt.id);
+            return (
+              <button
+                key={opt.id}
+                className={`chip${on ? ' selected' : ''}`}
+                style={{ '--i': i }}
+                aria-pressed={on}
+                onClick={() => toggle(opt)}
+              >
+                {on && <Icon name="check" size={14} className="chip-check" />}
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </Sheet>
   );

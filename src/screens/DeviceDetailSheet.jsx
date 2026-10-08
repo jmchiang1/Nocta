@@ -73,7 +73,7 @@ function AuthorizeStep({ device, requestedReads, onAllow, onCancel }) {
             </div>
           ))
         ) : (
-          <div className="oauth-perm-row muted">No reads selected — none will be granted.</div>
+          <div className="oauth-perm-row muted">No reads selected, so none will be granted.</div>
         )}
       </div>
       <p className="oauth-fineprint">
@@ -271,7 +271,7 @@ export function DeviceDetailSheet() {
                   <div className="lr-sub">
                     {enabled
                       ? 'Data feeds your home screen and trends'
-                      : 'Paused — kept connected but excluded from Nocta'}
+                      : 'Paused: kept connected but excluded from Nocta'}
                   </div>
                 </div>
                 <Switch
@@ -320,7 +320,7 @@ export function DeviceDetailSheet() {
                     <div className="lr-sub">
                       {syncing
                         ? 'New nights pull in automatically'
-                        : 'Paused — pull manually from Tonight'}
+                        : 'Paused: pull manually from Tonight'}
                     </div>
                   </div>
                   <Switch on={syncing} onChange={setSyncing} label="Background sync" />
@@ -364,7 +364,7 @@ export function DeviceDetailSheet() {
               </div>
               <p className="settings-note">
                 You’ll be sent to {device.title} to authorize Nocta. Only the reads you’ve
-                allowed above will be requested — you can change or revoke them later.
+                allowed above will be requested. You can change or revoke them later.
               </p>
               <button
                 className="btn primary"

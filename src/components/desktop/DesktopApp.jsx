@@ -3,6 +3,7 @@
  * the Mobile/Desktop toggle keeps you on the same night and tab. */
 import { useStore } from '../../lib/store.jsx';
 import { Icon } from '../Icons.jsx';
+import { Mascot } from '../Mascot.jsx';
 import { USER } from '../../data/account.js';
 import { DEVICE } from '../../data/therapy.js';
 import { DesktopTonight } from './DesktopTonight.jsx';
@@ -54,7 +55,7 @@ export function DesktopApp() {
 
         <button className="dash-coach" onClick={() => openSheet('coach')}>
           <span className="dash-coach-icon" aria-hidden="true">
-            <Icon name="coach" size={18} />
+            <Mascot size={34} />
           </span>
           <span className="dash-coach-text">
             <span className="dash-coach-title">Ask Nocta</span>
@@ -68,7 +69,9 @@ export function DesktopApp() {
             <span className="dash-sync-text">{DEVICE.status} · SleepHQ</span>
           </div>
           <div className="dash-user">
-            <div className="dash-avatar">{USER.initials}</div>
+            <div className="dash-avatar">
+              <img src={USER.photo} alt={USER.name} />
+            </div>
             <div className="dash-user-meta">
               <div className="dash-user-name">{USER.name}</div>
               <div className="dash-user-sub">{USER.plan}</div>

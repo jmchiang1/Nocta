@@ -117,7 +117,7 @@ export function DesktopFullNight() {
             </div>
           ) : (
             <div className="connect-cta">
-              <p>Tell Nocta how you slept and what shaped your night — it sharpens tonight's insight.</p>
+              <p>Tell Nocta how you slept and what shaped your night. It sharpens tonight's insight.</p>
               <button className="btn ghost" onClick={() => openSheet('checkin')}>Do morning check-in</button>
             </div>
           )}

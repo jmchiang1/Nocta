@@ -1,13 +1,15 @@
-/* Nocta — Therapy tab. Device status, equipment lifecycle, view-only settings, exports. */
+/* Nocta — Therapy tab. Device status, equipment lifecycle, view-only settings, exports.
+ * Compliance leads: it's the one number insurance holds you to. */
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
-import { DEVICE, EQUIPMENT, SETTINGS_VIEW, PROJECTION } from '../data/therapy.js';
+import { DEVICE, EQUIPMENT, machineById, deviceCells } from '../data/therapy.js';
+import { NIGHTS_ON_THERAPY } from '../data/history.js';
 import { maskById } from '../data/account.js';
-import { StatusBar } from '../components/StatusBar.jsx';
+import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
-import { Rich } from '../components/Rich.jsx';
 import { ProgressBar } from '../components/Charts.jsx';
 import { MaskCard } from '../components/MaskCard.jsx';
+import { ComplianceCard } from '../components/ComplianceCard.jsx';
 
 function lifeTone(pct) {
   if (pct >= 0.8) return 'alert';
@@ -20,113 +22,113 @@ function lifeWord(pct) {
 }
 
 export function TherapyScreen() {
-  const [exported, setExported] = useState(false);
-  const { maskId } = useStore();
-  /* keep the device card's Mask cell in sync with the picker on this screen */
-  const cells = DEVICE.cells.map((c) =>
-    c.k === 'Mask' ? { k: 'Mask', v: maskById(maskId).name } : c
-  );
+  // idle → preparing → ready: a short honest beat instead of an instant checkmark
+  const [exportState, setExportState] = useState('idle');
+  const { maskId, machineId, openSheet, showToast, syncNonce } = useStore();
+  const machine = machineById(machineId);
+
+  function exportSummary() {
+    if (exportState !== 'idle') return;
+    setExportState('preparing');
+    setTimeout(() => {
+      setExportState('ready');
+      showToast('Doctor summary ready', 'download');
+    }, 1400);
+  }
+  /* device card cells follow both pickers (machine + mask) */
+  const cells = deviceCells(machine, maskById(maskId).name);
 
   return (
-    <div className="screen">
-      <StatusBar />
-      <div className="scroll">
-        <header className="page-head">
-          <div>
-            <h1>Therapy</h1>
-            <div className="sub">Your machine, mask, and the paperwork</div>
-          </div>
-        </header>
-
-        <section className="device-card">
-          <div className="dc-top">
-            <span className="dc-status">{DEVICE.status}</span>
-          </div>
-          <h3>{DEVICE.name}</h3>
-          <div className="dc-sub">{DEVICE.source}</div>
-          <div className="dc-grid">
-            {cells.map((c) => (
-              <div key={c.k} className="dc-cell">
-                <div className="dc-k">{c.k}</div>
-                <div className="dc-v">{c.v}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <MaskCard />
-
-        <section className="projection">
-          <div className="pj-eyebrow">{PROJECTION.eyebrow}</div>
-          <h4>
-            <Rich text={PROJECTION.headline} />
-          </h4>
-          <p>{PROJECTION.body}</p>
-          <ProgressBar
-            pct={PROJECTION.progressPct}
-            marker={PROJECTION.targetPct}
-            gradient
-            height={8}
-          />
-          <div
-            className="compliance-dots"
-            role="img"
-            aria-label="Compliance status per night, 30 nights"
-          >
-            {PROJECTION.nights.map((status, i) => (
-              <span key={i} className={`compliance-dot ${status}`} />
-            ))}
-          </div>
-          <div className="pj-scale">
-            {PROJECTION.scale.map((s, i) => (
-              <span key={i}>{s}</span>
-            ))}
-          </div>
-        </section>
-
-        <div className="section-head">
-          <h3>Equipment</h3>
-          <span className="meta">replace on schedule</span>
+    <ScreenFrame title="Therapy">
+      <header className="page-head">
+        <div>
+          <h1>Therapy</h1>
+          <div className="sub">Your machine, mask, and the paperwork</div>
         </div>
-        <div className="equip">
-          {EQUIPMENT.map((e) => {
-            const pct = e.ageDays / e.lifespanDays;
-            const tone = lifeTone(pct);
-            return (
-              <div className="equip-row" key={e.name}>
-                <div className="er-top">
-                  <span className="er-name">{e.name}</span>
-                  <span className={`er-age ${tone}`}>
-                    {e.ageDays} / {e.lifespanDays} days · {lifeWord(pct)}
-                  </span>
-                </div>
-                <ProgressBar pct={pct * 100} color={tone || 'data'} height={6} />
-              </div>
-            );
-          })}
-        </div>
+      </header>
 
-        <div className="section-head">
-          <h3>For your doctor</h3>
+      <ComplianceCard />
+
+      <section className="device-card">
+        <div className="dc-top">
+          <span className="dc-dot live" aria-hidden="true" />
+          <span className="dc-status">{syncNonce > 0 ? 'Synced just now' : DEVICE.status}</span>
         </div>
-        <div className="list">
-          <button className="list-row" onClick={() => setExported(true)}>
-            <div className="lr-main">
-              <div className="lr-title">Export 30-night summary</div>
-              <div className="lr-sub">
-                {exported
-                  ? 'Ready — 30 nights, AHI & leak trends, compliance. No AI commentary.'
-                  : 'A clean one-page PDF to bring to your appointment'}
-              </div>
+        <h3>
+          {machine.brand} {machine.name}
+        </h3>
+        <div className="dc-sub">{DEVICE.source}</div>
+        <div className="dc-grid">
+          {cells.map((c) => (
+            <div key={c.k} className="dc-cell">
+              <div className="dc-k">{c.k}</div>
+              <div className="dc-v">{c.v}</div>
             </div>
-            <Icon name={exported ? 'check' : 'download'} size={18} />
-          </button>
+          ))}
         </div>
+        <button className="row-cta" onClick={() => openSheet('machinePicker')}>
+          <span>Change machine</span>
+          <Icon name="chevronRight" size={16} />
+        </button>
+      </section>
 
-        <p className="disclaimer">
-          The export contains your data only — no Nocta insights. It is not a medical record.
-        </p>
+      <MaskCard />
+
+
+      <div className="section-head">
+        <h3>Equipment</h3>
+        <span className="meta">replace on schedule</span>
       </div>
-    </div>
+      <div className="equip">
+        {EQUIPMENT.map((e) => {
+          const pct = e.ageDays / e.lifespanDays;
+          const tone = lifeTone(pct);
+          return (
+            <div className="equip-row" key={e.name}>
+              <div className="er-top">
+                <span className="er-name">{e.name}</span>
+                <span className={`er-age ${tone}`}>
+                  {e.ageDays} / {e.lifespanDays} days · {lifeWord(pct)}
+                </span>
+              </div>
+              <ProgressBar pct={pct * 100} color={tone || 'data'} height={6} />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="section-head">
+        <h3>For your doctor</h3>
+      </div>
+      <div className="list">
+        <button
+          className={`list-row export-row ${exportState}`}
+          onClick={exportSummary}
+          aria-busy={exportState === 'preparing'}
+        >
+          <div className="lr-main">
+            <div className="lr-title">Export summary for your doctor</div>
+            <div className="lr-sub" key={exportState}>
+              {exportState === 'ready'
+                ? `Ready. All ${NIGHTS_ON_THERAPY} nights: AHI, leak, hours and compliance. No AI commentary.`
+                : exportState === 'preparing'
+                  ? 'Preparing your PDF…'
+                  : 'A clean one-page PDF to bring to your appointment'}
+            </div>
+          </div>
+          <span className="export-icon" key={`i-${exportState}`}>
+            {exportState === 'preparing' ? (
+              <span className="mini-spinner" aria-hidden="true" />
+            ) : (
+              <Icon name={exportState === 'ready' ? 'check' : 'download'} size={18} />
+            )}
+          </span>
+        </button>
+      </div>
+
+      <p className="disclaimer">
+        The export contains your data only, with no Nocta insights. It is not a medical record.
+      </p>
+    </ScreenFrame>
   );
 }

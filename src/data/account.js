@@ -2,14 +2,17 @@
  * Mock for v1. None of this hits a backend; the toggles and pickers update
  * local store state so the subpages feel real. */
 
+import { NIGHTS_ON_THERAPY } from './history.js';
+
 export const USER = {
   name: 'Jonathan Chiang',
   email: 'jonathan@example.com',
-  initials: 'JC',
-  joinedDate: 'May 28, 2026',
+  initials: 'JC', // fallback if the photo fails to load
+  photo: '/avatar.jpg',
+  joinedDate: 'Sep 30, 2026',
   plan: 'Nocta · free trial',
-  planSub: '11 days remaining',
-  daysOnTherapy: 11,
+  planSub: 'Trial ends Oct 14 · 4 days left', // 14-day trial from Sep 30
+  daysOnTherapy: NIGHTS_ON_THERAPY,
   condition: 'OSA',
 };
 
@@ -24,8 +27,10 @@ export const SETTINGS_DEFAULTS = {
 export const PRIVACY_NOTE =
   'Your CPAP data is stored on Nocta servers and encrypted at rest. We never sell it or share it with insurers or employers. You can delete your account and all associated data from this screen at any time.';
 
+/* the one medical disclaimer — onboarding, the Tonight footer and Settings
+ * all render this, so the three never drift apart */
 export const MEDICAL_NOTE =
-  'Nocta is a wellness companion, not a medical device. It supplements — it does not replace — your prescribed therapy or your doctor’s care. No insight from Nocta should be used to adjust pressure settings, diagnose a condition, or stop therapy.';
+  'Nocta is a wellness companion, not a medical device. Don’t use it to change your pressure, diagnose a condition, or stop therapy. Ask your doctor instead.';
 
 /* Masks — single source of truth lives in onboarding.js (the catalog used by
  * the first-time setup flow). We re-export from here so the rest of the app
@@ -56,7 +61,7 @@ export const CONNECTED_DEVICES = [
     title: 'Apple Health',
     short: 'HealthKit',
     blurb:
-      'Aggregator on your iPhone. Nocta reads what other apps have written here — workouts, weight, and manual entries.',
+      'Aggregator on your iPhone. Nocta reads what other apps have written here: workouts, weight, and manual entries.',
     reads: ['Steps', 'Workouts', 'Body mass', 'Manual entries'],
     lastSync: null,
   },

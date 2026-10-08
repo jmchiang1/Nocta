@@ -13,7 +13,9 @@ export function AccountSheet() {
       {(close) => (
         <>
           <div className="profile-head" style={{ marginBottom: 20 }}>
-            <div className="avatar">{USER.initials}</div>
+            <div className="avatar">
+              <img src={USER.photo} alt={USER.name} />
+            </div>
             <div>
               <div className="ph-name">{USER.name}</div>
               <div className="ph-sub">{USER.email}</div>
@@ -54,7 +56,7 @@ export function AccountSheet() {
                 <Icon name="therapy" size={17} />
               </div>
               <div className="lr-main">
-                <div className="lr-title">{USER.condition} · day {USER.daysOnTherapy} of 30</div>
+                <div className="lr-title">{USER.condition} · night {USER.daysOnTherapy} of 30</div>
                 <div className="lr-sub">Starting Nocta tracker</div>
               </div>
             </div>

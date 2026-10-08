@@ -2,6 +2,7 @@
  * of the trend charts, best/worst night, and journal patterns. Reuses the same
  * getTrends() data and chart primitives as the mobile screen. */
 import { useState } from 'react';
+import { THERAPY_START, LAST_NIGHT } from '../../data/history.js';
 import { getTrends } from '../../data/trends.js';
 import { PRESSURE_RANGE } from '../../data/therapy.js';
 import { useStore } from '../../lib/store.jsx';
@@ -24,25 +25,22 @@ function tileTone(key, dir) {
   return (dir === 'down') === goodDown ? 'good' : '';
 }
 
-/* 'YYYY-MM-DD' → 'Jun 7' (parsed as local time so the day doesn't shift) */
+/* 'YYYY-MM-DD' → 'Oct 10' (parsed as local time so the day doesn't shift) */
 function fmtDate(iso) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-/* inclusive night count between two ISO dates */
-function nightCount(start, end) {
-  return Math.round((new Date(end) - new Date(start)) / 86400000) + 1;
 }
 
 export function DesktopTrends() {
   const { fixtureId, openSheet } = useStore();
   const [range, setRange] = useState('30d');
-  const [customStart, setCustomStart] = useState('2026-05-25');
-  const [customEnd, setCustomEnd] = useState('2026-06-07');
+  const [customStart, setCustomStart] = useState(THERAPY_START);
+  const [customEnd, setCustomEnd] = useState(LAST_NIGHT);
 
   const custom =
     range === 'custom'
       ? {
-          nights: Math.max(2, nightCount(customStart, customEnd)),
+          start: customStart,
+          end: customEnd,
           startLabel: fmtDate(customStart),
           endLabel: fmtDate(customEnd),
         }
@@ -90,6 +88,7 @@ export function DesktopTrends() {
                 <input
                   type="date"
                   value={customStart}
+                  min={THERAPY_START}
                   max={customEnd}
                   onChange={(e) => setCustomStart(e.target.value)}
                 />
@@ -100,6 +99,7 @@ export function DesktopTrends() {
                   type="date"
                   value={customEnd}
                   min={customStart}
+                  max={LAST_NIGHT}
                   onChange={(e) => setCustomEnd(e.target.value)}
                 />
               </label>

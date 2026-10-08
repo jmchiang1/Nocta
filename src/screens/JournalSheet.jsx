@@ -23,10 +23,10 @@ export function JournalSheet() {
   const groups = groupByMonth(JOURNAL_HISTORY);
 
   return (
-    <Sheet eyebrow="Trends" title="Sleep journal" onClose={closeSheet} full>
+    <Sheet title="Sleep journal" onClose={closeSheet} variant="page">
       <p className="settings-note" style={{ margin: '0 0 16px' }}>
         Every morning’s check-in alongside that night’s AHI. The most recent month is open
-        by default — tap any past month to expand it.
+        by default. Tap any past month to expand it.
       </p>
 
       {groups.map((g, i) => (

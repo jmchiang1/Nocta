@@ -12,6 +12,7 @@ import {
   MEDICAL_NOTE,
 } from '../../data/account.js';
 import { Icon } from '../Icons.jsx';
+import { machineById } from '../../data/therapy.js';
 
 function Switch({ on, onChange, label }) {
   return (
@@ -37,7 +38,7 @@ const TABS = [
 ];
 
 export function DesktopYou() {
-  const { checkin, resetCheckin, resetOnboarding, deviceConnections } = useStore();
+  const { checkin, resetCheckin, resetOnboarding, deviceConnections, machineId } = useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
 
   const [tab, setTab] = useState('account');
@@ -54,7 +55,7 @@ export function DesktopYou() {
           <div className="dash-sub">Profile, account, settings, and devices</div>
         </div>
         <div className="dash-topbar-meta">
-          <span className="dash-meta-pill">Therapy day {USER.daysOnTherapy} of 30</span>
+          <span className="dash-meta-pill">Night {USER.daysOnTherapy} of 30</span>
           <span className="dash-meta-pill">{USER.plan}</span>
         </div>
       </header>
@@ -77,11 +78,13 @@ export function DesktopYou() {
         <div className="dash-settings-body">
         <div className="panel dash-profile-panel">
           <div className="profile-head">
-            <div className="avatar">{USER.initials}</div>
+            <div className="avatar">
+              <img src={USER.photo} alt={USER.name} />
+            </div>
             <div>
               <div className="ph-name">{USER.name}</div>
               <div className="ph-sub">
-                {USER.condition} · therapy day {USER.daysOnTherapy} of 30 · AirSense 11
+                {USER.condition} · night {USER.daysOnTherapy} of 30 · {machineById(machineId).short}
               </div>
             </div>
           </div>
@@ -196,7 +199,7 @@ export function DesktopYou() {
                 <div className="lr-main">
                   <div className="lr-title">Export my data</div>
                   <div className="lr-sub">
-                    {exported ? 'Export queued — you’ll get an email when it’s ready' : 'Download everything Nocta holds'}
+                    {exported ? 'Export queued. You’ll get an email when it’s ready' : 'Download everything Nocta holds'}
                   </div>
                 </div>
                 <Icon name={exported ? 'check' : 'chevronRight'} size={17} />
@@ -236,7 +239,7 @@ export function DesktopYou() {
           </div>
         )}
 
-        <p className="disclaimer">Nocta v1 prototype · mock data · no live SleepHQ or OpenAI calls.</p>
+        <p className="disclaimer">Nocta 1.0 · Your therapy data arrives via SleepHQ.</p>
         </div>
       </div>
     </>

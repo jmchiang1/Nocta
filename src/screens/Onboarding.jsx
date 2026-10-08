@@ -1,11 +1,16 @@
 /* Nocta — first-run onboarding. Intro + 10 screens + a one-time medical disclaimer.
  * See docs/FEATURES.md → Onboarding. Signup is deferred; pairing/health are mocked. */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Rich } from '../components/Rich.jsx';
 import { Sheet } from '../components/Sheet.jsx';
+import { SwirlLogo } from '../components/SwirlLogo.jsx';
+import { WhyCard } from '../components/WhyCard.jsx';
+import { FIXTURES } from '../data/fixtures.js';
+import { prefersReducedMotion } from '../lib/motion.jsx';
+import { MEDICAL_NOTE } from '../data/account.js';
 import {
   GOALS,
   BIRTH_YEARS,
@@ -29,38 +34,51 @@ import {
 const BRAND_LABEL = Object.fromEntries(MASK_BRANDS.map((b) => [b.id, b.label]));
 const TYPE_LABEL = Object.fromEntries(MASK_TYPES.map((t) => [t.id, t.label]));
 
-/* ---- intro: a splash that morphs into the welcome screen ---- */
+/* ---- intro: a swirl that forms the logo, then settles into the welcome ----
+ * 'swirl': palette lines fill the screen and spiral into the logo (SwirlLogo).
+ * 'dawn':  the logo glides up into a small lockup, a warm glow rises from the
+ *          bottom, and the headline + CTA come in. */
+
+const HOLD_MS = 1500; // stay on the formed logo a while before it moves
 
 function Intro({ onDone }) {
-  const [phase, setPhase] = useState('a');
-  const welcome = phase === 'b';
+  const [phase, setPhase] = useState(() => (prefersReducedMotion() ? 'dawn' : 'swirl'));
+  const stageRef = useRef(null);
+  const dawn = phase === 'dawn';
+
+  const resolved = useRef(false);
+  const onResolve = () => {
+    if (resolved.current) return;
+    resolved.current = true;
+    setTimeout(() => setPhase('dawn'), HOLD_MS);
+  };
+
   return (
-    <div className="ob-intro">
+    <div ref={stageRef} className={`ob-intro ${phase}`}>
+      <StatusBar />
+      <div className="ob-intro-dawn" aria-hidden="true" />
+      <SwirlLogo
+        className="ob-intro-logo"
+        stageRef={stageRef}
+        onResolve={onResolve}
+        handoff={dawn}
+      />
+      <span className="ob-intro-wordmark" aria-hidden="true">
+        Nocta
+      </span>
       <div className="ob-intro-main">
-        <img
-          className={`ob-intro-logo ${welcome ? 'sm' : 'lg'}`}
-          src="/Nocta-logo.svg"
-          alt="Nocta"
-        />
-        <div className="ob-wordmark">Nocta</div>
-        {welcome ? (
-          <div className="ob-intro-welcome">
-            <h1 className="ob-title">Sleep better, knowingly.</h1>
-            <p className="ob-copy">
-              Your CPAP machine records a lot every night. Nocta turns it into one clear,
-              honest read on how you slept — and one thing worth trying.
-            </p>
-          </div>
-        ) : (
-          <div className="ob-intro-tag">Your CPAP nights, in plain language.</div>
-        )}
+        <h1 className="ob-intro-title">
+          <span>Sleep better,</span>
+          <span className="ob-intro-accent">knowingly.</span>
+        </h1>
+        <p className="ob-intro-copy">
+          Your CPAP machine records a lot every night. Nocta turns it into one clear, honest
+          read on how you slept, plus one thing worth trying.
+        </p>
       </div>
       <div className="ob-intro-foot">
-        <button
-          className="btn primary"
-          onClick={() => (welcome ? onDone() : setPhase('b'))}
-        >
-          {welcome ? 'Continue' : 'Get started'}
+        <button className="btn primary" onClick={onDone} tabIndex={dawn ? 0 : -1}>
+          Get started
         </button>
       </div>
     </div>
@@ -78,7 +96,15 @@ function Field({ label, children }) {
   );
 }
 
-/* full-width, single-column option list */
+/* the selection mark on an option card: a radio dot for single-choice,
+ * a rounded checkbox for multi-choice */
+const Tick = ({ on, multi }) => (
+  <span className={`ob-tick${multi ? ' multi' : ''}${on ? ' on' : ''}`} aria-hidden="true">
+    {on && <Icon name="check" size={13} />}
+  </span>
+);
+
+/* full-width, single-column list of option cards */
 function ChipGroup({ options, value, onChange, multi }) {
   const on = (id) => (multi ? value.includes(id) : value === id);
   const toggle = (o) => {
@@ -104,10 +130,12 @@ function ChipGroup({ options, value, onChange, multi }) {
         return (
           <button
             key={o.id}
-            className={`chip${sel ? ' selected' : ''}`}
+            className={`ob-option${sel ? ' selected' : ''}`}
+            aria-pressed={sel}
             onClick={() => toggle(o)}
           >
             <span>{o.label}</span>
+            <Tick on={sel} multi={multi} />
           </button>
         );
       })}
@@ -135,7 +163,8 @@ function InfoChipGroup({ options, value, onChange, onInfo }) {
         const sel = value.includes(o.id);
         return (
           <div key={o.id} className={`ob-cond-chip${sel ? ' selected' : ''}`}>
-            <button className="ob-cond-main" onClick={() => toggle(o)}>
+            <button className="ob-cond-main" aria-pressed={sel} onClick={() => toggle(o)}>
+              <Tick on={sel} multi />
               <span>{o.label}</span>
             </button>
             {o.info && (
@@ -219,7 +248,7 @@ function Goals({ data, update, next }) {
     <Step foot={<SkipFoot next={next} label="Skip for now" />}>
       <h1 className="ob-title">What brings you here?</h1>
       <p className="ob-copy">
-        Pick what matters most — Nocta will lead with the insights that fit. Choose as many
+        Pick what matters most and Nocta will lead with the insights that fit. Choose as many
         as you like.
       </p>
       <ChipGroup multi options={GOALS} value={data.goals} onChange={(v) => update({ goals: v })} />
@@ -283,7 +312,7 @@ function SleepingPosition({ data, update, next }) {
     <Step foot={<SkipFoot next={next} />}>
       <h1 className="ob-title">How do you usually sleep?</h1>
       <p className="ob-copy">
-        Position matters — on your back and stomach the airway crowds more easily than on
+        Position matters. On your back and stomach, the airway crowds more easily than on
         your side.
       </p>
       <ChipGroup
@@ -313,42 +342,77 @@ function SleepConditions({ data, update, next, onInfo }) {
   );
 }
 
-function Health({ data, update, next }) {
-  const [phase, setPhase] = useState(data.healthDevice ? 'done' : 'pick');
-  const [device, setDevice] = useState(data.healthDevice);
+/* device → its app icon, for the connect steps (files in public/brands) */
+const DEVICE_LOGO = {
+  apple_watch: '/brands/applehealth.png', // Apple Watch data arrives through Apple Health
+  oura: '/brands/oura.png',
+  fitbit: '/brands/fitbit.svg',
+  garmin: '/brands/garmin.svg',
+  samsung: '/brands/samsung.svg',
+  whoop: '/brands/whoop.png',
+};
+const SLEEPHQ_LOGO = '/brands/sleephq.png';
+const CONNECT_MS = 1700;
 
+/* Nocta ··· partner, joined by a link that pulses while connecting and
+ * draws solid once connected */
+function PairVisual({ logo, state }) {
+  return (
+    <div className={`ob-pair ${state}`} aria-hidden="true">
+      <span className="ob-pair-tile nocta">
+        <img src="/Nocta-logo.svg" alt="" />
+      </span>
+      <span className="ob-pair-link">
+        <i />
+        <i />
+        <i />
+      </span>
+      <span className="ob-pair-tile brand">
+        <img src={logo} alt="" />
+      </span>
+    </div>
+  );
+}
+
+/* the shared pick → connecting → connected rhythm of the two connect steps */
+function useConnect(alreadyConnected) {
+  const [phase, setPhase] = useState(alreadyConnected ? 'done' : 'pick');
   useEffect(() => {
     if (phase !== 'connecting') return undefined;
-    const t = setTimeout(() => setPhase('done'), 1700);
+    const t = setTimeout(() => setPhase('done'), CONNECT_MS);
     return () => clearTimeout(t);
   }, [phase]);
+  return [phase, () => setPhase('connecting')];
+}
+
+function Health({ data, update, next }) {
+  const [phase, start] = useConnect(Boolean(data.healthDevice));
+  const device = WEARABLES.find((w) => w.label === data.healthDevice);
 
   const connect = (w) => {
-    setDevice(w.label);
     update({ health: true, healthDevice: w.label });
-    setPhase('connecting');
+    start();
   };
 
-  if (phase === 'connecting') {
+  if (phase !== 'pick' && device) {
+    const done = phase === 'done';
     return (
-      <Step center>
-        <div className="ob-spinner" aria-hidden="true" />
-        <h1 className="ob-title">Connecting…</h1>
-        <p className="ob-copy">Pairing Nocta with your {device}.</p>
-      </Step>
-    );
-  }
-
-  if (phase === 'done') {
-    return (
-      <Step center foot={<button className="btn primary" onClick={next}>Continue</button>}>
-        <div className="ob-connect-mark">
-          <Icon name="check" size={30} />
-        </div>
-        <h1 className="ob-title">{device} connected</h1>
+      <Step
+        center
+        foot={
+          done && (
+            <button className="btn primary" onClick={next}>
+              Continue
+            </button>
+          )
+        }
+      >
+        <PairVisual logo={DEVICE_LOGO[device.id]} state={done ? 'done' : 'connecting'} />
+        <h1 className="ob-title">{done ? `${device.label} connected` : 'Connecting…'}</h1>
         <p className="ob-copy">
-          Nocta will line your heart rate and sleep stages up against your therapy each
-          night.
+          {done
+            ? 'Nocta will line your heart rate and sleep stages up against your therapy each night.'
+            : `Pairing Nocta with your ${device.label}.`}
         </p>
       </Step>
     );
@@ -365,9 +429,10 @@ function Health({ data, update, next }) {
         <div className="ob-field-label">Choose a device</div>
         <div className="ob-chips">
           {WEARABLES.map((w) => (
-            <button key={w.id} className="chip" onClick={() => connect(w)}>
-              <span>{w.label}</span>
-              <Icon name="chevronRight" size={15} />
+            <button key={w.id} className="ob-option" onClick={() => connect(w)}>
+              <img className="ob-option-logo" src={DEVICE_LOGO[w.id]} alt="" />
+              <span className="ob-option-label">{w.label}</span>
+              <Icon name="chevronRight" size={18} />
             </button>
           ))}
         </div>
@@ -376,7 +441,33 @@ function Health({ data, update, next }) {
   );
 }
 
-function Pairing({ update, next }) {
+function Pairing({ data, update, next }) {
+  const [phase, start] = useConnect(data.sleephq);
+
+  if (phase !== 'pick') {
+    const done = phase === 'done';
+    return (
+      <Step
+        center
+        foot={
+          done && (
+            <button className="btn primary" onClick={next}>
+              Continue
+            </button>
+          )
+        }
+      >
+        <PairVisual logo={SLEEPHQ_LOGO} state={done ? 'done' : 'connecting'} />
+        <h1 className="ob-title">{done ? 'SleepHQ connected' : 'Connecting…'}</h1>
+        <p className="ob-copy">
+          {done
+            ? "Each morning, Nocta will bring in last night's therapy data from SleepHQ."
+            : 'Signing in to SleepHQ.'}
+        </p>
+      </Step>
+    );
+  }
+
   return (
     <Step
       foot={
@@ -385,7 +476,7 @@ function Pairing({ update, next }) {
             className="btn primary"
             onClick={() => {
               update({ sleephq: true });
-              next();
+              start();
             }}
           >
             Connect SleepHQ
@@ -396,9 +487,10 @@ function Pairing({ update, next }) {
         </>
       }
     >
+      <PairVisual logo={SLEEPHQ_LOGO} state="idle" />
       <h1 className="ob-title">Bring in your CPAP data</h1>
       <p className="ob-copy">
-        Nocta reads your nightly therapy data through SleepHQ — it works with ResMed,
+        Nocta reads your nightly therapy data through SleepHQ. It works with ResMed,
         Philips, and most modern machines.
       </p>
       <p className="ob-note">
@@ -409,88 +501,107 @@ function Pairing({ update, next }) {
   );
 }
 
+const TYPE_FILTERS = [{ id: '', label: 'All' }, ...MASK_TYPES];
+
+/* one thing at a time: find the mask, then size and cushion appear */
 function Equipment({ data, update, next }) {
-  const [brand, setBrand] = useState('');
   const [type, setType] = useState('');
   const [query, setQuery] = useState('');
+  const [picking, setPicking] = useState(!data.maskModel);
+  const chosen = MASKS.find((m) => m.id === data.maskModel);
 
   const q = query.trim().toLowerCase();
   const results = MASKS.filter(
     (m) =>
-      (!brand || m.brand === brand) &&
       (!type || m.type === type) &&
       (!q ||
         m.name.toLowerCase().includes(q) ||
         BRAND_LABEL[m.brand].toLowerCase().includes(q))
   );
 
+  const pick = (m) => {
+    update({ maskModel: m.id });
+    setPicking(false);
+  };
+
   return (
     <Step foot={<SkipFoot next={next} />}>
       <h1 className="ob-title">Your mask &amp; supplies</h1>
       <p className="ob-copy">
-        Find the exact mask you use — Nocta tracks its parts and reminds you before they
-        wear out.
+        Find the mask you use. Nocta tracks its parts and reminds you before they wear out.
       </p>
 
-      <div className="ob-row" style={{ marginTop: 22 }}>
-        <SelectInput
-          filter
-          placeholder="All brands"
-          value={brand}
-          onChange={setBrand}
-          options={MASK_BRANDS}
-        />
-        <SelectInput
-          filter
-          placeholder="All types"
-          value={type}
-          onChange={setType}
-          options={MASK_TYPES}
-        />
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <TextInput placeholder="Search by model name" value={query} onChange={setQuery} />
-      </div>
-
-      <Field label={`Select your mask · ${results.length}`}>
-        <div className="ob-mask-results">
-          {results.length === 0 && (
-            <div className="ob-mask-empty">No masks match those filters.</div>
-          )}
-          {results.map((m) => {
-            const sel = data.maskModel === m.id;
-            return (
+      {picking || !chosen ? (
+        <div className="ob-reveal" key="pick">
+          <div className="ob-pills ob-filters" role="group" aria-label="Mask type">
+            {TYPE_FILTERS.map((t) => (
+              <button
+                key={t.id || 'all'}
+                className={`ob-pill${type === t.id ? ' on' : ''}`}
+                aria-pressed={type === t.id}
+                onClick={() => setType(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="ob-stack-gap">
+            <TextInput placeholder="Search by name or brand" value={query} onChange={setQuery} />
+          </div>
+          <div className="ob-mask-results ob-stack-gap">
+            {results.length === 0 && (
+              <div className="ob-mask-empty">No masks match that search.</div>
+            )}
+            {results.map((m) => (
               <button
                 key={m.id}
-                className={`ob-mask-row${sel ? ' selected' : ''}`}
-                onClick={() => update({ maskModel: m.id })}
+                className={`ob-mask-row${data.maskModel === m.id ? ' selected' : ''}`}
+                onClick={() => pick(m)}
               >
                 <span className="ob-mask-name">
                   {BRAND_LABEL[m.brand]} {m.name}
                 </span>
                 <span className="ob-mask-type">{TYPE_LABEL[m.type]}</span>
-                {sel && <Icon name="check" size={16} />}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </Field>
-
-      <Field label="Mask size">
-        <SelectInput
-          placeholder="Select size"
-          value={data.maskSize}
-          onChange={(v) => update({ maskSize: v })}
-          options={MASK_SIZES}
-        />
-      </Field>
-      <Field label="Cushion last replaced">
-        <ChipGroup
-          options={CUSHION_AGE}
-          value={data.cushion}
-          onChange={(v) => update({ cushion: v })}
-        />
-      </Field>
+      ) : (
+        <div className="ob-reveal" key="chosen">
+          <div className="ob-mask-chosen">
+            <span className="ob-mask-chosen-text">
+              <span className="ob-mask-name">
+                {BRAND_LABEL[chosen.brand]} {chosen.name}
+              </span>
+              <span className="ob-mask-sub">{TYPE_LABEL[chosen.type]} mask</span>
+            </span>
+            <button className="ob-link" onClick={() => setPicking(true)}>
+              Change
+            </button>
+          </div>
+          <Field label="Size">
+            <div className="ob-pills" role="group" aria-label="Mask size">
+              {MASK_SIZES.map((s) => (
+                <button
+                  key={s.id}
+                  className={`ob-pill${data.maskSize === s.id ? ' on' : ''}`}
+                  aria-pressed={data.maskSize === s.id}
+                  onClick={() => update({ maskSize: data.maskSize === s.id ? null : s.id })}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Cushion last replaced">
+            <ChipGroup
+              options={CUSHION_AGE}
+              value={data.cushion}
+              onChange={(v) => update({ cushion: v })}
+            />
+          </Field>
+        </div>
+      )}
     </Step>
   );
 }
@@ -500,7 +611,7 @@ function Compliance({ data, update, next }) {
     <Step foot={<SkipFoot next={next} />}>
       <h1 className="ob-title">Insurance &amp; compliance</h1>
       <p className="ob-copy">
-        Many insurers want proof of use — often 4+ hours on most nights for the first
+        Many insurers want proof of use, often 4+ hours on most nights for the first
         90 days. Nocta can track it so you don't have to.
       </p>
       <Field label="Are you in a compliance window?">
@@ -518,7 +629,7 @@ function Compliance({ data, update, next }) {
           options={INSURERS}
         />
         {data.insuranceProvider === 'other_ins' && (
-          <div style={{ marginTop: 8 }}>
+          <div className="ob-stack-gap">
             <TextInput
               placeholder="Enter your insurer"
               value={data.insuranceOther}
@@ -535,7 +646,7 @@ function Compliance({ data, update, next }) {
           options={DME_PROVIDERS}
         />
         {data.equipmentProvider === 'other_dme' && (
-          <div style={{ marginTop: 8 }}>
+          <div className="ob-stack-gap">
             <TextInput
               placeholder="Enter your DME provider"
               value={data.equipmentOther}
@@ -548,33 +659,33 @@ function Compliance({ data, update, next }) {
   );
 }
 
+/* the real why-card, played in like it will be tomorrow morning: the card
+ * rises, the verdict arrives a word at a time, the night's bars grow in, then
+ * the one action lands. Choreography lives in onboarding.css (.ob-why-stage). */
 function Expectations({ next }) {
+  const example = FIXTURES.anomaly;
   return (
     <Step foot={<button className="btn primary" onClick={next}>Got it</button>}>
       <h1 className="ob-title">Tomorrow morning</h1>
       <p className="ob-copy">
-        After your first full night, you'll wake up to a card like this — what happened,
-        why, and one thing to try. No 0–100 scores. No jargon.
+        After your first full night, you'll wake up to a card like this: what happened, why,
+        and one thing to try. No 0–100 scores. No jargon.
       </p>
-      <div className="ob-mini" aria-hidden="true">
-        <div className="ob-mini-eyebrow">
-          <Icon name="star" size={11} />
-          Nocta Coach · Last night
-        </div>
-        <div className="ob-mini-title">
-          <Rich text="Last night looked like your *usual baseline*." />
-        </div>
-        <p className="ob-mini-text">
-          Your AHI held at 3.2, comfortably in range, and leak stayed low all night.
-        </p>
-        <div className="ob-mini-action">
-          <Icon name="spark" size={14} />
-          Nothing to change tonight — keep doing what you did.
-        </div>
+      <div className="ob-why-stage">
+        <span className="ob-example-tag">Example</span>
+        <WhyCard
+          insight={example.insight}
+          spark={example.spark}
+          sparkKind={example.sparkKind}
+          eyebrow
+        />
       </div>
     </Step>
   );
 }
+
+const lockDate = () =>
+  new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
 function Notifications({ update, next }) {
   return (
@@ -602,6 +713,27 @@ function Notifications({ update, next }) {
         that makes Nocta's insights sharper over time.
       </p>
       <p className="ob-note">One nudge a day, never more.</p>
+
+      {/* what the nudge looks like: a Nocta notification on the lock screen */}
+      <figure className="ob-lock" aria-label="Example: a Nocta reminder on your lock screen">
+        <div className="ob-lock-date">{lockDate()}</div>
+        <div className="ob-lock-time tnum">7:02</div>
+        <div className="ob-notif">
+          <span className="ob-notif-icon">
+            <img src="/Nocta-logo.svg" alt="" />
+          </span>
+          <span className="ob-notif-body">
+            <span className="ob-notif-head">
+              <span>Nocta</span>
+              <span>now</span>
+            </span>
+            <span className="ob-notif-title">Good morning</span>
+            <span className="ob-notif-text">
+              How did you sleep? Your 20-second check-in is ready.
+            </span>
+          </span>
+        </div>
+      </figure>
     </Step>
   );
 }
@@ -623,14 +755,9 @@ function Disclaimer({ onAccept }) {
   return (
     <div className="ob-disclaimer">
       <div className="ob-disc-card">
-        <div className="ob-disc-icon">
-          <Icon name="shield" size={26} />
-        </div>
+        <img className="ob-disc-logo" src="/Nocta-logo.svg" alt="" />
         <h2>One important thing</h2>
-        <p>
-          Nocta is a wellness companion, not a medical device. It supplements — it does not
-          replace — your prescribed CPAP therapy or your doctor's care.
-        </p>
+        <p>{MEDICAL_NOTE}</p>
         <button className="btn primary" onClick={onAccept}>
           I understand
         </button>
@@ -645,6 +772,7 @@ export function Onboarding() {
   const { completeOnboarding } = useStore();
   const [intro, setIntro] = useState(true);
   const [step, setStep] = useState(0);
+  const [dir, setDir] = useState('fwd'); // which way the step content slides in
   const [disclaimer, setDisclaimer] = useState(false);
   const [infoTip, setInfoTip] = useState(null);
   const [data, setData] = useState({
@@ -671,8 +799,15 @@ export function Onboarding() {
   });
 
   const update = (patch) => setData((d) => ({ ...d, ...patch }));
-  const next = () => (step < STEPS.length - 1 ? setStep(step + 1) : setDisclaimer(true));
-  const back = () => setStep((s) => Math.max(0, s - 1));
+  const next = () => {
+    setDir('fwd');
+    if (step < STEPS.length - 1) setStep(step + 1);
+    else setDisclaimer(true);
+  };
+  const back = () => {
+    setDir('back');
+    setStep((s) => Math.max(0, s - 1));
+  };
 
   if (intro) return <Intro onDone={() => setIntro(false)} />;
   if (disclaimer) return <Disclaimer onAccept={completeOnboarding} />;
@@ -680,22 +815,30 @@ export function Onboarding() {
   const Current = STEPS[step];
 
   return (
-    <div className="ob-screen">
+    <div className={`ob-screen ${dir}`}>
+      <div className="ob-ambient" aria-hidden="true" />
       <StatusBar />
       <div className="ob-nav">
         {step > 0 ? (
-          <button className="ob-back" onClick={back} aria-label="Back">
+          <button className="ob-back glass" onClick={back} aria-label="Back">
             <Icon name="chevronLeft" size={20} />
           </button>
         ) : (
           <span className="ob-back-spacer" />
         )}
-        <div className="ob-progress" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
-          {STEPS.map((_, i) => (
-            <span key={i} className={i <= step ? 'on' : ''} />
-          ))}
+        <div
+          className="ob-progress"
+          role="progressbar"
+          aria-label="Setup progress"
+          aria-valuemin={1}
+          aria-valuemax={STEPS.length}
+          aria-valuenow={step + 1}
+        >
+          <span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
         </div>
-        <span className="ob-back-spacer" />
+        <span className="ob-count tnum">
+          {step + 1}/{STEPS.length}
+        </span>
       </div>
       <Current key={step} data={data} update={update} next={next} onInfo={setInfoTip} />
       {infoTip && (

@@ -2,7 +2,8 @@
  * equipment lifecycle + export, arranged as dashboard panels. */
 import { useState } from 'react';
 import { useStore } from '../../lib/store.jsx';
-import { DEVICE, EQUIPMENT, PROJECTION } from '../../data/therapy.js';
+import { DEVICE, EQUIPMENT, PROJECTION, machineById, deviceCells } from '../../data/therapy.js';
+import { NIGHTS_ON_THERAPY } from '../../data/history.js';
 import { maskById } from '../../data/account.js';
 import { Icon } from '../Icons.jsx';
 import { Rich } from '../Rich.jsx';
@@ -20,15 +21,14 @@ function lifeWord(pct) {
 
 export function DesktopTherapy() {
   const [exported, setExported] = useState(false);
-  const { maskId } = useStore();
-  const cells = DEVICE.cells.map((c) =>
-    c.k === 'Mask' ? { k: 'Mask', v: maskById(maskId).name } : c
-  );
+  const { maskId, machineId } = useStore();
+  const machine = machineById(machineId);
+  const cells = deviceCells(machine, maskById(maskId).name);
 
   /* at-a-glance strip, derived from the same fixtures the cards below use */
   const elapsed = PROJECTION.nights.filter((n) => n !== 'future');
   const metNights = elapsed.filter((n) => n === 'met').length;
-  const targetDay = PROJECTION.scale[1].split(' ·')[0]; // 'Day 22 · target'
+  const targetDay = PROJECTION.scale[1].split(' ·')[0]; // 'Night 24 · earliest'
   const nextDue = EQUIPMENT.reduce((a, e) =>
     e.lifespanDays - e.ageDays < a.lifespanDays - a.ageDays ? e : a
   );
@@ -44,7 +44,7 @@ export function DesktopTherapy() {
         <div className="dash-topbar-meta">
           <span className="dash-meta-pill">
             <span className="dash-sync-dot" aria-hidden="true" />
-            AirSense 11 · connected
+            {machine.short} · connected
           </span>
           <button
             className={`dash-topbar-action${exported ? ' done' : ''}`}
@@ -63,9 +63,9 @@ export function DesktopTherapy() {
           <div className="sm-sub">4+ hours, this 30-night window</div>
         </div>
         <div className="stat-mini">
-          <div className="sm-k">Projected to clear</div>
+          <div className="sm-k">Earliest to clear</div>
           <div className="sm-v">{targetDay}</div>
-          <div className="sm-sub">at your current pace</div>
+          <div className="sm-sub">if every night from here counts</div>
         </div>
         <div className="stat-mini">
           <div className="sm-k">Next replacement</div>
@@ -74,7 +74,7 @@ export function DesktopTherapy() {
         </div>
         <div className="stat-mini">
           <div className="sm-k">Device</div>
-          <div className="sm-v">AirSense 11</div>
+          <div className="sm-v">{machine.short}</div>
           <div className="sm-sub">{DEVICE.status} · SleepHQ</div>
         </div>
       </div>
@@ -104,7 +104,9 @@ export function DesktopTherapy() {
               <span className="dc-dot" />
               <span className="dc-status">{DEVICE.status}</span>
             </div>
-            <h3>{DEVICE.name}</h3>
+            <h3>
+              {machine.brand} {machine.name}
+            </h3>
             <div className="dc-sub">{DEVICE.source}</div>
             <div className="dc-grid">
               {cells.map((c) => (
@@ -146,10 +148,10 @@ export function DesktopTherapy() {
           <div className="list">
             <button className="list-row" onClick={() => setExported(true)}>
               <div className="lr-main">
-                <div className="lr-title">Export 30-night summary</div>
+                <div className="lr-title">Export summary for your doctor</div>
                 <div className="lr-sub">
                   {exported
-                    ? 'Ready — 30 nights, AHI & leak trends, compliance. No AI commentary.'
+                    ? `Ready. All ${NIGHTS_ON_THERAPY} nights: AHI, leak, hours and compliance. No AI commentary.`
                     : 'A clean one-page PDF to bring to your appointment'}
                 </div>
               </div>

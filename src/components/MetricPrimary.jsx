@@ -1,6 +1,7 @@
 /* Nocta — AHI primary metric card with a Chart.js baseline bar (replaces donut gauges). */
 import { Icon } from './Icons.jsx';
 import { BaselineBar } from './Charts.jsx';
+import { CountUp } from '../lib/motion.jsx';
 
 export function MetricPrimary({ ahi }) {
   const hasValue = ahi.value != null;
@@ -11,10 +12,12 @@ export function MetricPrimary({ ahi }) {
       <div className="ahi-top">
         <div>
           <div className="label">AHI · Events per hour</div>
-          <div className="ahi-value tnum">{hasValue ? ahi.value.toFixed(1) : '—'}</div>
+          <div className="ahi-value tnum">
+            {hasValue ? <CountUp value={ahi.value} decimals={1} duration={1100} delay={150} /> : '—'}
+          </div>
           <div className="ahi-unit">
             {hasValue
-              ? `vs. 14-day average ${ahi.avg14.toFixed(1)}`
+              ? `vs. your average so far, ${ahi.avgSoFar.toFixed(1)}`
               : 'Last night was too short to score'}
           </div>
         </div>
@@ -28,7 +31,7 @@ export function MetricPrimary({ ahi }) {
 
       {hasValue && (
         <div className="ahi-baseline">
-          <BaselineBar value={ahi.value} avg={ahi.avg14} />
+          <BaselineBar value={ahi.value} avg={ahi.avgSoFar} />
         </div>
       )}
       <div className="baseline-labels">

@@ -86,7 +86,7 @@ export function SettingsSheet() {
             <div className="lr-title">Export my data</div>
             <div className="lr-sub">
               {exported
-                ? 'Export queued — you’ll get an email when it’s ready'
+                ? 'Export queued. You’ll get an email when it’s ready'
                 : 'Download everything Nocta holds'}
             </div>
           </div>
@@ -109,7 +109,7 @@ export function SettingsSheet() {
       </div>
       <p className="settings-note">{MEDICAL_NOTE}</p>
 
-      <p className="disclaimer">Nocta v1 prototype · mock data · no live SleepHQ or OpenAI calls.</p>
+      <p className="disclaimer">Nocta 1.0 · Your therapy data arrives via SleepHQ.</p>
     </Sheet>
   );
 }

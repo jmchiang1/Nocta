@@ -49,8 +49,20 @@ button {
     #07090f;
 }
 
-/* demo control — a column to the left of the phone frame */
+/* demo control — a column docked just left of the phone frame. Fixed (out
+ * of flow) so the phone stays centred whether the panel is open or collapsed.
+ * --dp-dock = the x of the phone's left bezel edge minus a 40px gap
+ * (phone 402px wide + 13px bezel ring → 214px from centre, +40 gap). */
+.stage {
+  --dp-dock: calc(50% - 254px);
+}
 .dev-panel {
+  position: fixed;
+  /* 158px panel sits flush against the dock line, never off-screen */
+  left: max(16px, calc(var(--dp-dock) - 158px));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -61,6 +73,67 @@ button {
   border-radius: 16px;
   background: rgba(123, 149, 216, 0.07);
   border: 1px dashed rgba(255, 255, 255, 0.14);
+  animation: fade var(--dur-fast) ease both;
+}
+.dev-panel .dp-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.dev-panel .dp-top .dp-label {
+  padding: 0;
+}
+.dev-panel .dp-close {
+  white-space: nowrap;
+  padding: 3px 6px;
+  font-size: 10px;
+  border: 0;
+  background: none;
+  color: var(--text-tertiary);
+}
+.dev-panel .dp-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dev-panel button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.dev-panel kbd,
+.dev-handle kbd {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  margin-left: 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text-tertiary);
+}
+/* collapsed state — a quiet tab so the phone reads as the whole product */
+.dev-handle {
+  position: fixed;
+  /* right edge on the dock line, beside the phone */
+  left: max(110px, var(--dp-dock));
+  top: 50%;
+  transform: translate(-100%, -50%);
+  white-space: nowrap;
+  z-index: 100;
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: rgba(123, 149, 216, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  opacity: 0.5;
+  transition: opacity var(--dur-fast) ease;
+}
+.dev-handle:hover,
+.dev-handle:focus-visible {
+  opacity: 1;
 }
 .dev-panel .dp-label {
   font-size: 9px;
@@ -123,6 +196,11 @@ button {
   .stage {
     padding: 0;
   }
+  .dev-handle {
+    top: 8px;
+    left: 8px;
+    transform: none;
+  }
   .phone {
     width: 100vw;
     height: 100dvh;
@@ -135,6 +213,7 @@ button {
     top: 0;
     left: 0;
     right: 0;
+    transform: none;
     z-index: 200;
     flex-direction: row;
     flex-wrap: wrap;
@@ -206,12 +285,10 @@ button {
 }
 .page-head .eyebrow {
   font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 14px;
-  color: var(--accent);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--text-secondary);
   margin-bottom: 4px;
-  opacity: 0.95;
 }
 .page-head h1 {
   margin: 0;
@@ -284,7 +361,9 @@ button {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }

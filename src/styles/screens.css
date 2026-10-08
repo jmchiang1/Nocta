@@ -828,14 +828,24 @@
   padding: 14px 10px 6px;
 }
 .coach-intro .ci-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 12px;
   display: grid;
   place-items: center;
-  background: var(--accent);
-  color: var(--text-on-accent);
+}
+/* Coach replies (and the typing bubble) sit beside a small mascot */
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.msg-row .bubble.coach,
+.msg-row .typing {
+  align-self: auto;
+}
+.msg.coach .msg-foot {
+  margin-left: 36px;
 }
 .coach-intro h4 {
   font-family: var(--font-display);
@@ -954,4 +964,164 @@
   font-size: 13px;
   line-height: 1.55;
   margin: 0;
+}
+
+/* ============ DOCTOR SUMMARY (doctor path) ============ */
+.doc-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.doc-lede {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.doc-block h4 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+}
+.doc-reasons {
+  margin: 0;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid rgba(224, 122, 106, 0.28);
+}
+.doc-reasons > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.doc-reasons > div + div {
+  border-top: 1px solid var(--hairline);
+}
+.doc-reasons dt {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.doc-reasons dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.doc-note {
+  margin: 10px 2px 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+.doc-contents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.doc-contents li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+.doc-contents li svg {
+  color: var(--data-1);
+  flex-shrink: 0;
+}
+.doc-ready {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.doc-ready svg {
+  color: var(--data-1);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.doc-ready strong {
+  color: var(--text-primary);
+}
+
+/* ============ TONIGHT — PROPOSED LAYOUT (test page) ============
+ * Type steps up toward the 17pt body floor. Scoped so the current
+ * Tonight (and Trends, which shares these components) is unchanged. */
+.proposed-pill {
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  border: 1px dashed var(--hairline-strong);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.tonight-proposed .page-head .sub {
+  font-size: 15px;
+}
+.tonight-proposed .day .d-label {
+  font-size: 12px;
+}
+.tonight-proposed .why-card .action .action-text {
+  font-size: 17px;
+}
+.tonight-proposed .why-card .receipts {
+  font-size: 15px;
+  min-height: 48px;
+}
+.tonight-proposed .why-card .receipts-detail-inner {
+  font-size: 17px;
+}
+.tonight-proposed .why-card .trust {
+  font-size: 13px;
+}
+.tonight-proposed .ask-row {
+  font-size: 16px;
+}
+.tonight-proposed .checkin h4 {
+  font-size: 18px;
+}
+.tonight-proposed .checkin p {
+  font-size: 15px;
+}
+.tonight-proposed .checkin .ci-eyebrow {
+  font-size: 12px;
+}
+.tonight-proposed .night-meta .mid {
+  font-size: 14px;
+}
+.tonight-proposed .night-card .axis,
+.tonight-proposed .night-card .legend {
+  font-size: 13px;
+}
+.tonight-proposed .pattern .p-eyebrow {
+  font-size: 12px;
+}
+.tonight-proposed .pattern h4 {
+  font-size: 20px;
+}
+.tonight-proposed .pattern p {
+  font-size: 17px;
+}
+.tonight-proposed .small-stat {
+  font-size: 13px;
+}
+.tonight-proposed .small-stat strong {
+  font-size: 20px;
+}
+.tonight-proposed .disclaimer {
+  font-size: 14px;
 }

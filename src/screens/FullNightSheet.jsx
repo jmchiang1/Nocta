@@ -65,7 +65,7 @@ export function FullNightSheet() {
 
   return (
     <Sheet
-      full
+      variant="page"
       eyebrow={`${fx.dayName} · ${fx.session.start} – ${fx.session.end}`}
       title="The full night"
       onClose={closeSheet}
@@ -110,7 +110,7 @@ export function FullNightSheet() {
           ) : (
             <div className="connect-cta">
               <p>
-                Tell Nocta how you slept and what shaped your night — it sharpens
+                Tell Nocta how you slept and what shaped your night. It sharpens
                 tonight's insight.
               </p>
               <button className="btn ghost" onClick={() => openSheet('checkin')}>

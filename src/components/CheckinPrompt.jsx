@@ -13,7 +13,7 @@ export function CheckinPrompt({ checkin, onStart }) {
       <button className="checkin done card-enter" onClick={onStart}>
         <div>
           <div className="ci-eyebrow">Morning check-in · logged</div>
-          <h4>Thanks — Nocta has today's context.</h4>
+          <h4>Thanks. Nocta has today's context.</h4>
           {all.length > 0 ? (
             <div className="ci-tags">
               {all.map((t) => (

@@ -4,63 +4,38 @@
 import { useState } from 'react';
 import { useStore } from '../../lib/store.jsx';
 import { FIXTURES } from '../../data/fixtures.js';
-import { mulberry32, hashStr } from '../../lib/format.js';
 import { Icon } from '../Icons.jsx';
 import { WhyCard } from '../WhyCard.jsx';
 import { NightTimeline } from '../NightTimeline.jsx';
+import { nightMarks } from '../WeekStrip.jsx';
 import { PatternCard } from '../PatternCard.jsx';
 import { BodyResponse } from '../BodyResponse.jsx';
 import { BaselineBar, MetricSpark } from '../Charts.jsx';
 import { activeBodyResponses } from '../../lib/bodySource.js';
 
-/* The desktop top bar shows a 14-night strip you can page through with the
- * arrows. Window 0 is the authored current fortnight (mirrors the mobile WEEK);
- * older windows are generated deterministically so each prior fortnight is
- * distinct but stable. Days reuse the five fixtures — clicking loads that
- * night's data into the dashboard. */
+/* The desktop top bar shows the current 14-night strip. Therapy started
+ * Sep 30 (history.js), so the first three days are before night 1 and there
+ * is no older fortnight to page back to. Nights 1–4 had sessions but no
+ * authored detail fixture, so they show as logged but aren't clickable. */
 const WEEK14 = [
-  { key: '2026-05-25', day: '25', fixtureId: 'steady' },
-  { key: '2026-05-26', day: '26', fixtureId: 'win' },
-  { key: '2026-05-27', day: '27', fixtureId: null, state: 'missed' },
-  { key: '2026-05-28', day: '28', fixtureId: 'win' },
-  { key: '2026-05-29', day: '29', fixtureId: 'steady' },
-  { key: '2026-05-30', day: '30', fixtureId: 'escalation' },
-  { key: '2026-05-31', day: '31', fixtureId: null, state: 'missed' },
-  { key: '2026-06-01', day: '1', fixtureId: 'steady' },
-  { key: '2026-06-02', day: '2', fixtureId: 'win' },
-  { key: '2026-06-03', day: '3', fixtureId: 'escalation' },
-  { key: '2026-06-04', day: '4', fixtureId: 'insufficient' },
-  { key: '2026-06-05', day: '5', fixtureId: null, state: 'missed' },
-  { key: '2026-06-06', day: '6', fixtureId: null, state: 'missed' },
-  { key: '2026-06-07', day: '7', fixtureId: 'anomaly' },
+  { key: '2026-09-27', day: '27', fixtureId: null, state: 'none' },
+  { key: '2026-09-28', day: '28', fixtureId: null, state: 'none' },
+  { key: '2026-09-29', day: '29', fixtureId: null, state: 'none' },
+  { key: '2026-09-30', day: '30', fixtureId: null, state: 'logged' },
+  { key: '2026-10-01', day: '1', fixtureId: null, state: 'logged' },
+  { key: '2026-10-02', day: '2', fixtureId: null, state: 'logged' },
+  { key: '2026-10-03', day: '3', fixtureId: null, state: 'logged' },
+  { key: '2026-10-04', day: '4', fixtureId: 'steady' },
+  { key: '2026-10-05', day: '5', fixtureId: 'win' },
+  { key: '2026-10-06', day: '6', fixtureId: 'escalation' },
+  { key: '2026-10-07', day: '7', fixtureId: 'insufficient' },
+  { key: '2026-10-08', day: '8', fixtureId: null, state: 'missed' },
+  { key: '2026-10-09', day: '9', fixtureId: null, state: 'missed' },
+  { key: '2026-10-10', day: '10', fixtureId: 'anomaly' },
 ];
 
-const WIN0_START = new Date('2026-05-25T00:00:00'); // first day of window 0
-const FIX_POOL = ['steady', 'win', 'steady', 'win', 'anomaly', 'escalation', 'insufficient'];
-
-const localISO = (dt) =>
-  `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-
-/* offset 0 → authored current fortnight; offset ≥ 1 → generated older ones */
-function buildWindow(offset) {
-  if (offset === 0) return WEEK14;
-  const end = new Date(WIN0_START);
-  end.setDate(end.getDate() - 1 - (offset - 1) * 14);
-  const days = [];
-  for (let i = 13; i >= 0; i--) {
-    const date = new Date(end);
-    date.setDate(date.getDate() - i);
-    const iso = localISO(date);
-    const rnd = mulberry32(hashStr('nocta-night-' + iso));
-    let fixtureId = null;
-    let state = 'missed';
-    if (rnd() > 0.16) {
-      fixtureId = FIX_POOL[Math.floor(rnd() * FIX_POOL.length)];
-      state = FIXTURES[fixtureId].dayState;
-    }
-    days.push({ key: iso, day: String(date.getDate()), fixtureId, state });
-  }
-  return days;
+function buildWindow() {
+  return WEEK14;
 }
 
 const fmtShort = (iso) =>
@@ -81,7 +56,7 @@ export function DesktopTonight() {
   const fx = FIXTURES[fixtureId];
   const bodyCards = activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads);
   const hasAhi = fx.ahi.value != null;
-  const ahiMax = Math.max(20, Math.ceil(Math.max(fx.ahi.value ?? 0, fx.ahi.avg14) * 1.6));
+  const ahiMax = Math.max(20, Math.ceil(Math.max(fx.ahi.value ?? 0, fx.ahi.avgSoFar) * 1.6));
 
   return (
     <>
@@ -96,11 +71,13 @@ export function DesktopTonight() {
             <button
               className="dash-week-arrow"
               onClick={() => setWeekOffset((o) => o + 1)}
-              aria-label="Previous 14 nights"
+              disabled
+              title="Your first night was Sep 30"
+              aria-label="Previous 14 nights: none yet, your first night was Sep 30"
             >
               <Icon name="chevronLeft" size={18} />
             </button>
-            <div className="dash-week week" role="group" aria-label="14 nights — click a night to open it">
+            <div className="dash-week week" role="group" aria-label="14 nights. Click a night to open it">
               {days.map((d) => {
                 const nightFx = d.fixtureId ? FIXTURES[d.fixtureId] : null;
                 const state = nightFx ? nightFx.dayState : d.state;
@@ -113,17 +90,20 @@ export function DesktopTonight() {
                   );
                 }
                 const selected = d.key === selectedKey;
+                const marks = nightMarks(nightFx);
                 return (
                   <button
                     key={d.key}
                     type="button"
                     className={`day ${state}${selected ? ' selected' : ''}`}
                     aria-current={selected ? 'date' : undefined}
+                    aria-label={`${nightFx.dayName}, ${nightFx.dateLabel}${marks.a11y}`}
                     onClick={() => {
                       setFixtureId(d.fixtureId);
                       setSelectedKey(d.key);
                     }}
                   >
+                    {marks.suggests && <span className="day-dot" aria-hidden="true" />}
                     <Icon name="moon" size={19} className="day-moon" />
                     <span className="d-label">{d.day}</span>
                   </button>
@@ -148,7 +128,12 @@ export function DesktopTonight() {
 
       {/* hero row: the nightly story beside its pattern card */}
       <div className={`dash-tonight-hero${fx.pattern ? '' : ' solo'}`}>
-        <WhyCard insight={fx.insight} spark={fx.spark} sparkKind={fx.sparkKind} />
+        <WhyCard
+          insight={fx.insight}
+          spark={fx.spark}
+          sparkKind={fx.sparkKind}
+          onDoctor={() => openSheet('doctor')}
+        />
         {fx.pattern && <PatternCard pattern={fx.pattern} />}
       </div>
 
@@ -157,14 +142,20 @@ export function DesktopTonight() {
       <div className="dash-head">
         <h3>The night</h3>
         <div className="dash-head-right">
-          <span className="dash-head-meta">{fx.session.start} — {fx.session.end}</span>
+          <span className="dash-head-meta">{fx.session.start}–{fx.session.end}</span>
           <button className="dash-head-action" onClick={() => openSheet('compare')}>
             Compare nights
             <Icon name="chevronRight" size={14} />
           </button>
         </div>
       </div>
-      <NightTimeline timeline={fx.timeline} session={fx.session} onOpen={() => openSheet('fullnight')} />
+      <NightTimeline
+        timeline={fx.timeline}
+        session={fx.session}
+        ahi={fx.ahi.value}
+        escalated={fx.insight.escalation_flag === 'hard'}
+        onOpen={() => openSheet('fullnight')}
+      />
 
       {/* KPI row — uniform stat cards fill the full width */}
       <div className="dash-head">
@@ -185,10 +176,10 @@ export function DesktopTonight() {
             {hasAhi ? fx.ahi.value.toFixed(1) : '—'}
           </div>
           <div className="dash-kpi-chart">
-            {hasAhi && <BaselineBar value={fx.ahi.value} avg={fx.ahi.avg14} max={ahiMax} height={10} />}
+            {hasAhi && <BaselineBar value={fx.ahi.value} avg={fx.ahi.avgSoFar} max={ahiMax} height={10} />}
           </div>
           <div className="dash-kpi-sub">
-            {hasAhi ? `vs 14-night avg ${fx.ahi.avg14.toFixed(1)}` : 'Last night was too short to score'}
+            {hasAhi ? `vs your average so far, ${fx.ahi.avgSoFar.toFixed(1)}` : 'Last night was too short to score'}
           </div>
         </div>
         {fx.secondary.map((m) => (

@@ -52,7 +52,7 @@ export const SLEEP_CONDITIONS = [
   {
     id: 'rls',
     label: 'Restless legs',
-    info: 'An uncomfortable urge to move your legs in the evening or at night — often a crawling or tingling feeling.',
+    info: 'An uncomfortable urge to move your legs in the evening or at night, often a crawling or tingling feeling.',
   },
   {
     id: 'bruxism',
@@ -79,7 +79,7 @@ export const SLEEP_CONDITIONS = [
 
 /* insurance / compliance — providers picked from the major companies */
 export const COMPLIANCE_WINDOW = [
-  { id: 'yes', label: 'Yes — in my first 90 days' },
+  { id: 'yes', label: 'Yes, in my first 90 days' },
   { id: 'no', label: 'No / already cleared it' },
   { id: 'unsure', label: 'Not sure' },
 ];

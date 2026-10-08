@@ -469,7 +469,8 @@
 }
 
 .card-enter {
-  animation: cardIn 0.34s ease-out both;
+  /* backwards, not both: once settled the card's own :active transform wins */
+  animation: cardIn 0.34s ease-out backwards;
 }
 @keyframes cardIn {
   from {
@@ -523,17 +524,38 @@
   display: block;
   color: var(--data-faint);
 }
-.day.good .day-moon {
-  color: var(--good);
-  filter: drop-shadow(0 0 5px rgba(125, 201, 154, 0.55));
+/* 2-state palette: a logged night is a neutral data-blue moon; only a night
+ * that needs a doctor turns coral. No red/amber/green night scores. */
+.day.logged .day-moon {
+  color: var(--data-1);
 }
-.day.watch .day-moon {
-  color: var(--watch);
-  filter: drop-shadow(0 0 5px rgba(230, 184, 92, 0.55));
-}
-.day.alert .day-moon {
+.day.escalation .day-moon {
   color: var(--alert);
   filter: drop-shadow(0 0 5px rgba(224, 122, 106, 0.55));
+}
+/* low data: same moon, outline only — "there's a night here, too little to read" */
+.day.low .day-moon {
+  color: var(--text-secondary);
+}
+.day.low .day-moon path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+/* peach dot — the why-card has a suggested step for this night */
+.day {
+  position: relative;
+}
+.day-dot {
+  position: absolute;
+  top: 9px;
+  left: calc(50% + 8px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg-base);
 }
 .day.missed .day-moon {
   color: rgba(255, 255, 255, 0.14);
@@ -555,28 +577,28 @@
 .day.selected .day-moon {
   filter: drop-shadow(0 0 8px currentColor);
 }
-/* Selected tint follows the night's status hue so the box and label read as
- * one color with the moon — a green night stays green, not peach/orange. */
-.day.good.selected {
-  background: rgba(125, 201, 154, 0.12);
-  border-color: rgba(125, 201, 154, 0.32);
+/* Selected tint follows the moon: neutral for a logged night, coral for an
+ * escalation night. Not peach — peach is reserved for the AI. */
+.day.logged.selected {
+  background: rgba(123, 149, 216, 0.12);
+  border-color: rgba(123, 149, 216, 0.32);
 }
-.day.good.selected .d-label {
-  color: var(--good);
+.day.logged.selected .d-label {
+  color: var(--text-primary);
 }
-.day.watch.selected {
-  background: rgba(230, 184, 92, 0.12);
-  border-color: rgba(230, 184, 92, 0.32);
-}
-.day.watch.selected .d-label {
-  color: var(--watch);
-}
-.day.alert.selected {
+.day.escalation.selected {
   background: rgba(224, 122, 106, 0.12);
   border-color: rgba(224, 122, 106, 0.32);
 }
-.day.alert.selected .d-label {
+.day.escalation.selected .d-label {
   color: var(--alert);
+}
+.day.low.selected {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--hairline-strong);
+}
+.day.low.selected .d-label {
+  color: var(--text-primary);
 }
 
 /* ============ WHY-CARD ============
@@ -677,14 +699,6 @@
   border: 1px solid rgba(240, 164, 122, 0.22);
   margin-bottom: 18px;
 }
-.why-card .action .arrow {
-  color: var(--accent);
-  font-size: 18px;
-  font-weight: 600;
-  flex-shrink: 0;
-  line-height: 1.4;
-  margin-top: 1px;
-}
 .why-card .action .action-text {
   font-size: 16px;
   font-weight: 500;
@@ -695,15 +709,9 @@
   background: rgba(125, 201, 154, 0.1);
   border-color: rgba(125, 201, 154, 0.22);
 }
-.why-card.state-win .action .arrow {
-  color: var(--good);
-}
 .why-card.state-escalation .action {
   background: rgba(224, 122, 106, 0.1);
   border-color: rgba(224, 122, 106, 0.28);
-}
-.why-card.state-escalation .action .arrow {
-  color: var(--alert);
 }
 
 /* receipts — collapsed by default, tap to expand */
@@ -798,6 +806,46 @@
 .why-card .trust .bars span.on {
   background: var(--text-tertiary);
 }
+.why-card .trust {
+  padding: 11px 0;
+  border-top: 1px solid var(--hairline);
+  font-size: 12px;
+}
+
+/* doctor path — on a hard escalation the action box is a button that opens
+ * the doctor summary (FEATURES: primary chip = "Prepare doctor summary") */
+.why-card .action.doctor {
+  width: 100%;
+  align-items: center;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  min-height: 56px;
+  transition: background-color var(--dur-fast) ease, transform var(--dur-press) ease;
+}
+.why-card .action.doctor .action-text {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.why-card .action.doctor .action-title {
+  display: block;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.why-card .action.doctor:hover {
+  background: rgba(224, 122, 106, 0.16);
+}
+.why-card .action.doctor:active {
+  transform: scale(0.98);
+}
+.why-card .action.doctor:focus-visible {
+  outline: 2px solid var(--alert);
+  outline-offset: 2px;
+}
 
 /* ============ AHI PRIMARY METRIC ============ */
 .ahi-card {
@@ -836,15 +884,13 @@
   font-size: 12px;
   font-weight: 600;
   font-feature-settings: 'tnum' 1;
-  background: rgba(224, 122, 106, 0.14);
-  color: var(--alert);
-  border: 1px solid rgba(224, 122, 106, 0.22);
+  /* neutral either way — the arrow carries direction. A coral "up" / green
+   * "down" pill would be a red/green score on a clinical number. */
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid var(--hairline-strong);
 }
-.delta-pill.good {
-  background: rgba(125, 201, 154, 0.12);
-  color: var(--good);
-  border-color: rgba(125, 201, 154, 0.2);
-}
+.delta-pill.good,
 .delta-pill.flat {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-secondary);
@@ -1148,9 +1194,6 @@
   padding: 14px 13px 12px;
   text-align: left;
 }
-.metric:active {
-  transform: scale(0.98);
-}
 .metric .m-label {
   font-size: 10px;
   font-weight: 600;
@@ -1298,6 +1341,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+.night-card .legend .swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 .swatch.csa {
   width: 0;
@@ -1467,7 +1515,7 @@
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 18px;
-  color: var(--good);
+  color: var(--text-primary);
   margin-bottom: 2px;
   font-feature-settings: 'tnum' 1;
 }
@@ -1508,27 +1556,6 @@
 .tab svg {
   display: block;
 }
-
-/* ============ COACH FAB ============ */
-.coach-fab {
-  position: absolute;
-  right: 22px;
-  bottom: 98px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--text-on-accent);
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow-fab);
-  z-index: 31;
-}
-.coach-fab:active {
-  transform: scale(0.93);
-}
-/* the FAB is a static peach button — no pulsing ring (a flashing control reads
- * as an alert; the peach accent + glow shadow already draw the eye) */
 
 /* ============ SHEET (modal slide-up) ============ */
 .sheet-scrim {
@@ -1727,4 +1754,157 @@
   text-align: center;
   line-height: 1.5;
   padding: 4px 8px;
+}
+
+/* =================================================================
+ * Mascot — the moon face of the Coach (components/Mascot.jsx).
+ * Colours come from the peach tokens; motion only plays in the
+ * in-progress states. The global reduced-motion rule stops it.
+ * ================================================================= */
+.mascot {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+.mascot .mc-stop-hi { stop-color: var(--accent-soft); }
+.mascot .mc-stop-mid { stop-color: var(--accent); }
+.mascot .mc-stop-lo { stop-color: var(--accent-deep); }
+.mascot .mc-crater {
+  fill: var(--accent-deep);
+  opacity: 0.45;
+}
+.mascot .mc-open { fill: var(--text-on-accent); }
+.mascot .mc-shut {
+  fill: none;
+  stroke: var(--text-on-accent);
+  stroke-linecap: round;
+  opacity: 0;
+}
+.mascot .mc-body,
+.mascot .mc-eyes,
+.mascot .mc-open {
+  transform-box: fill-box;
+}
+.mascot .mc-body { transform-origin: 50% 85%; }
+.mascot .mc-eyes,
+.mascot .mc-open { transform-origin: center; }
+.mascot .mc-eyes { transition: transform 0.45s var(--ease-out); }
+.mascot .mc-open,
+.mascot .mc-shut { transition: opacity var(--dur-fast) ease; }
+
+.mascot.thinking .mc-eyes { transform: translate(4px, -5px); }
+.mascot.thinking .mc-body { animation: mcBob 2.4s ease-in-out infinite; }
+.mascot.talking .mc-body { animation: mcTalk 0.55s ease-in-out infinite; }
+.mascot.asleep .mc-open { opacity: 0; }
+.mascot.asleep .mc-shut { opacity: 1; }
+.mascot.asleep .mc-body { animation: mcBreathe 6.4s ease-in-out infinite; }
+.mascot.waking .mc-open { animation: mcBlink 0.5s 0.25s ease-in-out; }
+
+@keyframes mcBreathe {
+  0%, 100% { transform: scale(1, 1); }
+  45% { transform: scale(1.035, 1.045); }
+}
+@keyframes mcBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px) rotate(-2deg); }
+}
+@keyframes mcTalk {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(-2px) scale(1.02, 0.98); }
+}
+@keyframes mcBlink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.1); }
+}
+
+/* why-card byline — "Nocta Coach · Last night", state-coloured (DESIGN_SYSTEM item 1) */
+.why-card .why-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.why-card.state-steady .why-eyebrow,
+.why-card.state-win .why-eyebrow {
+  color: var(--good);
+}
+.why-card.state-escalation .why-eyebrow {
+  color: var(--alert);
+}
+.why-card.state-insufficient .why-eyebrow {
+  color: var(--text-tertiary);
+}
+
+/* ============ METRIC GRID (proposed Tonight) ============ */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.mg-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 48px;
+  padding: 14px 14px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  transition: transform var(--dur-press) ease, background-color var(--dur-fast) ease;
+}
+.mg-tile:active {
+  transform: scale(0.97);
+}
+.mg-tile:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+.mg-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mg-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.mg-chev {
+  color: var(--text-tertiary);
+}
+.mg-value {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 30px;
+  line-height: 1.15;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+  font-feature-settings: 'tnum' 1;
+}
+.mg-value .u {
+  font-size: 15px;
+  color: var(--text-tertiary);
+  margin-left: 3px;
+}
+.mg-sub {
+  font-size: 15px;
+  line-height: 1.3;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+@media (hover: hover) {
+  .mg-tile:hover {
+    background: var(--surface-2);
+  }
 }

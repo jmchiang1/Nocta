@@ -8,7 +8,7 @@
 | **Trends tab** | 7/30/90d ranges, metric trend charts, journal correlation cards, best/worst night view | Year view, cohort comparison |
 | **Therapy tab** | Device pairing status, equipment lifecycle, view-only settings, doctor PDF export, compliance projection | DME reorder integration, telehealth booking |
 | **You tab** | Profile, journal history, settings, account | Social features, sharing |
-| **AI Coach** | Persistent FAB, context-aware chat opening from any card, suggested follow-ups | Voice input (deferred), proactive notifications |
+| **AI Coach** | Contextual "Ask Nocta" entries (why-card, Trends insights), context-aware chat opening from any card, suggested follow-ups | Voice input (deferred), proactive notifications |
 | **Onboarding** | 8 screens, deferred signup, deferred CPAP pairing, health-data priming | Wearable connect, doctor invite |
 
 ---
@@ -50,7 +50,7 @@ never a wall of text on first read.
 └──────────────────────────────────────────────────┘
 ```
 
-No chip row — the Coach FAB carries the chat affordance globally.
+No chip row — the card ends with one "Ask Nocta about last night" row.
 
 ### AI insight JSON schema (Structured Outputs, strict mode)
 
@@ -349,13 +349,14 @@ In the Trends view, the journal is a separate filterable lens.
 
 ## Feature 3 (supporting): Nocta Coach chat
 
-Not a tab. A persistent floating action button (FAB) on every screen, plus inline "Ask
-Nocta about this" chips on every metric card and insight card.
+Not a tab, and not global chrome. Coach opens from where questions arise: an "Ask Nocta
+about last night" row on the why-card, "Ask Nocta about these trends" on the Trends
+insights card. Metric cards are read-only.
 
 ### Context-aware opening
 
 When opened via a chip, the Coach receives the card's context as a system message. When
-opened cold from the FAB, the Coach offers three suggested prompts based on recent data:
+opened without a specific card context, the Coach offers three suggested prompts based on recent data:
 - *"Why was last night different?"*
 - *"How can I reduce my leak rate?"*
 - *"What's my best night this week and why?"*
