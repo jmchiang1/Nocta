@@ -1,5 +1,5 @@
 /* Nocta — Therapy tab mock data: device, equipment lifecycle, settings, projection */
-import { NIGHTS, NIGHTS_ON_THERAPY, LAST_NIGHT, metCompliance, toDate } from './history.js';
+import { NIGHTS, NIGHTS_ON_THERAPY, LAST_NIGHT, metCompliance } from './history.js';
 
 /* prescribed APAP window — mirrored by the '5 – 12 cmH₂O' strings below and
  * drawn as the hatched band on the pressure trend chart */
@@ -69,10 +69,6 @@ export const SETTINGS_VIEW = [
 const WINDOW = 30;
 const REQUIRED = 21;
 
-const weekday = (iso) => toDate(iso).toLocaleDateString('en-US', { weekday: 'long' });
-const listJoin = (xs) =>
-  xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`;
-
 export function projectionAsOf(anchor = LAST_NIGHT) {
   const nights = NIGHTS.filter((x) => x.date <= anchor);
   const elapsed = nights.map((x) => (metCompliance(x) ? 'met' : 'missed'));
@@ -81,16 +77,6 @@ export function projectionAsOf(anchor = LAST_NIGHT) {
   const stillNeeded = Math.max(0, REQUIRED - met);
   const earliest = elapsed.length + stillNeeded; // if every night from here counts
   const slack = WINDOW - REQUIRED - missed; // misses left before it's out of reach
-
-  // say which nights didn't count, in plain words
-  const short = nights.filter((x) => x.hours > 0 && !metCompliance(x)).map((x) => weekday(x.date));
-  const none = nights.filter((x) => x.hours === 0).map((x) => weekday(x.date));
-  const why = [
-    short.length ? `${listJoin(short)} ${short.length > 1 ? 'were' : 'was'} short` : '',
-    none.length ? `${listJoin(none)} had no session` : '',
-  ]
-    .filter(Boolean)
-    .join(', and ');
 
   let headline;
   let body;
@@ -104,12 +90,10 @@ export function projectionAsOf(anchor = LAST_NIGHT) {
     headline = missed
       ? `You can still clear compliance by *night ${earliest}*.`
       : `You’re on track to clear compliance by *night ${earliest}*.`;
+    // headline carries the target night and the dot row shows which nights missed
     body =
-      `Insurance asks for 4+ hours on ${REQUIRED} of your first ${WINDOW} nights. ` +
-      (missed
-        ? `You’re at ${met} of ${elapsed.length}: ${why}. `
-        : `You’re at ${met} of ${elapsed.length}, and every night so far has counted. `) +
-      `${stillNeeded} more nights over 4 hours gets you there by night ${earliest}, with ${slack} nights of slack left.`;
+      `Insurance needs 4+ hours on ${REQUIRED} of your first ${WINDOW} nights. ` +
+      `You’re at ${met} of ${elapsed.length}. ${stillNeeded} more gets you there, with ${slack} nights to spare.`;
   }
 
   return {

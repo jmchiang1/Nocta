@@ -14,10 +14,16 @@
  * The box may move/resize meanwhile — the drawing follows it every frame,
  * re-weighting lines and dots for its current size (constellationWeights),
  * so it lands looking exactly like the artwork.
- * Reduced motion: only the artwork shows. */
+ *
+ * Sound (lib/sound.js) follows the same timeline: a low pad comes up with the
+ * sky, each star rings a bell as it's found, each line draws with a breath of
+ * air, the closed constellation blooms into a chord, and the glide to the top
+ * rises with a swell and settles with one soft note.
+ * Reduced motion: only the artwork shows, silently. */
 import { useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion.jsx';
 import { CONSTELLATION, constellationWeights } from '../data/constellation.js';
+import * as sound from '../lib/sound.js';
 
 const { viewBox: VB, nodes: NODES, lines: LINES, hero: HERO, radius: RADIUS } = CONSTELLATION;
 const TAU = Math.PI * 2;
@@ -34,6 +40,46 @@ const JOINED = JOIN_AT + JOIN_STAGGER * (LINES.length - 1) + JOIN_DUR;
 const RESOLVE_AT = JOINED + 160;
 const MOVE_MS = 850; // matches the .ob-intro-logo transition
 const SWAP_MS = 600; // canvas → artwork crossfade (.swirl-logo-img transition)
+
+/* the score. Each star's bell is pitched by its height in the mark, so the
+ * breathing wave plays as a melody (D major pentatonic, low star = D5, crest
+ * = D6); bells and breaths pan with the stars, left to right. */
+const SCALE = [0, 2, 4, 7, 9, 12]; // semitones above D5
+const D5 = 587.33;
+const NODE_YS = NODES.map((n) => n.y);
+const LOWEST = Math.max(...NODE_YS);
+const HIGHEST = Math.min(...NODE_YS);
+const height = (n) => (LOWEST - n.y) / (LOWEST - HIGHEST); // 0 low … 1 crest
+const pitch = (n) => D5 * Math.pow(2, SCALE[Math.round(height(n) * (SCALE.length - 1))] / 12);
+const panOf = (n) => (((n.x - VB[0]) / VB[2]) * 2 - 1) * 0.6;
+const PAD = [146.83, 220]; // D3 + A3, under the sky
+const BLOOM = [293.66, 440, 587.33, 739.99]; // D4 A4 D5 F♯5, when it closes
+
+function ringStar(i) {
+  const n = NODES[i];
+  const pan = panOf(n);
+  if (i === HERO) {
+    // the crest star: brighter and longer, with an octave underneath
+    sound.chime(pitch(n), { gain: 0.1, decay: 3.2, pan });
+    sound.chime(pitch(n) / 2, { gain: 0.05, attack: 0.03, decay: 3.6, pan });
+  } else {
+    sound.chime(pitch(n), { gain: 0.07, decay: 2.2, pan });
+  }
+}
+function drawLine(j) {
+  const [a, b] = LINES[j].map((k) => NODES[k]);
+  sound.breath({
+    from: 700 + 1500 * height(a),
+    to: 700 + 1500 * height(b),
+    dur: JOIN_DUR / 1000,
+    gain: 0.035,
+    pan: panOf(a),
+    panTo: panOf(b),
+  });
+}
+function bloom() {
+  BLOOM.forEach((f, i) => sound.chime(f, { gain: 0.035, attack: 0.25 + i * 0.06, decay: 4, send: 0.8 }));
+}
 
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const easeOut = (t) => 1 - Math.pow(1 - t, 3);
@@ -70,11 +116,15 @@ export function ConstellationReveal({ className = '', stageRef, onResolve, hando
   // wait for the glide to the top to finish, then crossfade to the artwork
   useEffect(() => {
     if (!handoff || swap) return undefined;
+    // the glide rises with a swell of air
+    sound.breath({ from: 260, to: 2600, dur: MOVE_MS / 1000, gain: 0.06, q: 0.6 });
     const t = setTimeout(() => setSwap(true), MOVE_MS);
     return () => clearTimeout(t);
   }, [handoff, swap]);
   useEffect(() => {
     if (!swap || done) return undefined;
+    // …and settles with one soft, low note as the artwork lands
+    sound.chime(D5 / 2, { gain: 0.05, attack: 0.02, decay: 2.6 });
     const t = setTimeout(() => setDone(true), SWAP_MS);
     return () => clearTimeout(t);
   }, [swap, done]);
@@ -148,11 +198,29 @@ export function ConstellationReveal({ className = '', stageRef, onResolve, hando
       tp: i * 1.7,
     }));
 
+    // sound cues fire as the timeline passes them; a cue missed while audio
+    // is still locked is skipped, never replayed late
+    let pad = null;
+    let rung = 0;
+    let drawn = 0;
+    let bloomed = false;
+    const score = (t) => {
+      if (!pad && t < JOINED) pad = sound.pad(PAD);
+      while (rung < NODES.length && t >= FIND_AT + rung * FIND_STAGGER) ringStar(rung++);
+      while (drawn < LINES.length && t >= JOIN_AT + drawn * JOIN_STAGGER) drawLine(drawn++);
+      if (!bloomed && t >= JOINED) {
+        bloomed = true;
+        bloom();
+        pad?.swell(0.045, 0.8);
+      }
+    };
+
     let raf;
     let t0;
     const frame = (now) => {
       if (t0 == null) t0 = now;
       const t = now - t0;
+      score(t);
       layout();
       const { scale, w } = geo;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -216,7 +284,10 @@ export function ConstellationReveal({ className = '', stageRef, onResolve, hando
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      pad?.stop(2.5); // the pad fades out as the canvas retires
+    };
   }, [done, stageRef]);
 
   return (

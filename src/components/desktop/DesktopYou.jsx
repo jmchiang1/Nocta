@@ -239,7 +239,7 @@ export function DesktopYou() {
           </div>
         )}
 
-        <p className="disclaimer">Nocta 1.0 · Your therapy data arrives via SleepHQ.</p>
+        {/* <p className="disclaimer">Nocta 1.0 · Your therapy data arrives via SleepHQ.</p> */}
         </div>
       </div>
     </>
