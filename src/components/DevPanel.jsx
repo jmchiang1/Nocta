@@ -16,8 +16,6 @@ export function DevPanel() {
     resetOnboarding,
     fixtureId,
     setFixtureId,
-    viewMode,
-    setViewMode,
     devPanelOpen,
     setDevPanelOpen,
     checkin,
@@ -75,16 +73,6 @@ export function DevPanel() {
       </button>
       <button className={onboarded ? 'on' : ''} onClick={completeOnboarding}>
         App
-      </button>
-
-      <span className="dp-sep" aria-hidden="true" />
-
-      <span className="dp-label">Layout</span>
-      <button className={viewMode === 'mobile' ? 'on' : ''} onClick={() => setViewMode('mobile')}>
-        Mobile
-      </button>
-      <button className={viewMode === 'desktop' ? 'on' : ''} onClick={() => setViewMode('desktop')}>
-        Desktop
       </button>
 
       <span className="dp-sep" aria-hidden="true" />
