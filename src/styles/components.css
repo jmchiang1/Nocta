@@ -3154,3 +3154,15 @@ button.nl-row:focus-visible {
 .del-go {
   margin-top: 16px;
 }
+
+/* an older night's check-in row, inside its "Last night" card
+ * (components/CheckinPrompt.jsx › LateCheckin) */
+.ck-late-count {
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+.ck-late-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

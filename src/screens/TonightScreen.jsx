@@ -9,7 +9,7 @@ import { SKY_FOR_STATE } from '../components/NightSky.jsx';
 import { TonightSkeleton } from '../components/Skeleton.jsx';
 import { WeekStrip } from '../components/WeekStrip.jsx';
 import { Icon } from '../components/Icons.jsx';
-import { CheckinPrompt } from '../components/CheckinPrompt.jsx';
+import { CheckinPrompt, LateCheckin } from '../components/CheckinPrompt.jsx';
 import { ProfileReminder } from '../components/ProfileReminder.jsx';
 import { WhyHorizon } from '../components/WhyHorizon.jsx';
 import { NightSwiper } from '../components/NightSwiper.jsx';
@@ -115,6 +115,10 @@ export function TonightScreen() {
               <span>Open full-night view</span>
               <Icon name="chevronRight" size={16} />
             </button>
+            {/* an older night: add (or edit) how that morning went, from memory */}
+            {fixtureId !== LAST_NIGHT && (
+              <LateCheckin date={fixtureId} onStart={(initial) => openSheet('checkin', { initial, date: fixtureId })} />
+            )}
           </section>
 
           {bodyCards.length > 0 && (

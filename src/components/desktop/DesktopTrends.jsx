@@ -193,85 +193,91 @@ export function DesktopTrends() {
           )}
         </div>
 
+        {/* under the full-width chart: what stands out on the left; the
+         * best/worst nights and the journal on the right */}
         <aside className="dash-rail" aria-label="Trend highlights">
-          <div className="dash-head">
-            <h3>What stands out</h3>
-          </div>
-          <section className="insight-list" aria-label="Trend insights">
-            {t.insights.map((ins, i) => (
-              <div className="il-row" key={i}>
-                <div className="il-icon">
-                  <Icon name={ins.icon} size={15} />
-                </div>
-                <div className="il-text">
-                  <Rich text={ins.text} />
-                </div>
-              </div>
-            ))}
-            <button
-              className="ask-row"
-              type="button"
-              onClick={() =>
-                openSheet('coach', {
-                  context: {
-                    kind: 'trends',
-                    range: t.rangeLabel,
-                    summary: t.insights[0]?.text,
-                    worst: t.bestWorst?.worst.date,
-                  },
-                })
-              }
-            >
-              <Mascot size={22} />
-              <span>Ask Nox about these trends</span>
-              <Icon name="chevronRight" size={15} className="ask-chev" />
-            </button>
-          </section>
-
-          {t.bestWorst && (
-            <>
-              <div className="dash-head">
-                <h3>Best &amp; worst night</h3>
-                <button className="dash-head-action" onClick={() => openSheet('compare')}>
-                  Compare nights
-                  <Icon name="chevronRight" size={14} />
-                </button>
-              </div>
-              <div className="compare">
-                <div className="cmp-card best">
-                  <div className="cmp-tag">Best</div>
-                  <div className="cmp-date">{t.bestWorst.best.date}</div>
-                  <div className="cmp-ahi tnum">
-                    <CountUp value={t.bestWorst.best.ahi} duration={900} />
+          <div className="dash-rail-group">
+            <div className="dash-head">
+              <h3>What stands out</h3>
+            </div>
+            <section className="insight-list" aria-label="Trend insights">
+              {t.insights.map((ins, i) => (
+                <div className="il-row" key={i}>
+                  <div className="il-icon">
+                    <Icon name={ins.icon} size={15} />
                   </div>
-                  <div className="cmp-sub">{t.bestWorst.best.note}</div>
-                </div>
-                <div className="cmp-card worst">
-                  <div className="cmp-tag">Worst</div>
-                  <div className="cmp-date">{t.bestWorst.worst.date}</div>
-                  <div className="cmp-ahi tnum">
-                    <CountUp value={t.bestWorst.worst.ahi} duration={900} />
+                  <div className="il-text">
+                    <Rich text={ins.text} />
                   </div>
-                  <div className="cmp-sub">{t.bestWorst.worst.note}</div>
                 </div>
-              </div>
-            </>
-          )}
-
-          <div className="dash-head">
-            <h3>Sleep journal</h3>
+              ))}
+              <button
+                className="ask-row"
+                type="button"
+                onClick={() =>
+                  openSheet('coach', {
+                    context: {
+                      kind: 'trends',
+                      range: t.rangeLabel,
+                      summary: t.insights[0]?.text,
+                      worst: t.bestWorst?.worst.date,
+                    },
+                  })
+                }
+              >
+                <Mascot size={22} />
+                <span>Ask Nox about these trends</span>
+                <Icon name="chevronRight" size={15} className="ask-chev" />
+              </button>
+            </section>
           </div>
-          <div className="list">
-            <button className="list-row" onClick={() => openSheet('journal')}>
-              <div className="lr-icon bare">
-                <Icon name="doc" size={17} />
-              </div>
-              <div className="lr-main">
-                <div className="lr-title">View all entries</div>
-                <div className="lr-sub">{journalHistory(checkin).length} nights logged</div>
-              </div>
-              <Icon name="chevronRight" size={17} />
-            </button>
+
+          <div className="dash-rail-group">
+            {t.bestWorst && (
+              <>
+                <div className="dash-head">
+                  <h3>Best &amp; worst night</h3>
+                  <button className="dash-head-action" onClick={() => openSheet('compare')}>
+                    Compare nights
+                    <Icon name="chevronRight" size={14} />
+                  </button>
+                </div>
+                <div className="compare">
+                  <div className="cmp-card best">
+                    <div className="cmp-tag">Best</div>
+                    <div className="cmp-date">{t.bestWorst.best.date}</div>
+                    <div className="cmp-ahi tnum">
+                      <CountUp value={t.bestWorst.best.ahi} duration={900} />
+                    </div>
+                    <div className="cmp-sub">{t.bestWorst.best.note}</div>
+                  </div>
+                  <div className="cmp-card worst">
+                    <div className="cmp-tag">Worst</div>
+                    <div className="cmp-date">{t.bestWorst.worst.date}</div>
+                    <div className="cmp-ahi tnum">
+                      <CountUp value={t.bestWorst.worst.ahi} duration={900} />
+                    </div>
+                    <div className="cmp-sub">{t.bestWorst.worst.note}</div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="dash-head">
+              <h3>Sleep journal</h3>
+            </div>
+            <div className="list">
+              <button className="list-row" onClick={() => openSheet('journal')}>
+                <div className="lr-icon bare">
+                  <Icon name="doc" size={17} />
+                </div>
+                <div className="lr-main">
+                  <div className="lr-title">View all entries</div>
+                  <div className="lr-sub">{journalHistory(checkin).length} nights logged</div>
+                </div>
+                <Icon name="chevronRight" size={17} />
+              </button>
+            </div>
           </div>
         </aside>
       </div>

@@ -12,7 +12,7 @@ import { MEDICAL_NOTE } from '../../data/account.js';
 import { Icon } from '../Icons.jsx';
 import { NightSky, SKY_FOR_STATE } from '../NightSky.jsx';
 import { WhyHorizon } from '../WhyHorizon.jsx';
-import { CheckinPrompt } from '../CheckinPrompt.jsx';
+import { CheckinPrompt, LateCheckin } from '../CheckinPrompt.jsx';
 import { ProfileReminder } from '../ProfileReminder.jsx';
 import { MetricSecondary } from '../MetricSecondary.jsx';
 import { BodyResponse } from '../BodyResponse.jsx';
@@ -228,6 +228,10 @@ export function DesktopTonight() {
                   <span>Compare with another night</span>
                   <Icon name="chevronRight" size={16} />
                 </button>
+                {/* an older night: add (or edit) how that morning went, from memory */}
+                {fixtureId !== LAST_NIGHT && (
+                  <LateCheckin date={fixtureId} onStart={(initial) => openSheet('checkin', { initial, date: fixtureId })} />
+                )}
               </section>
             </div>
 

@@ -6,6 +6,8 @@
  * (the full-night page), not repeated back on the home screen. */
 import { CHECKIN_SCREENS, allCheckinTags } from '../data/journal.js';
 import { Mascot } from './Mascot.jsx';
+import { Icon } from './Icons.jsx';
+import { getCheckin, isLateCheckin } from '../lib/checkins.js';
 
 const FIRST = CHECKIN_SCREENS[0];
 const QUICK = FIRST.options.slice(0, 5); // the five most common answers, inline
@@ -35,7 +37,7 @@ export function CheckinPrompt({ checkin, onStart, mascot = true }) {
       <div className="ck-card-head">
         {mascot && <Mascot size={34} state="idle" />}
         <div className="ck-card-titles">
-          <span className="ck-card-eyebrow">Morning check-in · 20 seconds</span>
+          <span className="ck-card-eyebrow">Morning check-in</span>
           <h3 className="ck-card-q">{FIRST.question}</h3>
         </div>
       </div>
@@ -50,5 +52,28 @@ export function CheckinPrompt({ checkin, onStart, mascot = true }) {
         </button>
       </div>
     </section>
+  );
+}
+
+/* An older night: no morning card (that morning has passed), just a quiet
+ * row in the night's card to add one from memory, or to edit it once added.
+ * Late entries are marked as such and the insights weigh them less
+ * (lib/checkins.js). */
+export function LateCheckin({ date, onStart }) {
+  const tags = getCheckin(date);
+  const n = tags ? allCheckinTags(tags).filter((id) => !id.startsWith('nothing_')).length : 0;
+  return (
+    <button className="row-cta ck-late" type="button" onClick={() => onStart(tags ?? undefined)}>
+      <span>
+        {tags ? (isLateCheckin(date) ? 'Check-in added later' : 'Checked in that morning') : 'Add how that morning went'}
+        {tags && (
+          <span className="ck-late-count tnum"> · {n === 0 ? 'nothing unusual' : `${n} ${n === 1 ? 'note' : 'notes'}`}</span>
+        )}
+      </span>
+      <span className="ck-late-go">
+        {tags && 'Edit'}
+        <Icon name="chevronRight" size={16} />
+      </span>
+    </button>
   );
 }

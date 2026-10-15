@@ -243,10 +243,17 @@ export function StoreProvider({ children }) {
     setSheets((st) => st.slice(0, -1));
   }, []);
 
-  const completeCheckin = useCallback((tags) => {
-    saveCheckinFor(LAST_NIGHT, tags);
+  /* bumped whenever any night's check-in changes, so screens showing an
+   * older night re-read it (lib/checkins.js) */
+  const [checkinVersion, setCheckinVersion] = useState(0);
+  /* `date`: the night it's for (default: last night). Any other night is a
+   * late entry, added after that morning, and the insights weigh it less. */
+  const completeCheckin = useCallback((tags, date = LAST_NIGHT) => {
+    const isLast = date === LAST_NIGHT;
+    saveCheckinFor(date, tags, { late: !isLast });
     refreshInsights(); // what was logged can change what Nox says
-    setCheckin({ done: true, tags });
+    if (isLast) setCheckin({ done: true, tags });
+    setCheckinVersion((v) => v + 1);
   }, []);
   const resetCheckin = useCallback(() => {
     clearCheckin(LAST_NIGHT);
@@ -362,6 +369,7 @@ export function StoreProvider({ children }) {
     saveCardImport,
     removeCardImport,
     checkin,
+    checkinVersion,
     completeCheckin,
     resetCheckin,
     profile,

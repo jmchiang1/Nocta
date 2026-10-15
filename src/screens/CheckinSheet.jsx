@@ -2,11 +2,23 @@
  * three multi-select questions, one per step, then a quiet "logged" state that
  * plays back what was picked. Options reuse onboarding's option cards so the
  * two flows feel like one product. Opened over the full-night page it stacks
- * on top (store.pushSheet), so closing returns there. */
+ * on top (store.pushSheet), so closing returns there.
+ * Opened for an older night (sheet.date), it's a late entry: the questions
+ * ask about "that morning", and it's saved as added later (lib/checkins.js),
+ * which the insights weigh less. */
+
+/* the same questions, asked about a morning that has passed */
+const PAST_QUESTION = {
+  feel: 'How did you feel that morning?',
+  lastnight: 'That evening I had…',
+  yesterday: 'That day I…',
+};
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { CHECKIN_SCREENS, EMPTY_CHECKIN_TAGS, TAG_LABELS, allCheckinTags } from '../data/journal.js';
 import { FIXTURES } from '../data/fixtures.js';
+import { LAST_NIGHT, toDate } from '../data/history.js';
+import { getCheckin } from '../lib/checkins.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Mascot } from '../components/Mascot.jsx';
@@ -19,18 +31,24 @@ const Tick = ({ on }) => (
 
 export function CheckinSheet() {
   const { closeSheet, completeCheckin, fixtureId, sheet, checkin } = useStore();
+  // the night this is for: last night, unless opened for an older one
+  const date = sheet?.date ?? LAST_NIGHT;
+  const late = date !== LAST_NIGHT;
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState('fwd'); // which way the question slides in
   // starts from an answer tapped on Tonight's card, or this morning's picks when editing
   const [picks, setPicks] = useState(() => ({
     ...EMPTY_CHECKIN_TAGS,
-    ...(sheet?.initial ?? (checkin.done ? checkin.tags : {})),
+    ...(sheet?.initial ?? (late ? (getCheckin(date) ?? {}) : checkin.done ? checkin.tags : {})),
   }));
 
   const total = CHECKIN_SCREENS.length;
   const done = step >= total;
   const screen = done ? null : CHECKIN_SCREENS[step];
-  const morning = `${FIXTURES[fixtureId]?.dayName ?? 'This'} morning`;
+  const morning = late
+    ? `${toDate(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} · added later`
+    : `${FIXTURES[fixtureId]?.dayName ?? 'This'} morning`;
+  const question = (sc) => (late && PAST_QUESTION[sc.id]) || sc.question;
 
   function toggle(opt) {
     const key = screen.id;
@@ -49,7 +67,7 @@ export function CheckinSheet() {
   }
 
   function advance() {
-    if (step === total - 1) completeCheckin(picks);
+    if (step === total - 1) completeCheckin(picks, date);
     setDir('fwd');
     setStep(step + 1);
   }
@@ -77,10 +95,11 @@ export function CheckinSheet() {
           <div className="ck-nox">
             <Mascot size={104} state="pleased" />
           </div>
-          <h2 className="ck-done-title">Logged. Thank you.</h2>
+          <h2 className="ck-done-title">{late ? 'Added. Thank you.' : 'Logged. Thank you.'}</h2>
           <p className="ck-done-copy">
-            Nocta will fold this into how it reads tonight. A couple of weeks of check-ins is
-            when the patterns start to show.
+            {late
+              ? 'Nox will count it, a little more lightly than a same-morning check-in, since it’s from memory.'
+              : 'Nocta will fold this into how it reads tonight. A couple of weeks of check-ins is when the patterns start to show.'}
           </p>
           {logged.length > 0 && (
             <ul className="ck-logged" aria-label="What you logged">
@@ -139,7 +158,7 @@ export function CheckinSheet() {
 
       {/* keyed on step so each question slides in fresh */}
       <div className={`ck-step ${dir}`} key={step}>
-        <h2 className="ck-question">{screen.question}</h2>
+        <h2 className="ck-question">{question(screen)}</h2>
         <p className="ck-hint">{screen.hint}</p>
         <div className={`ck-grid${wide ? ' wide' : ''}`}>
           {screen.options.map((opt, i) => {

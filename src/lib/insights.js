@@ -37,7 +37,7 @@ import {
   COMPLIANCE_MIN_HOURS,
 } from '../data/history.js';
 import { getAnswers } from './profile.js';
-import { checkinTags } from './checkins.js';
+import { checkinTags, isLateCheckin } from './checkins.js';
 
 const SOURCE = 'SD card';
 const BASELINE_NIGHTS = 30;
@@ -103,6 +103,9 @@ function contextFor(row) {
     answers,
     tags,
     has: (tag) => Boolean(tags?.includes(tag)),
+    // a check-in added days later is recall, not that morning: its causes
+    // drop a notch, and the wording says so
+    lateCheckin: Boolean(tags) && isLateCheckin(date),
   };
 }
 
@@ -373,10 +376,13 @@ function alsoLine(f, w) {
  * they haven't told us anything that fits */
 function toldCauses(ctx) {
   const out = [];
-  if (ctx.has('alcohol')) out.push({ cause: 'The alcohol you logged the evening before', probability_label: 'possible' });
-  if (ctx.has('late_meal')) out.push({ cause: 'The late or big meal you logged', probability_label: 'possible' });
-  if (ctx.has('sleep_aid')) out.push({ cause: 'The sleep aid you logged', probability_label: 'possible' });
-  if (ctx.has('congested') || ctx.has('cold_meds')) out.push({ cause: 'Congestion, which you noted that morning', probability_label: 'possible' });
+  const p = ctx.lateCheckin ? 'less_likely' : 'possible';
+  const logged = ctx.lateCheckin ? 'you added later' : 'you logged';
+  if (ctx.has('alcohol')) out.push({ cause: `The alcohol ${logged} for the evening before`, probability_label: p });
+  if (ctx.has('late_meal')) out.push({ cause: `The late or big meal ${logged}`, probability_label: p });
+  if (ctx.has('sleep_aid')) out.push({ cause: `The sleep aid ${logged}`, probability_label: p });
+  if (ctx.has('congested') || ctx.has('cold_meds'))
+    out.push({ cause: ctx.lateCheckin ? 'Congestion, which you added later' : 'Congestion, which you noted that morning', probability_label: p });
   return out;
 }
 
@@ -532,7 +538,13 @@ function write(f, row, ctx) {
             ]
           : [
               { cause: 'The mask shifted or loosened during the night', probability_label: 'most_likely' },
-              ...(ctx.has('congested') ? [{ cause: 'Congestion, which you noted that morning', probability_label: 'possible' }] : []),
+              ...(ctx.has('congested')
+                ? [
+                    ctx.lateCheckin
+                      ? { cause: 'Congestion, which you added later', probability_label: 'less_likely' }
+                      : { cause: 'Congestion, which you noted that morning', probability_label: 'possible' },
+                  ]
+                : []),
               { cause: 'A cushion that has started to wear', probability_label: 'possible' },
             ],
         recommended_action: f.chronic

@@ -627,9 +627,10 @@
 /* ===== Trends ===== */
 /* the tiles + the one large chart on the left, a reading rail on the right */
 .dash-trends-layout {
+  /* the tiles and the chart span the page; the highlights sit beneath */
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr);
-  gap: 18px 28px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
   align-items: start;
 }
 
@@ -672,12 +673,20 @@
 }
 
 .dash-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 0 28px;
+  align-items: start;
+  min-width: 0;
+}
+
+.dash-rail-group {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.dash-rail > .dash-head:first-child {
+.dash-rail-group > .dash-head:first-child {
   margin-top: 0;
 }
 
@@ -686,9 +695,9 @@
   margin: 0;
 }
 
-/* best/worst stack in the rail instead of two squeezed columns */
+/* best and worst side by side in their column */
 .dash-rail .compare {
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
@@ -1525,9 +1534,8 @@
     grid-template-columns: 1fr;
   }
 
-  /* the rail reflows beside itself once it has the full width */
-  .dash-rail .compare {
-    grid-template-columns: 1fr 1fr;
+  .dash-rail {
+    grid-template-columns: 1fr;
   }
 }
 

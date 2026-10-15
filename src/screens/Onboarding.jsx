@@ -741,7 +741,7 @@ function Notifications({ update, next }) {
     >
       <h1 className="ob-title">A gentle morning nudge</h1>
       <p className="ob-copy">
-        Want a quiet reminder to do your 20-second check-in each morning? It's the habit
+        Want a quiet reminder to do your check-in each morning? It's the habit
         that makes Nocta's insights sharper over time.
       </p>
       <p className="ob-note">
@@ -764,7 +764,7 @@ function Notifications({ update, next }) {
             </span>
             <span className="ob-notif-title">Good morning</span>
             <span className="ob-notif-text">
-              How did you sleep? Your 20-second check-in is ready.
+              How did you sleep? Your morning check-in is ready.
             </span>
           </span>
         </div>
