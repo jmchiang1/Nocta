@@ -1,59 +1,124 @@
-/* Nocta — the user's therapy history. THE single source of truth for every
- * number that spans more than one night: Trends charts + tiles, compliance,
- * the journal's AHI column, profile stats. Per-night fixtures (fixtures.js)
- * must agree with the matching row here.
+/* Nocta — the user's therapy history, from the CPAP card (lib/dataset.js).
+ * THE single source of truth for every number that spans more than one
+ * night: Trends charts + tiles, compliance, the calendar, the journal's AHI
+ * column, profile stats. Each night's own view (fixtures.js) agrees with its
+ * row here because both come from the same card night.
  *
- * Story: CPAP + Nocta started Wed Sep 30, 2026. "Last night" is Sat Oct 10,
- * night 11. All equipment is original (11 days old). This week: Wednesday's
- * session was only 1.7 h (too short to score), and there was no session
- * Thursday or Friday.
+ * One row per calendar day of the current therapy run, first night → last:
+ *   n         night number in the run (1 = first night)
+ *   date      'YYYY-MM-DD' — the evening the night started (ResMed's sleep day)
+ *   fixture   the night's id for its detail view (= date), absent on no-use days
+ *   ahi       { csa, osa, hyp } events/hr (unclassified apneas count as
+ *             obstructive), or null when under SCORE_MIN_HOURS (not scored)
+ *   hours     mask-on time, rounded to 0.1 (0 = no session)
+ *   rawHours  mask-on time unrounded — what the 4-hour compliance test uses,
+ *             so 3.95 h doesn't round up into a compliant night
+ *   used      nights with a session so far, this one included (the "Night N"
+ *             people see counts nights on the machine, not calendar days)
+ *   leak      95th-percentile leak, L/min (null when not recorded)
+ *   pressure  median pressure, cmH₂O
+ *   position  always null: the machine doesn't know how you slept
  *
- * ahi = { csa, osa, hyp } events/hr (central, obstructive, hypopnea; total =
- * the night's AHI), or null when the night wasn't scored. Central averages
- * 1.2/hr over nights 1–6 — the "usual" the escalation night is measured
- * against. hours = mask-on time (0 = no session). leak = P95 L/min.
- * pressure = median cmH₂O. */
+ * The run starts after the last gap of more than RUN_GAP_DAYS without a
+ * session, so a card that also holds an old stretch (a previous machine, a
+ * long break) reads as the therapy you're on now.
+ *
+ * Exports are live: NIGHTS is refilled in place and the `let` exports are
+ * reassigned when the card changes (an import), so importers stay current. */
+import { onDataset } from '../lib/dataset.js';
 
-export const THERAPY_START = '2026-09-30';
-export const LAST_NIGHT = '2026-10-10';
 export const COMPLIANCE_MIN_HOURS = 4;
 export const SCORE_MIN_HOURS = 2;
+const RUN_GAP_DAYS = 60;
 
-export const NIGHTS = [
-  { n: 1, date: '2026-09-30', ahi: { csa: 1.2, osa: 2.9, hyp: 1.5 }, hours: 4.6, leak: 14, pressure: 5.9, position: 'stomach' },
-  { n: 2, date: '2026-10-01', ahi: { csa: 1.1, osa: 1.3, hyp: 1.0 }, hours: 5.4, leak: 12, pressure: 5.7, position: 'side' },
-  { n: 3, date: '2026-10-02', ahi: { csa: 1.3, osa: 1.3, hyp: 1.0 }, hours: 5.9, leak: 11, pressure: 5.8, position: 'side' },
-  { n: 4, date: '2026-10-03', ahi: { csa: 1.2, osa: 2.3, hyp: 1.3 }, hours: 6.3, leak: 13, pressure: 5.9, position: 'stomach' },
-  // Sun — fixture "steady"
-  { n: 5, date: '2026-10-04', fixture: 'steady', ahi: { csa: 1.1, osa: 1.2, hyp: 0.9 }, hours: 7.1, leak: 9, pressure: 7.0, position: 'side' },
-  // Mon — fixture "win"
-  { n: 6, date: '2026-10-05', fixture: 'win', ahi: { csa: 1.1, osa: 0.5, hyp: 0.5 }, hours: 7.6, leak: 7, pressure: 6.8, position: 'side' },
-  // Tue — fixture "escalation" (central index 6.8)
-  { n: 7, date: '2026-10-06', fixture: 'escalation', ahi: { csa: 6.8, osa: 1.4, hyp: 1.2 }, hours: 6.4, leak: 10, pressure: 6.1, position: 'back' },
-  // Wed — fixture "insufficient" (1.7 h, unscored)
-  { n: 8, date: '2026-10-07', fixture: 'insufficient', ahi: null, hours: 1.7, leak: null, pressure: 5.8, position: null },
-  // Thu, Fri — no session
-  { n: 9, date: '2026-10-08', ahi: null, hours: 0, leak: null, pressure: null, position: null },
-  { n: 10, date: '2026-10-09', ahi: null, hours: 0, leak: null, pressure: null, position: null },
-  // Sat — fixture "anomaly" (65 events over 6.2 h; 52 obstructive)
-  { n: 11, date: '2026-10-10', fixture: 'anomaly', ahi: { csa: 0.6, osa: 8.4, hyp: 1.5 }, hours: 6.2, leak: 32, pressure: 5.6, position: 'stomach' },
-];
+export const NIGHTS = [];
+export let THERAPY_START = null;
+export let LAST_NIGHT = null;
+export let NIGHTS_ON_THERAPY = 0; // calendar days in the run (first night → last)
+export let NIGHTS_USED = 0; // nights with a session — what "nights on therapy" means to a person
 
-export const NIGHTS_ON_THERAPY = NIGHTS.length;
+/* the raw card night for a date (sessions, per-minute series, events) */
+const CARD_BY_DATE = new Map();
+export const cardNight = (date) => CARD_BY_DATE.get(date) ?? null;
 
-/* the date a night-detail fixture describes (falls back to last night).
- * Guard the lookup: most nights have no `fixture`, so searching for an
- * undefined id would match night 1. */
+/* ---- date helpers ---- */
+/* 'YYYY-MM-DD' → Date at local midnight (no timezone day-shift) */
+export const toDate = (iso) => new Date(`${iso}T00:00:00`);
+export const isoOf = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const addDays = (iso, days) => {
+  const d = toDate(iso);
+  d.setDate(d.getDate() + days);
+  return isoOf(d);
+};
+const daysBetween = (a, b) => Math.round((toDate(b) - toDate(a)) / 864e5);
+export const fmtShort = (iso) =>
+  toDate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+export const fmtDayShort = (iso) =>
+  toDate(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+export const round1 = (x) => (x == null ? null : Math.round(x * 10) / 10);
+
+function rebuild(card) {
+  CARD_BY_DATE.clear();
+  card.nights.forEach((x) => CARD_BY_DATE.set(x.date, x));
+
+  const used = card.nights.filter((x) => x.hours > 0).map((x) => x.date).sort();
+  let start = used[0];
+  for (let i = 1; i < used.length; i += 1) {
+    if (daysBetween(used[i - 1], used[i]) > RUN_GAP_DAYS) start = used[i];
+  }
+  const last = used.at(-1);
+
+  NIGHTS.length = 0;
+  if (!start) {
+    THERAPY_START = LAST_NIGHT = null;
+    NIGHTS_ON_THERAPY = NIGHTS_USED = 0;
+    return;
+  }
+  let usedSoFar = 0;
+  for (let date = start, n = 1; date <= last; date = addDays(date, 1), n += 1) {
+    const x = CARD_BY_DATE.get(date);
+    const hours = x?.hours > 0 ? round1(x.hours) : 0;
+    if (hours > 0) usedSoFar += 1;
+    NIGHTS.push({
+      n,
+      used: usedSoFar,
+      rawHours: x?.hours > 0 ? x.hours : 0,
+      date,
+      ...(hours > 0 ? { fixture: date } : {}),
+      ahi:
+        hours >= SCORE_MIN_HOURS && x.ahi
+          ? {
+              csa: round1(x.ahi.csa),
+              osa: round1(x.ahi.osa + (x.ahi.apnea ?? 0)),
+              hyp: round1(x.ahi.hyp),
+            }
+          : null,
+      hours,
+      leak: hours > 0 && x.leak?.p95 != null ? round1(x.leak.p95) : null,
+      pressure: hours > 0 && x.pressure?.p50 != null ? round1(x.pressure.p50) : null,
+      position: null,
+    });
+  }
+  THERAPY_START = start;
+  LAST_NIGHT = last;
+  NIGHTS_ON_THERAPY = NIGHTS.length;
+  NIGHTS_USED = usedSoFar;
+}
+onDataset(rebuild);
+
+/* the date a night's detail view describes: its id is its date. Anything
+ * else (no night selected, an old id) means the real last night. */
 export const dateForFixture = (fixtureId) =>
-  (fixtureId && NIGHTS.find((x) => x.fixture === fixtureId)?.date) || LAST_NIGHT;
+  (fixtureId && NIGHTS.some((x) => x.date === fixtureId) && fixtureId) || LAST_NIGHT;
 
 /* ---- derived helpers ---- */
 export const ahiTotal = (night) =>
   night.ahi ? +(night.ahi.csa + night.ahi.osa + night.ahi.hyp).toFixed(1) : null;
-export const metCompliance = (night) => night.hours >= COMPLIANCE_MIN_HOURS;
+export const metCompliance = (night) => (night.rawHours ?? night.hours) >= COMPLIANCE_MIN_HOURS;
 
 const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
-export const round1 = (x) => (x == null ? null : Math.round(x * 10) / 10);
 
 /* average over the nights that have a value (unscored / no-session skipped) */
 export function averages(nights) {
@@ -68,13 +133,6 @@ export function averages(nights) {
     used: used.length,
   };
 }
-
-/* 'YYYY-MM-DD' → Date at local midnight (no timezone day-shift) */
-export const toDate = (iso) => new Date(`${iso}T00:00:00`);
-export const fmtShort = (iso) =>
-  toDate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-export const fmtDayShort = (iso) =>
-  toDate(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
 export function nightsBetween(startIso, endIso) {
   return NIGHTS.filter((x) => x.date >= startIso && x.date <= endIso);

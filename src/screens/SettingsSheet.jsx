@@ -1,10 +1,14 @@
 /* Nocta — Settings subpage. Full-screen sheet from the You tab.
- * Notifications, privacy, medical disclaimer, data export. */
-import { useState } from 'react';
+ * Profile photo, sign-in & security, reminders, export and delete, and the
+ * medical disclaimer. */
+import { useState, useRef } from 'react';
 import { useStore } from '../lib/store.jsx';
-import { SETTINGS_DEFAULTS, PRIVACY_NOTE, MEDICAL_NOTE } from '../data/account.js';
+import { PRIVACY_NOTE, MEDICAL_NOTE } from '../data/account.js';
+import { ProfileAvatar } from '../components/ProfileAvatar.jsx';
+import { exportMyData } from '../lib/accountData.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
+import { setReminders, missingQuestions, setPhoto, setCheckinReminder } from '../lib/profile.js';
 
 /* accessible on/off switch — same one used in YouScreen */
 function Switch({ on, onChange, label }) {
@@ -22,17 +26,120 @@ function Switch({ on, onChange, label }) {
   );
 }
 
-export function SettingsSheet() {
-  const { closeSheet } = useStore();
-  const [checkin, setCheckin] = useState(SETTINGS_DEFAULTS.checkinReminder);
-  const [weekly, setWeekly] = useState(SETTINGS_DEFAULTS.weeklySummary);
-  const [cellular, setCellular] = useState(SETTINGS_DEFAULTS.syncOverCellular);
-  const [exported, setExported] = useState(false);
+/* a photo, scaled down to 256 px (a small JPEG kept on this device) */
+function shrink(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const c = document.createElement('canvas');
+      c.width = c.height = 256;
+      // centre-crop to a square, like the round avatar shows it
+      c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 256, 256);
+      URL.revokeObjectURL(img.src);
+      resolve(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/* the page's sections, shared with the desktop You page (rendered inline
+ * there rather than one click away). Every control here does what it says:
+ * nothing is a display-only switch. */
+export function SettingsContent() {
+  // sub-pages stack on Settings, so Back returns here (desktop: on an empty stack)
+  const { profile, authUser, pushSheet: openSheet, showToast } = useStore();
+  const missing = missingQuestions(profile).length;
+  const fileRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
+  const guest = !authUser || authUser.kind === 'guest';
+  const photo = profile.photo ?? authUser?.photo ?? null;
 
   return (
-    <Sheet title="Settings" onClose={closeSheet} variant="page">
+    <>
+      {/* ---- profile photo ---- */}
       <div className="section-head">
-        <h3>Notifications</h3>
+        <h3>Profile</h3>
+      </div>
+      <div className="list">
+        <div className="list-row st-photo">
+          <div className="st-avatar">
+            <ProfileAvatar user={authUser} />
+          </div>
+          <div className="lr-main">
+            <div className="lr-title">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
+            <div className="st-photo-actions">
+              <button type="button" className="ob-link" onClick={() => fileRef.current?.click()}>
+                {photo ? 'Change photo' : 'Add a photo'}
+              </button>
+              {profile.photo && (
+                <button type="button" className="ob-link subtle" onClick={() => setPhoto(null)}>
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            tabIndex={-1}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (!f) return;
+              try {
+                setPhoto(await shrink(f));
+                showToast('Photo updated', 'check');
+              } catch {
+                showToast('That image couldn’t be read', 'info');
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* ---- sign-in & security ---- */}
+      {!guest && (
+        <>
+          <div className="section-head">
+            <h3>Sign-in &amp; security</h3>
+          </div>
+          <div className="list">
+            {authUser.kind === 'email' ? (
+              <button className="list-row" onClick={() => openSheet('changePassword')}>
+                <div className="lr-icon bare">
+                  <Icon name="lock" size={17} />
+                </div>
+                <div className="lr-main">
+                  <div className="lr-title">Change password</div>
+                  <div className="lr-sub">{authUser.email}</div>
+                </div>
+                <Icon name="chevronRight" size={17} />
+              </button>
+            ) : (
+              <div className="list-row">
+                <div className="lr-icon bare">
+                  <Icon name="lock" size={17} />
+                </div>
+                <div className="lr-main">
+                  <div className="lr-title">Signed in with {authUser.kind === 'apple' ? 'Apple' : 'Google'}</div>
+                  <div className="lr-sub">
+                    There’s no Nocta password to change. Your password is managed by your{' '}
+                    {authUser.kind === 'apple' ? 'Apple ID' : 'Google account'}.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ---- notifications: what Nocta actually does ---- */}
+      <div className="section-head">
+        <h3>Reminders</h3>
       </div>
       <div className="list">
         <div className="list-row">
@@ -40,65 +147,67 @@ export function SettingsSheet() {
             <Icon name="bell" size={17} />
           </div>
           <div className="lr-main">
-            <div className="lr-title">Morning check-in</div>
-            <div className="lr-sub">7:00 AM · weekdays and weekends</div>
+            <div className="lr-title">Morning check-in reminder</div>
+            <div className="lr-sub">7:00 AM. Sent by the iPhone app once it’s out; the web version can’t send reminders</div>
           </div>
-          <Switch on={checkin} onChange={setCheckin} label="Morning check-in reminder" />
+          <Switch on={Boolean(profile.checkinReminder)} onChange={setCheckinReminder} label="Morning check-in reminder" />
         </div>
-        <div className="list-row">
-          <div className="lr-icon bare">
-            <Icon name="calendar" size={17} />
+        {!guest && (
+          <div className="list-row">
+            <div className="lr-icon bare">
+              <Icon name="info" size={17} />
+            </div>
+            <div className="lr-main">
+              <div className="lr-title">Quick questions</div>
+              <div className="lr-sub">
+                {missing
+                  ? `Now and then on Tonight, ask the ${missing === 1 ? 'question' : `${missing} questions`} I skipped`
+                  : 'You’ve answered everything'}
+              </div>
+            </div>
+            <Switch
+              on={!profile.reminders.off}
+              onChange={(on) => setReminders({ off: !on, snoozedUntil: null })}
+              label="Quick question reminders"
+            />
           </div>
-          <div className="lr-main">
-            <div className="lr-title">Weekly summary</div>
-            <div className="lr-sub">Sundays at 9:00 AM</div>
-          </div>
-          <Switch on={weekly} onChange={setWeekly} label="Weekly summary" />
-        </div>
+        )}
       </div>
 
+      {/* ---- your data ---- */}
       <div className="section-head">
-        <h3>Sync</h3>
-      </div>
-      <div className="list">
-        <div className="list-row">
-          <div className="lr-icon bare">
-            <Icon name="refresh" size={17} />
-          </div>
-          <div className="lr-main">
-            <div className="lr-title">Sync over cellular</div>
-            <div className="lr-sub">Use mobile data when Wi-Fi is unavailable</div>
-          </div>
-          <Switch on={cellular} onChange={setCellular} label="Sync over cellular" />
-        </div>
-      </div>
-
-      <div className="section-head">
-        <h3>Privacy &amp; data</h3>
+        <h3>Your data</h3>
       </div>
       <p className="settings-note">{PRIVACY_NOTE}</p>
       <div className="list">
-        <button className="list-row" onClick={() => setExported(true)}>
+        <button
+          className="list-row"
+          disabled={exporting}
+          onClick={async () => {
+            setExporting(true);
+            try {
+              const r = await exportMyData(authUser);
+              showToast(`Downloaded: ${r.nights} nights, ${r.checkins} check-ins`, 'download');
+            } finally {
+              setExporting(false);
+            }
+          }}
+        >
           <div className="lr-icon bare accent">
             <Icon name="download" size={17} />
           </div>
           <div className="lr-main">
             <div className="lr-title">Export my data</div>
-            <div className="lr-sub">
-              {exported
-                ? 'Export queued. You’ll get an email when it’s ready'
-                : 'Download everything Nocta holds'}
-            </div>
+            <div className="lr-sub">{exporting ? 'Preparing your file…' : 'Download everything Nocta holds, as a JSON file'}</div>
           </div>
-          <Icon name={exported ? 'check' : 'chevronRight'} size={17} />
         </button>
-        <button className="list-row">
+        <button className="list-row" onClick={() => openSheet('deleteAccount')}>
           <div className="lr-icon bare">
             <Icon name="x" size={17} />
           </div>
           <div className="lr-main">
-            <div className="lr-title destructive">Delete account</div>
-            <div className="lr-sub">Permanently remove all your data</div>
+            <div className="lr-title destructive">{guest ? 'Erase this device’s data' : 'Delete account'}</div>
+            <div className="lr-sub">{guest ? 'Remove everything Nocta keeps here' : 'Permanently delete your account and data'}</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
@@ -108,8 +217,16 @@ export function SettingsSheet() {
         <h3>Medical disclaimer</h3>
       </div>
       <p className="settings-note">{MEDICAL_NOTE}</p>
+    </>
+  );
+}
 
-      {/* <p className="disclaimer">Nocta 1.0 · Your therapy data arrives via SleepHQ.</p> */}
+export function SettingsSheet() {
+  const { closeSheet } = useStore();
+
+  return (
+    <Sheet title="Settings" onClose={closeSheet} variant="page">
+      <SettingsContent />
     </Sheet>
   );
 }

@@ -323,7 +323,7 @@ export function DeviceDetailSheet() {
                     <div className="lr-sub">
                       {syncing
                         ? 'New nights pull in automatically'
-                        : 'Paused: pull manually from Tonight'}
+                        : 'Paused: no new data comes in until it’s back on'}
                     </div>
                   </div>
                   <Switch on={syncing} onChange={setSyncing} label="Background sync" />

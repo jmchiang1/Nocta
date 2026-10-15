@@ -1,5 +1,6 @@
 /* Nocta — comprehensive mask picker. Same catalog + filter UX as the
  * onboarding "Your mask & supplies" step so the user can find any model. */
+import { setAnswers } from '../lib/profile.js';
 import { useState, useMemo } from 'react';
 import { useStore } from '../lib/store.jsx';
 import {
@@ -91,6 +92,7 @@ export function MaskPickerSheet() {
                     className={`list-row${selected ? ' selected' : ''}`}
                     onClick={() => {
                       setMaskId(m.id);
+                      setAnswers({ maskModel: m.id }); // answers the "which mask?" question too
                       close();
                       if (m.id !== maskId) showToast(`Mask set to ${m.name}`, 'check');
                     }}

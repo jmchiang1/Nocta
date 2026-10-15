@@ -438,6 +438,68 @@ SleepHQ data. Not a medical record."* No AI insights in the export.
 
 Drop a one-time medical disclaimer modal on first sign-in.
 
+### Sign-in (account creation comes last)
+
+The splash: **Get started**, **I already have an account**, and a small **Look around first**
+pill in the top-right corner.
+
+- **Get started** goes straight into the 11 setup steps, with no account yet. The last
+  step is **Save your setup**: Continue with Google, or email + password (confirmed by an
+  email link). Then the medical disclaimer, then the welcome. Setup progress is saved on
+  the device as it goes, so a Google redirect or an email link opened in a new tab
+  doesn't lose it. Signing in to an *existing* account at that step goes to its restore
+  flow instead. Backing out of it returns to the step with the answers intact.
+- **I already have an account** goes to sign in (Google or email, plus "Forgot password?"
+  → reset link → new password). Its "Create an account" starts setup.
+- **Look around first** is a guest. Nothing is saved, so there's no setup: the
+  disclaimer, then the app on sample data. Guests can create an account later from
+  You › Account.
+- The splash lifts away and the next screen rises in. Returning to the splash fades it
+  back.
+- **Sign in with Apple** is off for now. It must return before App Store submission
+  (guideline 4.8).
+
+Edge cases covered: a malformed email, a short password, an email that already has an
+account (→ "Sign in instead", email kept), a wrong password, an unconfirmed email, the
+resend cooldown, rate limits, offline, an email link opened in another browser or
+expired, Supabase's mailer refusing an address, a cancelled Google sheet (silent), Google
+switched off, a reload mid-setup, an account pending deletion, a SleepHQ link that
+expired while away, and notification permission being per phone. Real with Supabase
+configured (`docs/AUTH_SETUP.md`). Otherwise the mock runs, and the DevPanel's
+**Sign-in** group picks what the account looks like.
+
+### Import from SD card (ResMed)
+
+The way real data gets in today. Reached from Therapy › device card, and from
+onboarding's "Bring in your CPAP data" step (the main option there). The person picks
+or drops the card's folder; `lib/resmed/` parses it **in the browser**, and the result is
+kept on the device in IndexedDB (`lib/importStore.js`). Re-importing merges by night.
+
+- Reads `STR.edf` (daily summaries), `DATALOG/<day>/*_EVE|CSL|PLD|SA2.edf` (events, 2 s
+  pressure/leak/breathing, oximetry), `Identification.json|.tgt` and
+  `SETTINGS/CurrentSettings.json`. It skips the 25 Hz `BRP` waveform files.
+- A night's numbers come from its detail files, so the listed events and the AHI always
+  agree. AHI = (obstructive + central + unclassified apneas + hypopneas) / hours. STR
+  fills in nights whose detail is gone.
+- Verified against a real AirSense 11 card: AHI matches the machine's to 0.1, and leak
+  95% matches myAir. `node scripts/check-card.mjs <card folder> [dates]` re-checks a card
+  from the terminal.
+- Handled: wrong folder, Philips card, an empty card, truncated or garbage files (skipped
+  with a note), events outside recorded time, no oximeter, multi-session nights.
+- Shown plainly, with no good/bad colouring. The periodic-breathing minutes from CSL are
+  kept for the escalation rules but never shown or named.
+- **When it can't be read:** a full error state (not a card / Philips / no nights yet /
+  damaged), each with what probably happened and what to try, plus "Choose the card
+  again". A card that mostly reads imports, with a visible "N files couldn't be read"
+  note above the nights.
+- **The "Bringing in last night" live activity** (Dynamic Island on the phone, the status
+  pill on desktop, Tonight skeletons) plays only after an import has been read
+  successfully. It never plays on app open, and there's **no pull-to-refresh**: there's
+  nothing to pull from. The device card says what's true: "No data yet", or "Imported
+  today · latest night Oct 13".
+- **Not yet:** imported nights don't drive Tonight / Trends. Those still read the
+  fixtures. The iPhone picker comes with the native app (Safari can't open folders).
+
 ---
 
 ## Things to deliberately omit from v1

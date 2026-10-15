@@ -15,9 +15,8 @@ export function MachinePickerSheet() {
       {(close) => (
         <>
           <p className="settings-note" style={{ margin: '0 0 14px' }}>
-            Pick the CPAP you sleep with. Nocta reads it through SleepHQ, so your next sync
-            will come from the machine you choose here. Your prescribed pressure doesn’t
-            change.
+            Pick the CPAP you sleep with. Once you import its SD card, Nocta reads the
+            machine and its settings from the card instead.
           </p>
 
           {BRANDS.map((brand) => (

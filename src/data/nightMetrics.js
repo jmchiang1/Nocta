@@ -3,17 +3,18 @@
  * "About" in plain language). Hedged, never diagnostic, and never a pressure
  * suggestion (CLAUDE.md safety rails). */
 import { pct } from '../lib/nightSeries.js';
+import { cardNight } from './history.js';
 
 const LEAK_LINE = 24;
 const round1 = (x) => Math.round(x * 10) / 10;
 
 export const NIGHT_METRICS = {
-  flow: {
-    title: 'Flow rate',
-    unit: '',
-    meta: 'breath by breath',
+  resp: {
+    title: 'Breathing rate',
+    unit: 'breaths/min',
+    meta: 'breaths a minute',
     about:
-      'Flow rate is the air moving in and out with each breath, as your machine measures it. Even, steady waves mean easy breathing. Flatter stretches are where breathing paused or got shallow, which is what your machine counts as events.',
+      'Breathing rate is how many breaths a minute your machine counted through the night. Many adults sit somewhere around 12 to 20 at rest. What matters most is how steady yours stays from minute to minute and night to night.',
   },
   pressure: {
     title: 'Pressure',
@@ -31,65 +32,65 @@ export const NIGHT_METRICS = {
   snore: {
     title: 'Snore index',
     unit: '',
-    meta: '0 – 10',
+    meta: 'machine snore index',
     about:
-      'Snore index is how much vibration your machine picked up in your airway, on a scale of 0 to 10. A little is common, even on CPAP. Longer stretches of higher snoring can mean your airway was partly narrowed for a while.',
+      'Snore index is how much vibration your machine picked up in your airway. Higher means more. A little is common, even on CPAP. Longer stretches of higher snoring can mean your airway was partly narrowed for a while.',
   },
 };
 
-/* the headline number for a metric's detail page, from the night's series */
+/* the headline number for a metric's detail page. Pressure, leak and
+ * breathing rate use the card's own night statistics (computed from the
+ * machine's 2-second samples) — the same numbers as the tiles, so the two
+ * always agree. Only snore, which the card doesn't summarise, is read from
+ * its per-minute series, skipping mask-off minutes. */
 export function metricStat(key, series, fx) {
-  const minsPer = (fx.session.durationHours * 60) / (series[key]?.length || 1);
+  const raw = cardNight(fx.id);
+  const none = (label, what) => ({ label, value: '—', unit: '', sub: `No ${what} recorded`, sentence: `the machine did not record ${what} this night` });
+
   if (key === 'pressure') {
-    const s = series.pressure;
+    const p = raw?.pressure;
+    if (p?.p50 == null) return none('Median', 'pressure');
     return {
       label: 'Median',
-      value: round1(pct(s, 0.5)).toFixed(1),
-      sub: `Ranged ${round1(Math.min(...s)).toFixed(1)} to ${round1(Math.max(...s)).toFixed(1)} overnight`,
-      sentence: `the median was **${round1(pct(s, 0.5)).toFixed(1)} cmH₂O**, ranging from ${round1(Math.min(...s)).toFixed(1)} to ${round1(Math.max(...s)).toFixed(1)}`,
+      value: round1(p.p50).toFixed(1),
+      sub: `95% of the night at or under ${round1(p.p95).toFixed(1)} · highest ${round1(p.max).toFixed(1)}`,
+      sentence: `the median was **${round1(p.p50).toFixed(1)} cmH₂O**, 95% of the night at or under ${round1(p.p95).toFixed(1)}, and the highest reading ${round1(p.max).toFixed(1)}`,
     };
   }
   if (key === 'leak') {
-    const s = series.leak;
-    if (!s)
-      return {
-        label: '95th percentile',
-        value: '—',
-        unit: '',
-        sub: 'Not enough data recorded',
-        sentence: 'the machine did not record enough leak data this night to read',
-      };
-    const over = Math.round(s.filter((v) => v > LEAK_LINE).length * minsPer);
-    const p95 = Math.round(pct(s, 0.95));
+    const l = raw?.leak;
+    if (l?.p95 == null) return none('95th percentile', 'leak');
+    const p95 = Math.round(l.p95);
+    const over = l.largeMinutes; // minutes above the line, from 2-second samples
     return {
       label: '95th percentile',
       value: String(p95),
-      sub: over ? `Above ${LEAK_LINE} for about ${over} min` : `Under ${LEAK_LINE} all night`,
+      sub: over ? `Above ${LEAK_LINE} for about ${over} min` : over === 0 ? `Under ${LEAK_LINE} all night` : 'L/min',
       sentence: over
-        ? `it peaked at **${p95} L/min** and ran above ${LEAK_LINE} for about **${over} minutes**`
-        : `it stayed under ${LEAK_LINE} all night, topping out at **${p95} L/min**`,
+        ? `95% of the night it stayed at or under **${p95} L/min**, and it ran above ${LEAK_LINE} for about **${over} minutes**`
+        : `95% of the night it stayed at or under **${p95} L/min**${over === 0 ? `, never above ${LEAK_LINE}` : ''}`,
     };
   }
   if (key === 'snore') {
-    const s = series.snore;
+    const s = (raw?.sessions ?? []).flatMap((x) => x.series?.snore ?? []).filter((v) => v != null);
+    if (!s.length) return none('Average', 'snoring');
     const avg = round1(s.reduce((a, b) => a + b, 0) / s.length);
+    const peak = round1(Math.max(...s));
     return {
       label: 'Average',
       value: avg.toFixed(1),
-      sub: `Peak ${round1(Math.max(...s)).toFixed(1)} of 10`,
-      sentence: `it averaged **${avg.toFixed(1)}** out of 10, peaking at ${round1(Math.max(...s)).toFixed(1)}`,
+      sub: `Highest minute ${peak.toFixed(1)}`,
+      sentence: `it averaged **${avg.toFixed(1)}**, with the highest minute at ${peak.toFixed(1)}`,
     };
   }
-  // flow: the waveform has no single number; breathing rate comes from the watch
-  const rr = fx.bodyResponse?.respRate?.value;
+  // breathing rate: the card's median; the spread from its per-minute series
+  const med = raw?.respRate?.p50;
+  const s = (raw?.sessions ?? []).flatMap((x) => x.series?.respRate ?? []).filter((v) => v > 0);
+  if (med == null || !s.length) return none('Median', 'breathing rate');
   return {
-    label: 'Breathing rate',
-    value: rr != null ? String(rr) : '—',
-    unit: rr != null ? 'breaths/min' : '',
-    sub: rr != null ? 'Average from your watch' : 'No breathing rate recorded',
-    sentence:
-      rr != null
-        ? `you averaged **${rr} breaths a minute**, and the wave shows each breath through the night`
-        : 'the wave shows each breath through the night',
+    label: 'Median',
+    value: round1(med).toFixed(1),
+    sub: `Mostly between ${round1(pct(s, 0.1)).toFixed(1)} and ${round1(pct(s, 0.9)).toFixed(1)}`,
+    sentence: `your breathing rate sat around **${round1(med).toFixed(1)} breaths a minute**, mostly between ${round1(pct(s, 0.1)).toFixed(1)} and ${round1(pct(s, 0.9)).toFixed(1)}`,
   };
 }

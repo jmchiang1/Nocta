@@ -1,4 +1,5 @@
-import { NIGHTS, LAST_NIGHT, ahiTotal, toDate, fmtDayShort } from './history.js';
+import { NIGHTS, ahiTotal, toDate, fmtDayShort } from './history.js';
+import { checkinTags } from '../lib/checkins.js';
 
 /* Nocta — Morning Check-In question set + journal history.
  * Tags are a controlled vocabulary (see docs/FEATURES.md). */
@@ -75,22 +76,11 @@ export const TAG_LABELS = CHECKIN_SCREENS.reduce((acc, s) => {
   return acc;
 }, {});
 
-/* Journal history — one morning check-in per night that had a session
- * (no session Thu Oct 8 / Fri Oct 9 → no check-in). Tags are what the user
- * logged; the AHI column comes straight from history.js so it always matches
- * Tonight, Trends and compliance. Newest first. Last night's entry comes
- * from this morning's check-in (journalHistory), so it only counts once done. */
-const CHECKIN_TAGS = {
-  '2026-10-07': ['tired', 'worked_late'],
-  '2026-10-06': ['sore', 'headache', 'late_meal'],
-  '2026-10-05': ['rested', 'exercised'],
-  '2026-10-04': ['rested'],
-  '2026-10-03': ['tired', 'alcohol'],
-  '2026-10-02': ['rested', 'exercised'],
-  '2026-10-01': ['foggy', 'late_meal'],
-  '2026-09-30': ['anxious', 'tired'], // first night on CPAP
-};
-
+/* Journal history — the morning check-ins you've actually done, one per
+ * night (lib/checkins.js). The CPAP card can't know how you felt or what you
+ * did before bed, so nothing is filled in. Tags are what you logged; the AHI
+ * column comes straight from history.js so it always matches Tonight, Trends
+ * and compliance. Newest first. */
 const entry = (x, tags) => {
   const total = ahiTotal(x);
   return {
@@ -101,14 +91,10 @@ const entry = (x, tags) => {
   };
 };
 
-export const JOURNAL_HISTORY = NIGHTS.filter((x) => CHECKIN_TAGS[x.date])
-  .reverse()
-  .map((x) => entry(x, CHECKIN_TAGS[x.date]));
-
-/* the journal including this morning's check-in, once it's done */
-export function journalHistory(checkin) {
-  if (!checkin?.done) return JOURNAL_HISTORY;
-  const last = NIGHTS.find((x) => x.date === LAST_NIGHT);
-  const tags = allCheckinTags(checkin.tags).filter((id) => !id.startsWith('nothing_'));
-  return [entry(last, tags), ...JOURNAL_HISTORY];
+/* `checkin` (the store's last-night entry) is only a re-render hint: every
+ * saved night is read from the per-night store */
+export function journalHistory(_checkin) {
+  return NIGHTS.filter((x) => checkinTags(x.date))
+    .reverse()
+    .map((x) => entry(x, checkinTags(x.date)));
 }

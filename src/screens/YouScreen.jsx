@@ -6,12 +6,13 @@
  * DevPanel outside the phone, so the app itself reads as shipped. */
 import { useStore } from '../lib/store.jsx';
 import { USER, CONNECTED_DEVICES, DEVICE_PHOTO } from '../data/account.js';
-import { machineById } from '../data/therapy.js';
+import { machineName } from '../data/therapy.js';
+import { ProfileAvatar } from '../components/ProfileAvatar.jsx';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
 
 export function YouScreen() {
-  const { openSheet, deviceConnections, machineId } = useStore();
+  const { openSheet, deviceConnections, machineId, authUser } = useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
 
 
@@ -24,17 +25,16 @@ export function YouScreen() {
       <section className="profile-card" aria-label="Your profile">
         <div className="profile-head">
           <div className="avatar">
-            <img src={USER.photo} alt={USER.name} />
+            <ProfileAvatar user={authUser} />
           </div>
           <div>
-            <div className="ph-name">{USER.name}</div>
-            <div className="ph-sub">
-              {USER.condition} · {machineById(machineId).short}
-            </div>
+            {/* who: from sign-in. What: from the card. Nothing filled in */}
+            <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
+            <div className="ph-sub">{machineName(machineId).name}</div>
             {/* one plain milestone; compliance and AHI live on Therapy and Trends */}
             <div className="ph-meta tnum">
-              {USER.daysOnTherapy} nights on therapy · since{' '}
-              {USER.joinedDate.replace(/, \d{4}$/, '')}
+              {USER.daysOnTherapy} nights on the machine
+              {USER.therapyStart && ` · since ${USER.therapyStart}`}
             </div>
           </div>
         </div>
@@ -50,7 +50,7 @@ export function YouScreen() {
           </div>
           <div className="lr-main">
             <div className="lr-title">Account</div>
-            <div className="lr-sub">Profile, plan, and sign out</div>
+            <div className="lr-sub">Sign-in and sign out</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
@@ -60,7 +60,7 @@ export function YouScreen() {
           </div>
           <div className="lr-main">
             <div className="lr-title">Settings</div>
-            <div className="lr-sub">Notifications, privacy, and data</div>
+            <div className="lr-sub">Photo, password, reminders, and your data</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
@@ -90,7 +90,7 @@ export function YouScreen() {
               )}
               <div className="lr-main">
                 <div className="lr-title">{d.title}</div>
-                <div className="lr-sub">Connected · synced {d.lastSync || 'just now'}</div>
+                <div className="lr-sub">Connected</div>
               </div>
               <Icon name="chevronRight" size={17} />
             </button>
@@ -100,7 +100,7 @@ export function YouScreen() {
           <div className="list-row empty">
             <div className="lr-main">
               <div className="lr-title">No devices connected</div>
-              <div className="lr-sub">Pair a wearable to layer heart rate and sleep onto your therapy</div>
+              <div className="lr-sub">Nocta reads your CPAP’s SD card. Wearables can’t be connected yet.</div>
             </div>
           </div>
         )}
@@ -109,7 +109,8 @@ export function YouScreen() {
             <Icon name="plus" size={17} />
           </div>
           <div className="lr-main">
-            <div className="lr-title">Add a device</div>
+            <div className="lr-title">Wearables</div>
+            <div className="lr-sub">Coming soon</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>

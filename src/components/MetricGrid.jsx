@@ -10,7 +10,7 @@ import { getTrends } from '../data/trends.js';
 
 export function MetricGrid({ fixtureId, ahi, items, onMetric }) {
   // AHI's sparkline: the last 7 nights, last night highlighted
-  const raw = getTrends(fixtureId, '7d').ahiSeries.map((d) => d.csa + d.osa + d.hyp);
+  const raw = getTrends(fixtureId, '7d').ahiSeries.map((d) => (d.csa == null ? null : d.csa + d.osa + d.hyp));
   const peak = Math.max(...raw, 1);
   const week = raw.map((v) => v / peak); // sparklines draw on a 0–1 scale
   const hasAhi = ahi.value != null;
@@ -34,7 +34,7 @@ export function MetricGrid({ fixtureId, ahi, items, onMetric }) {
           key={m.key}
           type="button"
           className="mg-tile card-enter"
-          onClick={() => onMetric(m.label)}
+          onClick={() => onMetric(m.label, m.key)}
           aria-label={`${m.label} ${m.value}${m.unit ? ` ${m.unit}` : ''}, ${m.sub}. Ask Nox about it`}
         >
           <span className="mg-top">

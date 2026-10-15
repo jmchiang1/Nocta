@@ -9,31 +9,32 @@
  * Dynamic Island. */
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
-import { USER, maskById } from '../data/account.js';
-import { machineById } from '../data/therapy.js';
+import { maskById, firstName } from '../data/account.js';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { RevealText } from '../lib/motion.jsx';
 
 const EXIT_MS = 720;
 
-export function Welcome({ data, onDone }) {
-  const { machineId } = useStore();
+/* `returning`: a signed-in existing account, so the copy greets them back and
+ * the pills say only what's really set up on this device */
+export function Welcome({ data, onDone, returning = false }) {
+  const { authUser } = useStore();
   const [leaving, setLeaving] = useState(false);
-  const first = USER.name.split(' ')[0];
-  const machine = machineById(machineId);
+  // only the name their sign-in shared; an email signup has none to greet
+  const first = firstName(authUser);
 
   // what onboarding actually set up; skipped steps read as "add later"
   const pills = [
-    data.sleephq
-      ? { icon: 'therapy', text: `${machine.short} connected` }
-      : { icon: 'therapy', text: 'CPAP · connect later', later: true },
-    data.maskModel
+    data.cardNights
+      ? { icon: 'therapy', text: `${data.cardNights} nights imported` }
+      : { icon: 'therapy', text: 'SD card · import later', later: true },
+    maskById(data.maskModel)
       ? { icon: 'pillow', text: maskById(data.maskModel).name }
       : { icon: 'pillow', text: 'Mask · add later', later: true },
     data.notify
-      ? { icon: 'bell', text: 'Check-in at 7:00 AM' }
-      : { icon: 'bell', text: 'Reminders off', later: true },
+      ? { icon: 'bell', text: 'Check-in reminder on' }
+      : { icon: 'bell', text: returning ? 'Reminders off on this phone' : 'Reminders off', later: true },
   ];
 
   function go() {
@@ -43,7 +44,7 @@ export function Welcome({ data, onDone }) {
   }
 
   return (
-    <div className={`welcome${leaving ? ' leaving' : ''}`} role="dialog" aria-label="Welcome to Nocta">
+    <div className={`welcome${leaving ? ' leaving' : ''}`} role="dialog" aria-label={returning ? 'Welcome back to Nocta' : 'Welcome to Nocta'}>
       <StatusBar />
 
       <div className="wl-body">
@@ -54,11 +55,22 @@ export function Welcome({ data, onDone }) {
         </div>
 
         <h1 className="wl-title">
-          <RevealText text={`You’re all set, *${first}*.`} />
+          <RevealText
+            text={
+              returning
+                ? first
+                  ? `Welcome back, *${first}*.`
+                  : 'Welcome *back*.'
+                : first
+                  ? `You’re all set, *${first}*.`
+                  : 'You’re all *set*.'
+            }
+          />
         </h1>
         <p className="wl-sub">
-          Each morning, Nocta reads your CPAP data and tells you, plainly, what changed and
-          why.
+          {returning
+            ? 'Your nights, mask, and settings are back, right where you left them.'
+            : 'Each morning, Nocta reads your CPAP data and tells you, plainly, what changed and why.'}
         </p>
 
         <ul className="wl-pills" aria-label="What's set up">

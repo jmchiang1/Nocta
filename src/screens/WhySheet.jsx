@@ -2,6 +2,7 @@
  * insight, one tap from the info button on Tonight. Evidence with its
  * numbers, confidence and the disclaimer travel together (CLAUDE.md:
  * every insight cites its data, carries a confidence label and the footer). */
+import { LAST_NIGHT } from '../data/history.js';
 import { useStore } from '../lib/store.jsx';
 import { FIXTURES } from '../data/fixtures.js';
 import { Sheet } from '../components/Sheet.jsx';
@@ -14,6 +15,7 @@ export function WhySheet() {
   const { fixtureId, closeSheet, openSheet, setTab } = useStore();
   const fx = FIXTURES[fixtureId];
   const insight = fx.insight;
+  const latest = fixtureId === LAST_NIGHT;
   const conf = CONFIDENCE[insight.confidence] || 1;
   const confLabel = insight.confidence
     ? `${insight.confidence[0].toUpperCase()}${insight.confidence.slice(1)} confidence`
@@ -21,7 +23,7 @@ export function WhySheet() {
 
   return (
     <Sheet
-      eyebrow="Nox · last night"
+      eyebrow={latest ? 'Nox · last night' : `Nox · ${fx.dayName}, ${fx.dateLabel.split(' · ')[0]}`}
       title="Why Nox thinks this"
       onClose={closeSheet}
       footer={(close) => (
@@ -32,7 +34,7 @@ export function WhySheet() {
             setTimeout(() => openSheet('coach', { context: { kind: 'why' } }), 320);
           }}
         >
-          Ask Nox about last night
+          {latest ? 'Ask Nox about last night' : 'Ask Nox about this night'}
         </button>
       )}
     >

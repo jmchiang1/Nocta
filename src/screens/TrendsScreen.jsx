@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { THERAPY_START, LAST_NIGHT } from '../data/history.js';
 import { getTrends } from '../data/trends.js';
-import { PRESSURE_RANGE } from '../data/therapy.js';
+import { pressureRange } from '../data/therapy.js';
 import { journalHistory } from '../data/journal.js';
 import { useStore } from '../lib/store.jsx';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
@@ -47,12 +47,13 @@ export function TrendsScreen() {
       : null;
 
   const t = getTrends(fixtureId, range, custom);
+  const rx = pressureRange(); // the prescribed window the machine records, if any
 
   const rangeIndex = RANGE_TABS.indexOf(range);
 
   const CHARTS = {
     ahi: {
-      title: 'AHI events',
+      title: 'AHI (events an hour)',
       meta: `avg ${t.ahiAvg}/h`,
       body: (
         <>
@@ -77,8 +78,8 @@ export function TrendsScreen() {
     },
     pressure: {
       title: 'Pressure',
-      meta: `cmH₂O · shaded: prescribed ${PRESSURE_RANGE[0]}–${PRESSURE_RANGE[1]}`,
-      body: <LineChart values={t.pressureSeries} color="data" band={PRESSURE_RANGE} />,
+      meta: rx ? `cmH₂O · shaded: prescribed ${rx[0]}–${rx[1]}` : 'cmH₂O',
+      body: <LineChart values={t.pressureSeries} color="data" band={rx ?? undefined} />,
     },
   };
   const chart = CHARTS[metric];

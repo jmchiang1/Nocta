@@ -11,6 +11,8 @@
  *    second hero repeating the why-card's number
  *  - date line drops "Night 11 of 30"
  *  - type steps up toward the 17pt body floor (scoped to .tonight-proposed) */
+import { firstName } from '../data/account.js';
+import { LAST_NIGHT } from '../data/history.js';
 import { Fragment } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { FIXTURES } from '../data/fixtures.js';
@@ -36,7 +38,7 @@ export function TonightProposedScreen() {
     deviceReads,
     syncing,
     syncNonce,
-    startSync,
+    authUser,
   } = useStore();
   const fx = FIXTURES[fixtureId];
   const date = fx.dateLabel.split(' · ')[0];
@@ -44,15 +46,13 @@ export function TonightProposedScreen() {
   const escalated = fx.insight.escalation_flag === 'hard';
 
   return (
-    <ScreenFrame
-      title={`${fx.dayName}, ${date}`}
-      onRefresh={startSync}
-      refreshing={syncing}
-      className="tonight-proposed"
-    >
+    <ScreenFrame title={`${fx.dayName}, ${date}`} className="tonight-proposed">
       <header className="page-head">
         <div>
-          <div className="eyebrow">{fx.greeting}</div>
+          <div className="eyebrow">
+            {fx.greeting}
+            {fixtureId === LAST_NIGHT && firstName(authUser) ? `, ${firstName(authUser)}` : ''}
+          </div>
           <h1>{fx.dayName}</h1>
           <div className="sub">{date}</div>
         </div>
@@ -72,10 +72,12 @@ export function TonightProposedScreen() {
             onDoctor={() => openSheet('doctor')}
           />
 
-          {!checkin.done && <CheckinPrompt checkin={checkin} onStart={() => openSheet('checkin')} />}
+          {fixtureId === LAST_NIGHT && !checkin.done && (
+            <CheckinPrompt checkin={checkin} onStart={(initial) => openSheet('checkin', { initial })} />
+          )}
 
           <div className="section-head">
-            <h3>Last night</h3>
+            <h3>{fixtureId === LAST_NIGHT ? 'Last night' : 'This night'}</h3>
             <span className="meta tnum">
               {fx.session.start}–{fx.session.end}
             </span>
@@ -84,7 +86,12 @@ export function TonightProposedScreen() {
             fixtureId={fixtureId}
             ahi={fx.ahi}
             items={fx.secondary}
-            onMetric={(label) => openSheet('coach', { context: { kind: 'metric', label } })}
+            // a metric with its own page opens it (as on the main layout); the rest ask Nox
+            onMetric={(label, key) =>
+              ['leak', 'pressure'].includes(key)
+                ? openSheet('metricDetail', { metric: key })
+                : openSheet('coach', { context: { kind: 'metric', label } })
+            }
           />
 
           <div className="section-head">
@@ -111,7 +118,9 @@ export function TonightProposedScreen() {
             <BodyResponse key={data.deviceKey} data={data} session={fx.session} />
           ))}
 
-          {checkin.done && <CheckinPrompt checkin={checkin} onStart={() => openSheet('checkin')} />}
+          {fixtureId === LAST_NIGHT && checkin.done && (
+            <CheckinPrompt checkin={checkin} onStart={(initial) => openSheet('checkin', { initial })} />
+          )}
         </Fragment>
       )}
 

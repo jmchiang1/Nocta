@@ -8,6 +8,8 @@
  * sky eases between nights instead of cutting.
  *
  * Options for the first-run screens:
+ *   density — star count multiplier (the splash sky is fuller than Tonight's;
+ *             the faintest tier grows most, so it reads as depth, not glitter)
  *   twinkle — share of stars that twinkle (0–1)
  *   comets  — an occasional comet streaks across: random timing (6.5–13 s
  *             apart), angle and length, one at a time
@@ -31,12 +33,14 @@ const TIERS = [
   { cls: 't3', count: 34, size: [0.7, 1.1], alpha: [0.3, 0.55] }, // faint
 ];
 
-function makeStars(seed, twinkle) {
+function makeStars(seed, twinkle, density = 1) {
   const rnd = mulberry32(hashStr(seed));
   const lerp = ([a, b]) => a + rnd() * (b - a);
   const out = [];
-  TIERS.forEach((t) => {
-    for (let i = 0; i < t.count; i += 1) {
+  TIERS.forEach((t, ti) => {
+    // extra stars are mostly faint ones: depth, not glitter
+    const n = Math.round(t.count * (1 + (density - 1) * [0.6, 0.9, 1.3][ti]));
+    for (let i = 0; i < n; i += 1) {
       out.push({
         key: `${t.cls}-${i}`,
         cls: t.cls,
@@ -85,11 +89,12 @@ export function NightSky({
   condition = 'clear',
   seed = 'nocta-sky',
   twinkle = 0.35,
+  density = 1,
   comets = false,
   firstCometMs = 2200,
   className = '',
 }) {
-  const stars = useMemo(() => makeStars(seed, twinkle), [seed, twinkle]);
+  const stars = useMemo(() => makeStars(seed, twinkle, density), [seed, twinkle, density]);
   const [comet, clearComet] = useComets(comets, firstCometMs);
 
   return (

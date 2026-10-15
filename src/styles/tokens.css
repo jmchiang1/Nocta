@@ -84,6 +84,10 @@
 
   /* phone hardware + translucent chrome (status/compact title bar) */
   --hw-black: #000;
+  /* sign-in provider buttons: Google's (and Apple's) brand rules call for a
+   * plain white button with near-black text */
+  --provider-btn-bg: #fff;
+  --provider-btn-fg: #1f1f1f;
   --chrome-bg: rgba(9, 13, 26, 0.8);
   /* liquid glass, dark appearance: a smoky tint that *darkens* what's behind
    * it (deep + contrasty), never a frosted brightening */

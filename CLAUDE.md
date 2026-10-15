@@ -26,8 +26,21 @@ re-rendering are materially cleaner as components. Everything else in the handof
   library, used for every chart in `src/components/Charts.jsx`. Chosen at the user's
   direction (chart animations + tooltips). Canvas can't read CSS variables, so the token
   hexes are mirrored into `Charts.jsx`; keep them in sync with `styles/tokens.css`.
-- **Data (v1)**: mock JSON fixtures only (`src/data/`). No live SleepHQ or OpenAI calls —
-  the AI insight JSON is hand-authored to match the `FEATURES.md` schema exactly.
+- **Real CPAP data**: ResMed SD card import, parsed in the browser by `src/lib/resmed/`
+  (EDF reader + card reader), stored on the device in IndexedDB. Not yet wired into
+  Tonight / Trends, which still read the fixtures.
+- **Data (v1)**: a parsed ResMed SD card drives every screen (`src/lib/dataset.js`): the
+  card imported on the device, else the bundled demo year `src/data/demoCard.json`
+  (rebuild it with `node scripts/build-demo-card.mjs "CPAP Data 1 Year"`). `history.js`
+  and `fixtures.js` derive from it. No live SleepHQ or OpenAI calls — each night's
+  insight JSON comes from the rule engine in `src/lib/insights.js` (detect → one
+  action → the `FEATURES.md` schema), never hand-authored.
+- **Auth**: Supabase Auth (`@supabase/supabase-js`, version pinned) on the shared Supabase
+  project "General": Google and email + password (Apple returns before the App Store).
+  "Look around without an account" is a local-only guest who skips setup; nothing of
+  theirs is saved. Real when
+  `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set in `.env.local`, mock
+  otherwise. See `docs/AUTH_SETUP.md`. Never put the secret/service_role key in the app.
 - **AI (future)**: OpenAI API with Structured Outputs (strict JSON schema mode).
 - **Data source (future)**: SleepHQ API (OAuth2 password grant).
 - **Hosting target**: static site host (Vercel / Netlify / GitHub Pages). A serverless
@@ -44,7 +57,9 @@ If a request would pull in a UI framework or CSS framework, push back and ask fi
 - **No CSS frameworks.** Custom CSS only, in plain stylesheets.
 - **Fonts**: DM Sans (display + numerals) and Inter (body + UI). Loaded from Google Fonts
   in `index.html`.
-- **Mobile-first**, 390px design width. Desktop is a "phone in the middle of the page".
+- **Mobile-first**, 390px design width. A real responsive web app, no phone mockup: under
+  768px the mobile app fills the screen; from 768px up, the desktop dashboard
+  (`src/components/desktop/`). The DevPanel can force either layout (Auto follows the width).
 - **Accessibility floors**: 17pt body minimum, 48pt touch targets minimum (56pt for primary
   CTAs), WCAG AA contrast everywhere, AAA on critical numbers like AHI.
 - **No emoji in UI** except inside the sleep journal context badges (food, drink, etc.).

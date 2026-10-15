@@ -1,21 +1,23 @@
-/* Nocta — demo-only control, on the stage outside the phone frame.
- * Switches between the onboarding flow and the app, picks which night
- * fixture the Tonight tab shows (exercises every why-card state), and holds
- * the prototype resets that used to sit inside the You tab.
- * Collapsed by default so the phone reads as a shipped app when presenting;
- * press D (or click the tab) to open it. R reloads the whole prototype —
- * the launch sync replays; onboarding/check-in state persists. */
+/* Nocta — demo-only control, floating over the app. Switches between the
+ * onboarding flow and the app, forces the mobile or desktop layout (Auto
+ * follows the window width), and holds the prototype resets that used to sit
+ * inside the You tab.
+ * Collapsed by default so the app reads as shipped when presenting.
+ * Keys work whether it's open or not:
+ *   H  hide / show the panel        M  mobile layout    D  desktop layout
+ *   O  onboarding                   A  the app          R  reload the prototype
+ * (M / D again returns to Auto; a reload replays the launch sync;
+ * onboarding/check-in state persists). */
 import { useEffect } from 'react';
 import { useStore } from '../lib/store.jsx';
-import { FIXTURES, FIXTURE_ORDER } from '../data/fixtures.js';
 
 export function DevPanel() {
   const {
     onboarded,
     completeOnboarding,
     resetOnboarding,
-    fixtureId,
-    setFixtureId,
+    layoutPref,
+    setViewMode,
     devPanelOpen,
     setDevPanelOpen,
     checkin,
@@ -33,12 +35,19 @@ export function DevPanel() {
       }
       // leave browser shortcuts (⌘R, ctrl+D…) alone
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'd' || e.key === 'D') setDevPanelOpen(!devPanelOpen);
-      if (e.key === 'r' || e.key === 'R') window.location.reload();
+      // the same actions as the panel's buttons
+      const key = e.key.toLowerCase();
+      if (key === 'h') setDevPanelOpen(!devPanelOpen);
+      // M / D force a layout; pressing the forced one again goes back to Auto
+      else if (key === 'm') setViewMode(layoutPref === 'mobile' ? 'auto' : 'mobile');
+      else if (key === 'd') setViewMode(layoutPref === 'desktop' ? 'auto' : 'desktop');
+      else if (key === 'o') resetOnboarding();
+      else if (key === 'a') completeOnboarding();
+      else if (key === 'r') window.location.reload();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [devPanelOpen, setDevPanelOpen]);
+  }, [devPanelOpen, setDevPanelOpen, layoutPref, setViewMode, resetOnboarding, completeOnboarding]);
 
   if (!devPanelOpen) {
     return (
@@ -47,7 +56,7 @@ export function DevPanel() {
         onClick={() => setDevPanelOpen(true)}
         aria-label="Open demo controls"
       >
-        Demo <kbd>D</kbd>
+        Demo <kbd>H</kbd>
       </button>
     );
   }
@@ -57,7 +66,7 @@ export function DevPanel() {
       <div className="dp-top">
         <span className="dp-label">Demo</span>
         <button className="dp-close" onClick={() => setDevPanelOpen(false)} aria-label="Hide demo controls">
-          Hide <kbd>D</kbd>
+          Hide <kbd>H</kbd>
         </button>
       </div>
 
@@ -69,27 +78,25 @@ export function DevPanel() {
 
       <span className="dp-label">View</span>
       <button className={!onboarded ? 'on' : ''} onClick={resetOnboarding}>
-        Onboarding
+        Onboarding <kbd>O</kbd>
       </button>
       <button className={onboarded ? 'on' : ''} onClick={completeOnboarding}>
-        App
+        App <kbd>A</kbd>
       </button>
 
       <span className="dp-sep" aria-hidden="true" />
 
-      <span className="dp-label">Night</span>
-      {FIXTURE_ORDER.map((id) => (
-        <button
-          key={id}
-          className={onboarded && id === fixtureId ? 'on' : ''}
-          onClick={() => {
-            setFixtureId(id);
-            completeOnboarding();
-          }}
-        >
-          {FIXTURES[id].label}
-        </button>
-      ))}
+      {/* Auto follows the window width; Mobile / Desktop force one */}
+      <span className="dp-label">Layout</span>
+      <button className={layoutPref === 'auto' ? 'on' : ''} onClick={() => setViewMode('auto')}>
+        Auto
+      </button>
+      <button className={layoutPref === 'mobile' ? 'on' : ''} onClick={() => setViewMode('mobile')}>
+        Mobile <kbd>M</kbd>
+      </button>
+      <button className={layoutPref === 'desktop' ? 'on' : ''} onClick={() => setViewMode('desktop')}>
+        Desktop <kbd>D</kbd>
+      </button>
 
       <span className="dp-sep" aria-hidden="true" />
 
@@ -98,11 +105,11 @@ export function DevPanel() {
         onClick={() => {
           closeSheet();
           setTab('tonight');
-          startSync();
+          startSync({ title: 'Bringing in last night', sub: 'SD card · AirSense 11 AutoSet' });
         }}
         disabled={!onboarded}
       >
-        Morning sync
+        Import sync
       </button>
       <button onClick={resetCheckin} disabled={!checkin.done}>
         Reset check-in

@@ -79,7 +79,7 @@ export function CoachSheet() {
       eyebrow="Nox"
       title="Ask anything"
       onClose={closeSheet}
-      className="tall"
+      className="tall coach-sheet"
       footer={
         <form
           className="coach-input"

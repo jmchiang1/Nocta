@@ -10,11 +10,7 @@ import { nightSeries } from '../lib/nightSeries.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { SleepStages } from '../components/SleepStages.jsx';
-import { LineChart, Waveform, Bars, EventWave } from '../components/Charts.jsx';
-
-/* Episode mini-waveform colour: central apneas are the escalation signal per
- * the safety rails, so they get coral. Everything else is the metric blue. */
-const WAVE_COLOR = { CSA: 'alert', OSA: 'data', Hypopnea: 'data' };
+import { LineChart, Bars } from '../components/Charts.jsx';
 
 function Episode({ ep }) {
   const [open, setOpen] = useState(false);
@@ -30,20 +26,20 @@ function Episode({ ep }) {
         <div className="episode-body">
           <div className="episode-body-inner">
             <div className="ep-detail">
-              <span className="ed-k">Pressure at the time</span>
+              <span className="ed-k">Pressure that minute</span>
               <span className="ed-v">{ep.pressure}</span>
             </div>
             <div className="ep-detail">
-              <span className="ed-k">Machine response</span>
+              <span className="ed-k">Next 3 minutes</span>
               <span className="ed-v">{ep.response}</span>
             </div>
-            <div className="ep-detail">
-              <span className="ed-k">Sleeping position</span>
-              <span className="ed-v">{ep.position}</span>
-            </div>
-            <div style={{ marginTop: 10 }}>
-              <EventWave seed={ep.seed} color={WAVE_COLOR[ep.type]} />
-            </div>
+            {/* the machine can't tell how you slept; a wearable could */}
+            {ep.position && (
+              <div className="ep-detail">
+                <span className="ed-k">Sleeping position</span>
+                <span className="ed-v">{ep.position}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -56,7 +52,7 @@ export function FullNightSheet() {
   const fx = FIXTURES[fixtureId];
   const episodes = EPISODES[fixtureId] || [];
 
-  const { flow, pressure, leak, snore } = nightSeries(fixtureId);
+  const { resp, pressure, leak, snore } = nightSeries(fixtureId);
   // each machine graph opens its own full page (MetricDetailSheet)
   const open = (metric) => pushSheet('metricDetail', { metric });
 
@@ -99,30 +95,33 @@ export function FullNightSheet() {
             sleepStages={fx.bodyResponse?.stages}
           />
 
-          <div className="section-head">
-            <h3>Sleep stages</h3>
-            <span className="meta">Apple Watch</span>
-          </div>
-          {fx.bodyResponse?.stages ? (
-            <div className="chart-card">
-              <SleepStages stages={fx.bodyResponse.stages} session={fx.session} />
-            </div>
-          ) : (
-            <div className="connect-cta">
-              <p>Last night was too short for your watch to chart sleep stages.</p>
-            </div>
+          {/* only with a connected wearable: the machine can't see sleep stages */}
+          {fx.bodyResponse?.stages && (
+            <>
+              <div className="section-head">
+                <h3>Sleep stages</h3>
+                <span className="meta">{fx.bodyResponse.source}</span>
+              </div>
+              <div className="chart-card">
+                <SleepStages stages={fx.bodyResponse.stages} session={fx.session} />
+              </div>
+            </>
           )}
 
-          <button className="fn-metric" type="button" onClick={() => open('flow')}>
+          <button className="fn-metric" type="button" onClick={() => open('resp')}>
             <span className="section-head">
-              <h3>Flow rate</h3>
+              <h3>Breathing rate</h3>
               <span className="meta">
-                breath by breath
+                breaths a minute
                 <Icon name="chevronRight" size={14} />
               </span>
             </span>
             <span className="chart-card">
-              <Waveform amps={flow} color="data" />
+              {resp ? (
+                <LineChart values={resp} color="data" />
+              ) : (
+                <span className="fn-nodata">No breathing rate recorded this night</span>
+              )}
               <TimeAxis session={fx.session} />
             </span>
           </button>
@@ -136,7 +135,7 @@ export function FullNightSheet() {
               </span>
             </span>
             <span className="chart-card">
-              <LineChart values={pressure} color="data" />
+              {pressure ? <LineChart values={pressure} color="data" /> : <span className="fn-nodata">No pressure recorded this night</span>}
               <TimeAxis session={fx.session} />
             </span>
           </button>
@@ -163,12 +162,12 @@ export function FullNightSheet() {
             <span className="section-head">
               <h3>Snore index</h3>
               <span className="meta">
-                0 – 10
+                from the machine
                 <Icon name="chevronRight" size={14} />
               </span>
             </span>
             <span className="chart-card">
-              <Bars values={snore} color="data" />
+              {snore ? <Bars values={snore} color="data" /> : <span className="fn-nodata">No snore data this night</span>}
               <TimeAxis session={fx.session} />
             </span>
           </button>

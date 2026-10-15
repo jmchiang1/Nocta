@@ -2,33 +2,39 @@
  * onboarded & checkin persist to localStorage. */
 import { EMPTY_CHECKIN_TAGS } from '../data/journal.js';
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { DEFAULT_FIXTURE, WEEK } from '../data/fixtures.js';
+import { DEFAULT_FIXTURE } from '../data/fixtures.js';
+import { NIGHTS, LAST_NIGHT } from '../data/history.js';
+import { refreshInsights } from '../data/fixtures.js';
+import { getCheckin, setCheckin as saveCheckinFor, clearCheckin, migrateOldCheckin } from './checkins.js';
+import { getProfile, onProfile } from './profile.js';
+import { setCard, getCard, isDemoData } from './dataset.js';
 import { DEFAULT_MACHINE_ID } from '../data/therapy.js';
 import {
-  DEFAULT_MASK_ID,
   DEFAULT_DEVICE_CONNECTIONS,
   DEFAULT_DEVICE_ENABLED,
   DEFAULT_DEVICE_READS,
 } from '../data/account.js';
+import { DEFAULT_SIGNIN_SCENARIO } from '../data/auth.js';
+import { useAuth } from './auth.jsx';
+import { saveImport, clearImport } from './importStore.js';
 
 const StoreContext = createContext(null);
 
-const CHECKIN_KEY = 'nocta.checkin.v1';
 const ONBOARD_KEY = 'nocta.onboarded.v1';
 const DEVPANEL_KEY = 'nocta.devpanel.v1';
+const VIEW_KEY = 'nocta.layout.v1'; // v1 view key held a forced layout from the old toggle
+/* the width at which the desktop dashboard takes over from the mobile app */
+const DESKTOP_QUERY = '(min-width: 768px)'; // tablets get the dashboard (icon rail under 820)
 const EMPTY_CHECKIN = { done: false, tags: EMPTY_CHECKIN_TAGS };
 const TAB_ORDER = ['tonight', 'trends', 'therapy', 'you'];
-/* how long the mock "pulling last night from SleepHQ" sync takes */
+/* how long the "bringing in last night" live activity runs after an import */
 const SYNC_MS = 1700;
 
+/* last night's check-in, from the per-night store (lib/checkins.js) */
 function loadCheckin() {
-  try {
-    const raw = localStorage.getItem(CHECKIN_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    /* ignore */
-  }
-  return EMPTY_CHECKIN;
+  migrateOldCheckin(LAST_NIGHT);
+  const tags = getCheckin(LAST_NIGHT);
+  return tags ? { done: true, tags } : EMPTY_CHECKIN;
 }
 
 function loadOnboarded() {
@@ -40,7 +46,7 @@ function loadOnboarded() {
 }
 
 export function StoreProvider({ children }) {
-  const [onboarded, setOnboarded] = useState(loadOnboarded);
+  const [onboardedFlag, setOnboarded] = useState(loadOnboarded);
   const [tab, setTabState] = useState('tonight');
   /* bumped on every setTab call — even when the requested tab matches the
    * current one — so the app shell can use it as a key to remount the
@@ -62,22 +68,19 @@ export function StoreProvider({ children }) {
     setTabNonce((n) => n + 1);
   }, []);
   const [fixtureId, setFixtureIdState] = useState(DEFAULT_FIXTURE);
-  /* nights in calendar order (the week strip, minus no-session days) — used
-   * to know which way a night change moves, so the new night slides in from
-   * that side, and what the neighbours are for swiping */
-  const nightOrder = WEEK.filter((d) => d.fixtureId).map((d) => d.fixtureId);
+  /* every night with a session, in calendar order — used to know which way
+   * a night change moves, so the new night slides in from that side, and
+   * what the neighbours are for swiping. Read fresh from history (it
+   * changes when a card is imported). */
+  const nightOrder = NIGHTS.filter((x) => x.hours > 0).map((x) => x.date);
   const [nightDir, setNightDir] = useState(0); // +1 later night, -1 earlier
   const fixtureRef = useRef(DEFAULT_FIXTURE);
-  const setFixtureId = useCallback(
-    (next) => {
-      setNightDir(Math.sign(nightOrder.indexOf(next) - nightOrder.indexOf(fixtureRef.current)));
-      fixtureRef.current = next;
-      setFixtureIdState(next);
-    },
-    // nightOrder is derived from static fixture data
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  const setFixtureId = useCallback((next) => {
+    // night ids are dates, so their order is the calendar's
+    setNightDir(next === fixtureRef.current ? 0 : next > fixtureRef.current ? 1 : -1);
+    fixtureRef.current = next;
+    setFixtureIdState(next);
+  }, []);
   /* live drag progress while swiping the why-card: -1…1, positive = toward
    * the next (later) night. The week strip's highlight follows it. */
   const [nightDrag, setNightDrag] = useState(0);
@@ -94,10 +97,37 @@ export function StoreProvider({ children }) {
     else url.searchParams.delete('layout');
     window.history.replaceState(null, '', url);
   }, []);
-  /* 'mobile' = the phone-in-the-center demo; 'desktop' = the full-width
-   * dashboard. Toggled from the DevPanel; both share the same underlying state
-   * (tab, fixture, devices) so switching keeps you on the same data. */
-  const [viewMode, setViewMode] = useState('mobile');
+  /* layout: the desktop dashboard on wide windows, the mobile app on narrow
+   * ones, switching as the window resizes, like any web app. The DevPanel can
+   * force either ('mobile' | 'desktop'); 'auto' follows the width. The
+   * preference persists so a reload (R) keeps a forced layout. Every consumer
+   * reads `viewMode`, the layout actually showing. */
+  const [layoutPref, setLayoutPref] = useState(() => {
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      return v === 'mobile' || v === 'desktop' ? v : 'auto';
+    } catch {
+      return 'auto';
+    }
+  });
+  const wideQuery = typeof window !== 'undefined' ? window.matchMedia(DESKTOP_QUERY) : null;
+  const [wide, setWide] = useState(() => wideQuery?.matches ?? true);
+  useEffect(() => {
+    if (!wideQuery) return undefined;
+    const on = (e) => setWide(e.matches);
+    wideQuery.addEventListener('change', on);
+    return () => wideQuery.removeEventListener('change', on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const viewMode = layoutPref === 'auto' ? (wide ? 'desktop' : 'mobile') : layoutPref;
+  const setViewMode = useCallback((mode) => {
+    setLayoutPref(mode);
+    try {
+      localStorage.setItem(VIEW_KEY, mode);
+    } catch {
+      /* ignore */
+    }
+  }, []);
   /* open sheets, bottom → top ({ kind, ...params }). openSheet replaces the
    * stack; pushSheet layers one over the current (e.g. the check-in over the
    * full-night page), and closing it returns to the one beneath. */
@@ -116,13 +146,18 @@ export function StoreProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(null), 2600);
   }, []);
 
-  /* mock SleepHQ sync — runs once when the app opens and on pull-to-refresh.
-   * The Dynamic Island shows progress; Tonight shows skeletons meanwhile. */
+  /* the "bringing in last night" live activity. Data only arrives by SD card
+   * import, so it plays once an import has been read successfully — never on
+   * app open, never on a pull (there's nothing to pull from). The Dynamic
+   * Island / desktop status pill show it; Tonight shows skeletons meanwhile.
+   * info: { title, sub } for the island while it runs. */
   const [syncing, setSyncing] = useState(false);
   const [syncNonce, setSyncNonce] = useState(0);
+  const [syncInfo, setSyncInfo] = useState(null);
   const syncTimer = useRef(null);
-  const startSync = useCallback(() => {
+  const startSync = useCallback((info = null) => {
     clearTimeout(syncTimer.current);
+    setSyncInfo(info);
     setSyncing(true);
     syncTimer.current = setTimeout(() => {
       setSyncing(false);
@@ -145,8 +180,29 @@ export function StoreProvider({ children }) {
       /* ignore */
     }
   }, []);
+  /* demo: what the Apple / Google account you "use" looks like (mock sign-in
+   * only — see data/auth.js) */
+  const [signinScenario, setSigninScenario] = useState(DEFAULT_SIGNIN_SCENARIO);
+  const auth = useAuth(signinScenario);
+  /* with real sign-in, the app needs a signed-in user (account or guest):
+   * a session that ended elsewhere lands back on the splash */
+  const onboarded = onboardedFlag && (!auth.authConfigured || auth.authUser != null);
+  /* the morning check-in is about last night; each night keeps its own
+   * (lib/checkins.js), and the insights read them */
   const [checkin, setCheckin] = useState(loadCheckin);
-  const [maskId, setMaskId] = useState(DEFAULT_MASK_ID);
+  /* onboarding answers + reminder prefs (lib/profile.js), mirrored here so
+   * screens re-render when they change; the insights read them too */
+  const [profile, setProfileState] = useState(getProfile);
+  useEffect(
+    () =>
+      onProfile((p) => {
+        refreshInsights();
+        setProfileState(p);
+      }),
+    []
+  );
+  // the mask they picked or told us in onboarding — none until then
+  const [maskId, setMaskId] = useState(() => getProfile().answers.maskModel ?? null);
   const [machineId, setMachineId] = useState(DEFAULT_MACHINE_ID);
   const [deviceConnections, setDeviceConnections] = useState(DEFAULT_DEVICE_CONNECTIONS);
   const [deviceEnabled, setDeviceEnabledState] = useState(DEFAULT_DEVICE_ENABLED);
@@ -168,19 +224,11 @@ export function StoreProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(CHECKIN_KEY, JSON.stringify(checkin));
+      localStorage.setItem(ONBOARD_KEY, onboardedFlag ? '1' : '0');
     } catch {
       /* ignore */
     }
-  }, [checkin]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(ONBOARD_KEY, onboarded ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
-  }, [onboarded]);
+  }, [onboardedFlag]);
 
   const openSheet = useCallback((kind, params = {}) => {
     setSheetLeaving(false);
@@ -196,24 +244,85 @@ export function StoreProvider({ children }) {
   }, []);
 
   const completeCheckin = useCallback((tags) => {
+    saveCheckinFor(LAST_NIGHT, tags);
+    refreshInsights(); // what was logged can change what Nox says
     setCheckin({ done: true, tags });
   }, []);
-  const resetCheckin = useCallback(() => setCheckin(EMPTY_CHECKIN), []);
+  const resetCheckin = useCallback(() => {
+    clearCheckin(LAST_NIGHT);
+    refreshInsights();
+    setCheckin(EMPTY_CHECKIN);
+  }, []);
 
   const completeOnboarding = useCallback(() => {
-    if (!onboarded) startSync();
     setOnboarded(true);
-  }, [onboarded, startSync]);
+  }, []);
+  /* sign out: back to the splash (a guest's setup is gone with it) */
+  const { signOutAuth } = auth;
+  /* bumped on every reset so onboarding remounts clean (App keys on it) */
+  const [onboardingNonce, setOnboardingNonce] = useState(0);
   const resetOnboarding = useCallback(() => {
     setTab('tonight');
     setSheets([]);
     setOnboarded(false);
-  }, []);
+    try {
+      localStorage.removeItem('nocta.setupDraft.v1'); // Onboarding's DRAFT_KEY
+    } catch {
+      /* ignore */
+    }
+    setOnboardingNonce((n) => n + 1);
+    signOutAuth();
+  }, [signOutAuth]);
+
+  /* a guest choosing an account (You › Account): leave guest mode and land on
+   * the sign up screen (Onboarding reads authEntry once) */
+  const [authEntry, setAuthEntry] = useState(null);
+  const switchToAccount = useCallback(
+    (mode = 'signup') => {
+      setAuthEntry(mode);
+      resetOnboarding();
+    },
+    [resetOnboarding]
+  );
+
+  /* CPAP data imported from an SD card (lib/resmed, kept in IndexedDB).
+   * main.jsx loaded it before the first render (lib/dataset.js); with
+   * nothing imported the app shows the demo year and cardData stays null. */
+  const [cardData, setCardData] = useState(() => (isDemoData() ? null : getCard()));
+  /* a card that read cleanly: keep it, switch every screen onto it (open on
+   * its last night), then play "bringing in last night" */
+  const saveCardImport = useCallback(
+    async (card) => {
+      const res = await saveImport(card);
+      await setCard(res.card);
+      setCardData(res.card);
+      setFixtureId(DEFAULT_FIXTURE);
+      setCheckin(loadCheckin()); // "last night" may be a different night now
+      startSync({
+        title: 'Bringing in last night',
+        sub: `SD card · ${res.card.device.model}`,
+      });
+      return res;
+    },
+    [startSync, setFixtureId]
+  );
+  /* removing the import goes back to the demo year */
+  const removeCardImport = useCallback(async () => {
+    await clearImport();
+    await setCard(null);
+    setCardData(null);
+    setFixtureId(DEFAULT_FIXTURE);
+    setCheckin(loadCheckin()); // "last night" may be a different night now
+  }, [setFixtureId]);
 
   const value = {
     onboarded,
     completeOnboarding,
     resetOnboarding,
+    switchToAccount,
+    onboardingNonce,
+    authEntry,
+    setAuthEntry,
     tab,
     setTab,
     tabNonce,
@@ -225,6 +334,7 @@ export function StoreProvider({ children }) {
     toast,
     showToast,
     syncing,
+    syncInfo,
     syncNonce,
     startSync,
     devPanelOpen,
@@ -238,15 +348,23 @@ export function StoreProvider({ children }) {
     tonightLayout,
     setTonightLayout,
     viewMode,
+    layoutPref,
     setViewMode,
     sheet,
     sheets,
     openSheet,
     pushSheet,
     closeSheet,
+    signinScenario,
+    setSigninScenario,
+    ...auth,
+    cardData,
+    saveCardImport,
+    removeCardImport,
     checkin,
     completeCheckin,
     resetCheckin,
+    profile,
     maskId,
     setMaskId,
     machineId,

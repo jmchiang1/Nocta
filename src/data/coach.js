@@ -1,9 +1,24 @@
 /* Nocta Coach — mock conversational layer. No real LLM; keyword-matched canned replies
  * written to the voice + safety rules in docs/FEATURES.md and CLAUDE.md. */
 
-import { NIGHTS_ON_THERAPY } from './history.js';
+import { NIGHTS, NIGHTS_ON_THERAPY, fmtShort } from './history.js';
 import { metricStat } from './nightMetrics.js';
 import { nightSeries } from '../lib/nightSeries.js';
+import { baselineFor } from '../lib/insights.js';
+import { equipmentStatus } from '../lib/equipment.js';
+import { getCard } from '../lib/dataset.js';
+
+/* recent nights where central events ran above 5 an hour (the hard
+ * escalation line), newest first, with the usual level before them */
+function centralNights(days = 30) {
+  const recent = NIGHTS.filter((x) => x.ahi && x.ahi.csa > 5).slice(-4).reverse();
+  const fresh = recent.filter((x) => x.date >= NIGHTS.at(-days)?.date);
+  if (!fresh.length) return null;
+  const usual = baselineFor(fresh.at(-1).date).csa;
+  const list = fresh.map((x) => `**${x.ahi.csa}** an hour on ${fmtShort(x.date)}`);
+  const joined = list.length > 1 ? `${list.slice(0, -1).join(', ')} and ${list.at(-1)}` : list[0];
+  return { joined, usual };
+}
 
 export const SUGGESTED_PROMPTS = [
   'Why was last night different?',
@@ -29,7 +44,7 @@ function whyOpener(fx) {
       tail: ' What would you like to dig into?',
       prompts: [
         `What does an AHI of ${fx.ahi.value} mean?`,
-        g.peak_position ? `Why does sleeping on my ${g.peak_position} matter?` : 'Why was last night different?',
+        /leak/i.test(g.headline ?? '') ? 'How can I reduce my leak?' : 'Why was last night different?',
         'How sure are you about this?',
       ],
     },
@@ -38,8 +53,8 @@ function whyOpener(fx) {
       prompts: ['What counts as my usual range?', 'What does AHI mean?', 'How sure are you about this?'],
     },
     win: {
-      tail: ' Side sleeping looks like the biggest reason. Want the details?',
-      prompts: ['Why was this my best night?', 'How do I sleep on my side more?', 'What does AHI mean?'],
+      tail: ' One of your lowest nights in a while. Want the details?',
+      prompts: ['Why was this my best night?', 'How do I repeat it?', 'What does AHI mean?'],
     },
     escalation: {
       tail: " That's the kind of change worth showing your sleep doctor, and I can help you prepare.",
@@ -56,7 +71,7 @@ function whyOpener(fx) {
 const METRIC_PROMPTS = {
   leak: ['What is a normal leak rate?', 'How can I reduce my leak?', 'Why does leak matter?'],
   pressure: ['Why does my pressure change overnight?', 'Should my pressure be higher?', 'What is AutoSet?'],
-  flow: ['What am I looking at here?', 'What do the flat stretches mean?', 'Is my breathing rate normal?'],
+  resp: ['Is my breathing rate normal?', 'What makes it change overnight?', 'What does AHI mean?'],
   snore: ['Is snoring on CPAP normal?', 'What makes the snore index go up?', 'Does snoring mean my mask is wrong?'],
 };
 
@@ -110,22 +125,35 @@ const REPLIES = [
   {
     match: ['usual range'],
     text: (fx) =>
-      `Your usual range comes from your own nights, not a chart of other people. Before this night you averaged about **${(fx?.ahi?.avgSoFar ?? 4.6).toFixed(1)}** events an hour. A night close to that is "your usual", even if it's not the lowest you've had.`,
+      fx?.ahi?.avgSoFar != null
+        ? `Your usual range comes from your own nights, not a chart of other people. Before this night your typical AHI was about **${fx.ahi.avgSoFar.toFixed(1)}** events an hour. A night close to that is "your usual", even if it's not the lowest you've had.`
+        : "Your usual range comes from your own nights, not a chart of other people. There aren't enough nights yet to say what yours is; after about a week, there will be.",
   },
   {
-    match: ['best night', 'lowest'],
-    text:
-      "Monday came in at **2.1**, your lowest so far. You spent most of it on your side, and you'd exercised that day. Side sleeping keeps showing up on your better nights, so it looks like your biggest lever right now.",
+    match: ['best night', 'lowest', 'repeat it'],
+    text: (fx) => {
+      const n = fx?.insight?.time_window?.nights_analyzed;
+      const head =
+        fx?.ahi?.value != null
+          ? `This night came in at **${fx.ahi.value}** across **${fx.session.durationHours} hours**${n ? `, against your last ${n} nights` : ''}.`
+          : 'This was one of your better nights.';
+      return `${head} Your machine can't see what you did differently, so your morning check-in is the best way to find out what's worth repeating: bedtime, what you ate or drank, how you slept.`;
+    },
   },
   {
     match: ['scored', 'how long do i need'],
-    text:
-      "Nocta needs at least **2 hours** on the mask to score a night. Wednesday's session was **1.7 hours**, so there wasn't enough to read reliably. It still helps me learn your routine, and a full night tonight gets you a proper read.",
+    text: (fx) =>
+      `Nocta needs at least **2 hours** on the mask to score a night.${fx?.ahi?.value == null && fx?.session ? ` This session was **${fx.session.durationHours} hours**, so there wasn't enough to read reliably.` : ''} Short nights still count toward learning your routine, and a full night gets you a proper read.`,
   },
   {
     match: ['tell my doctor', 'bring to my doctor', 'what should i tell'],
-    text:
-      "Bring the night itself: central events at **6.8** an hour on Tuesday against a usual **1.2**, and how you felt that morning. I can put your nights so far on one page for them. Tap *Prepare doctor summary* on the night's card.",
+    text: () => {
+      const c = centralNights();
+      const nights = c
+        ? `the nights central events ran high: ${c.joined}, against a usual **${c.usual}**`
+        : 'your recent nights';
+      return `Bring ${nights}, and how you felt those mornings. I can put it all on one page for them. Tap *Prepare doctor summary* on the night's card.`;
+    },
   },
   {
     match: ['change anything myself', 'anything myself'],
@@ -135,7 +163,9 @@ const REPLIES = [
   {
     match: ['call something a trend', 'trend'],
     text: () =>
-      `I hold off on calling anything a trend until about **two weeks** of nights. Before that, a single bad night can look like a pattern when it isn't. You're **${NIGHTS_ON_THERAPY}** nights in, so for now I'll point out early signals and say how sure I am.`,
+      NIGHTS_ON_THERAPY >= 14
+        ? `I hold off on calling anything a trend until about **two weeks** of nights, so one bad night can't pass for a pattern. You have **${NIGHTS_ON_THERAPY}** nights of history, so the Trends tab has plenty to go on. I compare each night with your last 30.`
+        : `I hold off on calling anything a trend until about **two weeks** of nights. Before that, a single bad night can look like a pattern when it isn't. You're **${NIGHTS_ON_THERAPY}** nights in, so for now I'll point out early signals and say how sure I am.`,
   },
   {
     match: ['normal leak'],
@@ -157,19 +187,27 @@ const REPLIES = [
   },
   {
     match: ['change overnight', 'autoset'],
-    text:
-      "Your machine is on **AutoSet**: it adjusts pressure through the night on its own, within the range your doctor prescribed. When your airway starts to narrow, it nudges pressure up; when things settle, it eases off. A higher stretch usually means it was working harder then.",
+    // only what the card records about the mode; nothing assumed
+    text: () => {
+      const s = getCard()?.settings;
+      const range = s?.minPressure != null && s?.maxPressure != null ? ` between **${s.minPressure}** and **${s.maxPressure} cmH₂O**` : '';
+      if (s?.mode === 'CPAP')
+        return `Your card shows your machine on fixed **CPAP**${s.setPressure != null ? ` at **${s.setPressure} cmH₂O**` : ''}. It holds one pressure all night, so small wiggles in the chart come from your breathing and mask, not the machine adjusting.`;
+      if (s?.mode === 'AutoSet' || s?.mode === 'HerAuto' || s?.mode === 'APAP')
+        return `Your card shows your machine on **${s.mode === 'HerAuto' ? 'AutoSet for Her' : 'AutoSet'}**: it adjusts pressure through the night on its own${range}, the range your doctor set. When your airway starts to narrow, it nudges pressure up; when things settle, it eases off.`;
+      return "An auto-adjusting machine raises pressure through the night when your airway starts to narrow and eases off when things settle. Your card doesn't say which mode yours is set to.";
+    },
   },
   {
-    match: ['looking at here', 'flat stretches'],
-    text:
-      "Each wave is one breath, in and out, as your machine measured it. Even waves mean easy breathing. Where the waves go flat or small, breathing paused or got shallow, and those are the moments your machine counts as events.",
-  },
-  {
-    match: ['breathing rate'],
-    text: (fx) =>
-      `${fx?.bodyResponse?.respRate?.value != null ? `Your watch measured about **${fx.bodyResponse.respRate.value} breaths a minute** overnight.` : "Your watch didn't record a breathing rate this night."}`
-      + " Many adults sit somewhere around 12 to 20 at rest, and what matters most is how steady yours is from night to night. I'll point it out if it starts to drift.",
+    match: ['breathing rate', 'change overnight'],
+    text: (fx) => {
+      const stat = fx ? metricStat('resp', nightSeries(fx.id), fx) : null;
+      const yours =
+        stat && stat.value !== '—'
+          ? `Your machine counted about **${stat.value} breaths a minute** through this night.`
+          : "Your machine didn't record a breathing rate this night.";
+      return `${yours} Many adults sit somewhere around 12 to 20 at rest. It dips and rises a little with sleep stages and events, and what matters most is how steady it stays from night to night.`;
+    },
   },
   {
     match: ['snoring on cpap', 'snore index go up', 'snoring mean'],
@@ -184,17 +222,32 @@ const REPLIES = [
   {
     match: ['diagnos', 'do i have', 'is this csa', 'central sleep apnea', 'complex apnea'],
     text:
-      "I won't put a name to it. That's a clinical call, and I'm a companion, not a doctor. What I can tell you is *what the data shows*: central-type events jumped to **6.8** an hour on Tuesday night, against a usual **1.2**. That's worth showing your sleep doctor, and I can package it for you.",
+      () => {
+        const c = centralNights(365);
+        const shows = c
+          ? `central-type events ran at ${c.joined}, against a usual **${c.usual}**. That's worth showing your sleep doctor, and I can package it for you.`
+          : 'your numbers, night by night, and how they compare with your usual. If something is worth a doctor’s look, I’ll say so plainly.';
+        return `I won't put a name to it. That's a clinical call, and I'm a companion, not a doctor. What I can tell you is *what the data shows*: ${shows}`;
+      },
   },
   {
     match: ['leak', 'mask leak', 'air leak'],
-    text:
-      "Leak usually creeps up for one of three reasons: the cushion has aged past its seal, the straps loosen as you move, or you shift onto your back and the mask gets pushed. Your cushion is only **11 days old**, well inside its 30-day window, so I'd start with the straps. A snug-but-not-tight fit, re-checked sitting up, fixes most of it.",
+    // the cushion's age only if they logged it on Therapy
+    text: () => {
+      const c = equipmentStatus().find((p) => p.id === 'cushion');
+      const age =
+        c?.ageDays == null
+          ? " You haven't logged when you last replaced your cushion; if you're not sure, that's worth checking first."
+          : c.ageDays >= c.lifespanDays
+            ? ` Your cushion is **${c.ageDays} days old**, past its ${c.lifespanDays}-day window, so I'd start there.`
+            : ` Your cushion is **${c.ageDays} days old**, inside its ${c.lifespanDays}-day window, so I'd start with the straps.`;
+      return `Leak usually creeps up for one of three reasons: the cushion has aged past its seal, the straps loosen as you move, or you shift onto your back and the mask gets pushed.${age} A snug-but-not-tight fit, re-checked sitting up, fixes most of it.`;
+    },
   },
   {
     match: ['stomach', 'position', 'side sleep', 'on my back'],
     text:
-      "Position matters more than most people expect. On your stomach and back, the airway is easier to crowd; on your side it tends to stay open. Your first few nights already hint at it: all three of your stomach nights ran higher. A body pillow against your chest makes side-sleeping easier to *hold* through the night.",
+      "Position matters more than most people expect. On your back, the airway is easier to crowd; on your side it tends to stay open. Your machine can't see how you slept, so note it in your morning check-in and I'll compare those nights for you. A body pillow against your chest makes side-sleeping easier to *hold* through the night.",
   },
   {
     match: ['ahi', 'what does ahi', 'events per hour'],
@@ -212,17 +265,27 @@ const REPLIES = [
     text: (fx) =>
       fx?.insight?.observation
         ? `Here's what I'm seeing. ${fx.insight.observation}`
-        : "Last night your AHI sat above your usual range, and most of the events were obstructive, bunched between 2 and 5 a.m. You were on your stomach for that stretch. None of those alone explains it, but together they line up with your other stomach nights.",
+        : "Pick a night on Tonight and I'll walk you through what changed against your usual: the events, when they happened, and what leak was doing.",
   },
   {
     match: ['cushion', 'replace', 'filter', 'equipment'],
-    text:
-      "Worn parts quietly drag your numbers down. Everything you have is **11 days old**. It all came with your machine, so nothing is due yet. Your cushion and filter are next, around **October 30**. The Therapy tab tracks the ages for you.",
+    // ages only from what they logged on Therapy
+    text: () => {
+      const parts = equipmentStatus();
+      const logged = parts.filter((p) => p.ageDays != null);
+      if (!logged.length)
+        return "Worn parts quietly drag your numbers down. You haven't logged any replacements yet, so I can't tell what's due. On the Therapy tab, tap **Replaced today** (or pick a date) for each part, and I'll keep track from there.";
+      const due = logged.filter((p) => p.ageDays >= p.lifespanDays * 0.8);
+      const list = (xs) => xs.map((p) => p.name.toLowerCase()).join(', ');
+      return due.length
+        ? `Worn parts quietly drag your numbers down. From what you've logged, your **${list(due)}** ${due.length === 1 ? 'is' : 'are'} due or close to it. ${parts.length - logged.length ? `${parts.length - logged.length} parts aren't logged yet.` : ''}`
+        : `Worn parts quietly drag your numbers down. Nothing you've logged is due yet. ${parts.length - logged.length ? `${parts.length - logged.length} parts aren't logged yet, so I can't say for those.` : ''}`;
+    },
   },
 ];
 
 const DEFAULT_REPLY =
-  "Good question. I read your CPAP data each night and look for what changed and why: leak, position, timing, the events themselves. Ask me about any metric on your screen, or about a night that looked off, and I'll talk you through what I see.";
+  "Good question. I read your CPAP data each night and look for what changed against your usual: leak, timing, the events themselves, how long you wore the mask. Ask me about any metric on your screen, or about a night that looked off, and I'll talk you through what I see.";
 
 /* fx: the night being viewed, so replies quote its numbers, not a fixed night */
 export function coachReply(text, fx) {

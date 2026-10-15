@@ -1,41 +1,28 @@
-/* Nocta — desktop Therapy view. Device + mask + compliance projection +
- * equipment lifecycle + export, arranged as dashboard panels. */
-import { useState } from 'react';
+/* Nocta — desktop Therapy view. Same order as the mobile screen: compliance
+ * leads (it's the one number insurance holds you to), then the machine, the
+ * mask and the equipment schedule side by side, then the doctor export. */
 import { useStore } from '../../lib/store.jsx';
-import { DEVICE, EQUIPMENT, PROJECTION, machineById, deviceCells } from '../../data/therapy.js';
-import { NIGHTS_ON_THERAPY } from '../../data/history.js';
-import { maskById } from '../../data/account.js';
+import { cardDevice, machineName, deviceCells } from '../../data/therapy.js';
+import { EquipmentList } from '../EquipmentList.jsx';
+import { openDoctorReport } from '../../lib/doctorReport.js';
+import { deviceStatus } from '../../lib/deviceStatus.js';
+import { SdImportCard } from '../SdImportCard.jsx';
 import { Icon } from '../Icons.jsx';
-import { Rich } from '../Rich.jsx';
-import { ProgressBar } from '../Charts.jsx';
 import { MaskCard } from '../MaskCard.jsx';
-
-function lifeTone(pct) {
-  return pct >= 0.8 ? 'alert' : '';
-}
-function lifeWord(pct) {
-  if (pct >= 1) return 'Replace now';
-  if (pct >= 0.8) return 'Replace soon';
-  return 'In good shape';
-}
+import { ComplianceCard } from '../ComplianceCard.jsx';
 
 export function DesktopTherapy() {
-  const [exported, setExported] = useState(false);
-  const { maskId, machineId } = useStore();
-  const machine = machineById(machineId);
-  const cells = deviceCells(machine, maskById(maskId).name);
+  const { machineId, openSheet, showToast, syncNonce, cardData } = useStore();
+  const status = deviceStatus(cardData, syncNonce > 0);
+  // the card names the machine and its settings; nothing is filled in
+  const device = cardDevice();
+  const machine = machineName(machineId);
+  const cells = deviceCells();
 
-  /* at-a-glance strip, derived from the same fixtures the cards below use */
-  const elapsed = PROJECTION.nights.filter((n) => n !== 'future');
-  const metNights = elapsed.filter((n) => n === 'met').length;
-  const targetDay = PROJECTION.scale[1].split(' ·')[0]; // 'Night 24 · earliest'
-  // every part due soonest (two can share a date), as the mobile page lists them
-  const daysLeft = (e) => e.lifespanDays - e.ageDays;
-  const dueDays = Math.min(...EQUIPMENT.map(daysLeft));
-  const nextParts = EQUIPMENT.filter((e) => daysLeft(e) === dueDays).map((e) => e.name);
-  const nextName = nextParts.length > 1
-    ? `${nextParts.slice(0, -1).join(', ')} and ${nextParts.at(-1).toLowerCase()}`
-    : nextParts[0];
+  /* the real export (as on mobile): a printable 30-night summary */
+  function exportSummary() {
+    if (!openDoctorReport()) showToast('Allow pop-ups for Nocta to open the summary', 'info');
+  }
 
   return (
     <>
@@ -44,125 +31,81 @@ export function DesktopTherapy() {
           <h1 className="dash-h1">Therapy</h1>
           <div className="dash-sub">Your machine, mask, and the paperwork</div>
         </div>
-        <div className="dash-topbar-meta">
-          <span className="dash-meta-pill">
-            <span className="dash-sync-dot" aria-hidden="true" />
-            {machine.short} · connected
-          </span>
-          <button
-            className={`dash-topbar-action${exported ? ' done' : ''}`}
-            onClick={() => setExported(true)}
-          >
-            <Icon name={exported ? 'check' : 'download'} size={15} />
-            {exported ? 'Summary ready' : 'Export for doctor'}
-          </button>
-        </div>
       </header>
 
-      <div className="dash-statline">
-        <div className="stat-mini">
-          <div className="sm-k">Compliance nights</div>
-          <div className="sm-v">{metNights} of {elapsed.length}</div>
-          <div className="sm-sub">4+ hours, this 30-night window</div>
-        </div>
-        <div className="stat-mini">
-          <div className="sm-k">Earliest to clear</div>
-          <div className="sm-v">{targetDay}</div>
-          <div className="sm-sub">if every night from here counts</div>
-        </div>
-        <div className="stat-mini">
-          <div className="sm-k">Next replacement</div>
-          <div className="sm-v">{nextName}</div>
-          <div className="sm-sub">due in {dueDays} {dueDays === 1 ? 'day' : 'days'}</div>
-        </div>
-        <div className="stat-mini">
-          <div className="sm-k">Device</div>
-          <div className="sm-v">{machine.short}</div>
-          <div className="sm-sub">{DEVICE.status} · SleepHQ</div>
-        </div>
-      </div>
-
       <div className="therapy-hero">
-        <section className="projection">
-          <div className="pj-eyebrow">{PROJECTION.eyebrow}</div>
-          <h4><Rich text={PROJECTION.headline} /></h4>
-          <p>{PROJECTION.body}</p>
-          <ProgressBar pct={PROJECTION.progressPct} marker={PROJECTION.targetPct} gradient height={8} />
-          <div className="compliance-dots" role="img" aria-label="Compliance status per night, 30 nights">
-            {PROJECTION.nights.map((status, i) => (
-              <span key={i} className={`compliance-dot ${status}`} />
-            ))}
-          </div>
-          <div className="pj-scale">
-            {PROJECTION.scale.map((s, i) => <span key={i}>{s}</span>)}
-          </div>
-        </section>
+        <ComplianceCard />
       </div>
 
       <div className="dash-grid dash-grid-therapy">
         <div className="dash-col">
-          <div className="dash-head"><h3>Machine &amp; mask</h3></div>
+          {/* same heading style as Equipment's, so the two columns start level */}
+          <div className="section-head">
+            <h3>Your machine</h3>
+          </div>
           <section className="device-card">
             <div className="dc-top">
-              <span className="dc-dot" />
-              <span className="dc-status">{DEVICE.status}</span>
+              <span className={`dc-dot${status.live ? ' live' : ' idle'}`} aria-hidden="true" />
+              <span className={`dc-status${status.live ? '' : ' idle'}`}>{status.status}</span>
             </div>
             <h3>
               {machine.brand} {machine.name}
             </h3>
-            <div className="dc-sub">{DEVICE.source}</div>
-            <div className="dc-grid">
-              {cells.map((c) => (
-                <div key={c.k} className="dc-cell">
-                  <div className="dc-k">{c.k}</div>
-                  <div className="dc-v">{c.v}</div>
-                </div>
-              ))}
-            </div>
+            <div className="dc-sub">{status.source}</div>
+            {cells.length > 0 ? (
+              <div className="dc-grid">
+                {cells.map((c) => (
+                  <div key={c.k} className="dc-cell">
+                    <div className="dc-k">{c.k}</div>
+                    <div className="dc-v">{c.v}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="dc-none">This card doesn’t record the machine’s settings.</p>
+            )}
+            {/* the card says which machine it is; only without one can it be picked */}
+            {!device && (
+              <button className="row-cta" onClick={() => openSheet('machinePicker')}>
+                <span>Change machine</span>
+                <Icon name="chevronRight" size={16} />
+              </button>
+            )}
+            {/* the mask lives with the machine: one setup, one card (as on mobile) */}
+            <MaskCard inline />
           </section>
 
-          <MaskCard />
+          {/* the machine's own data comes in from its card, so it sits here */}
+          <SdImportCard card={cardData} onOpen={() => openSheet('cardImport')} />
         </div>
 
         <div className="dash-col">
-          <div className="dash-head">
+          <div className="section-head">
             <h3>Equipment</h3>
-            <span className="dash-head-meta">replace on schedule</span>
+            <span className="meta">log when you replace</span>
           </div>
-          <div className="equip">
-            {EQUIPMENT.map((e) => {
-              const pct = e.ageDays / e.lifespanDays;
-              const tone = lifeTone(pct);
-              return (
-                <div className="equip-row" key={e.name}>
-                  <div className="er-top">
-                    <span className="er-name">{e.name}</span>
-                    <span className={`er-age ${tone}`}>
-                      {e.ageDays} / {e.lifespanDays} days · {lifeWord(pct)}
-                    </span>
-                  </div>
-                  <ProgressBar pct={pct * 100} color={tone || 'data'} height={6} />
-                </div>
-              );
-            })}
-          </div>
+          <EquipmentList />
 
-          {/* <div className="dash-head"><h3>For your doctor</h3></div>
-          <div className="list">
-            <button className="list-row" onClick={() => setExported(true)}>
+          <div className="section-head">
+            <h3>For your doctor</h3>
+          </div>
+          <div className="list dash-export">
+            <button className="list-row export-row" onClick={exportSummary}>
               <div className="lr-main">
-                <div className="lr-title">Export summary for your doctor</div>
-                <div className="lr-sub">
-                  {exported
-                    ? `Ready. All ${NIGHTS_ON_THERAPY} nights: AHI, leak, hours and compliance. No AI commentary.`
-                    : 'A clean one-page PDF to bring to your appointment'}
-                </div>
+                <div className="lr-title">Summary for your doctor</div>
+                <div className="lr-sub">Your last 30 nights on one page: AHI, events, leak, use. Opens to print or save as PDF.</div>
               </div>
-              <Icon name={exported ? 'check' : 'download'} size={18} />
+              <span className="export-icon">
+                <Icon name="download" size={18} />
+              </span>
             </button>
-          </div> */}
+          </div>
         </div>
       </div>
+
+      <p className="disclaimer">
+        The export contains your data only, with no Nocta insights. It is not a medical record.
+      </p>
     </>
   );
 }

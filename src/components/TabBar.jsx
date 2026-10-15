@@ -6,7 +6,7 @@
  * ringed in peach when selected. */
 import { useStore } from '../lib/store.jsx';
 import { Icon } from './Icons.jsx';
-import { USER } from '../data/account.js';
+import { ProfileAvatar } from './ProfileAvatar.jsx';
 
 const TABS = [
   { id: 'tonight', label: 'Tonight', icon: 'tonight' },
@@ -16,7 +16,7 @@ const TABS = [
 ];
 
 export function TabBar() {
-  const { tab, setTab, tabBarHidden } = useStore();
+  const { tab, setTab, tabBarHidden, authUser } = useStore();
   const index = Math.max(0, TABS.findIndex((t) => t.id === tab));
 
   return (
@@ -38,7 +38,7 @@ export function TabBar() {
             {/* keyed on active so the settle animation replays on selection */}
             <span className="tab-icon" key={active ? 'on' : 'off'}>
               {t.photo ? (
-                <img className="tab-avatar" src={USER.photo} alt="" />
+                <ProfileAvatar user={authUser} className="tab-avatar" size={16} />
               ) : (
                 <Icon name={active ? `${t.icon}On` : t.icon} size={24} />
               )}

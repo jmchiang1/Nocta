@@ -10,13 +10,14 @@ import { Mascot } from './Mascot.jsx';
 const FIRST = CHECKIN_SCREENS[0];
 const QUICK = FIRST.options.slice(0, 5); // the five most common answers, inline
 
-export function CheckinPrompt({ checkin, onStart }) {
+/* `mascot={false}` drops Nox's face (the desktop dashboard keeps the card plain) */
+export function CheckinPrompt({ checkin, onStart, mascot = true }) {
   if (checkin.done) {
     const n = allCheckinTags(checkin.tags).filter((id) => !id.startsWith('nothing_')).length;
     return (
       <section className="tn-module ck-card done" aria-label="Morning check-in, done">
         <div className="ck-card-head">
-          <Mascot size={26} />
+          {mascot && <Mascot size={26} />}
           <span className="ck-card-done tnum">
             Checked in
             <span className="ck-card-count"> · {n === 0 ? 'nothing unusual' : `${n} ${n === 1 ? 'note' : 'notes'}`}</span>
@@ -32,7 +33,7 @@ export function CheckinPrompt({ checkin, onStart }) {
   return (
     <section className="tn-module ck-card" aria-label="Morning check-in">
       <div className="ck-card-head">
-        <Mascot size={34} state="idle" />
+        {mascot && <Mascot size={34} state="idle" />}
         <div className="ck-card-titles">
           <span className="ck-card-eyebrow">Morning check-in · 20 seconds</span>
           <h3 className="ck-card-q">{FIRST.question}</h3>

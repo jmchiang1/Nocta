@@ -484,7 +484,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   /* gap: 7px; */
-  margin-bottom: 22px;
+  margin: 0;
 }
 .day {
   height: min-content;
@@ -1779,9 +1779,9 @@
 
 /* disclaimer footnote */
 .disclaimer {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
-  text-align: center;
+  text-align: left;
   line-height: 1.5;
   padding: 4px 8px;
 }
@@ -2404,4 +2404,753 @@
   gap: 2px;
   font-weight: 600;
   color: var(--good);
+}
+
+/* =================================================================
+ * The day heading on Tonight is the way to every night (like myAir's
+ * date picker): the day name + a quiet chevron, opening the calendar.
+ * ================================================================= */
+.day-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+}
+.day-picker svg {
+  color: var(--text-tertiary);
+  transition: color var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+.day-picker:hover svg {
+  color: var(--text-primary);
+  transform: translateY(1px);
+}
+
+/* =================================================================
+ * All nights — the month calendar (components/NightCalendar.jsx).
+ * A sheet on the phone (.cal-sheet), a wide dialog on desktop
+ * (desktop.css › .cal-dialog lays the detail beside the month).
+ * ================================================================= */
+.cal-body {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+
+.cal-month-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cal-month-head h3 {
+  min-width: 170px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.cal-arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+}
+
+.cal-arrow:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cal-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  /* the weekday labels, then six equal week rows: every month is the same
+   * height, whichever nights it holds */
+  grid-template-rows: auto repeat(6, 88px);
+  gap: 6px;
+}
+
+.cal-weekday {
+  padding: 0 4px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+/* a day cell: date + moon on top, the AHI, then hours. Re-uses the week
+ * strip's .day moon colours; the cell itself stays neutral */
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 6px;
+  width: auto;
+  height: auto;
+  aspect-ratio: auto;
+  min-height: 0; /* the grid row sets the height */
+  padding: 10px 10px 9px;
+  border-radius: var(--r-md);
+  text-align: left;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+button.cal-day:hover {
+  border-color: var(--hairline-strong);
+}
+
+.cal-day.missed {
+  background: transparent;
+}
+
+.cal-day.outside {
+  background: transparent;
+  border-color: transparent;
+}
+
+.cal-day.selected {
+  border-color: color-mix(in srgb, var(--data-1) 70%, transparent);
+  background: color-mix(in srgb, var(--data-1) 10%, var(--surface-1));
+}
+
+.cal-day.escalation.selected {
+  border-color: color-mix(in srgb, var(--alert) 60%, transparent);
+  background: color-mix(in srgb, var(--alert) 8%, var(--surface-1));
+}
+
+.cal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-num {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.cal-day.outside .cal-num {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+/* the night currently open on Tonight */
+.cal-day.current .cal-num {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  margin: -3px 0 -3px -4px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  color: var(--text-on-accent);
+  background: var(--text-primary);
+}
+
+.cal-moon {
+  position: relative;
+  display: grid;
+}
+
+.cal-moon .day-dot {
+  top: -3px;
+  left: auto;
+  right: -4px;
+}
+
+.cal-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.cal-stat b {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.cal-stat span,
+.cal-hours {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.cal-word {
+  margin-top: auto;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text-tertiary);
+}
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* legend swatches borrow .day for the moon colours, minus its cell shape */
+.cal-legend .day,
+.cal-legend-dot {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  height: auto;
+  padding: 0;
+  aspect-ratio: auto;
+  background: none;
+  border: 0;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.cal-legend-dot .day-dot {
+  position: static;
+}
+
+.cal-detail {
+  padding: 20px;
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+.cal-detail.empty p {
+  font-size: 15px;
+  color: var(--text-tertiary);
+}
+
+
+.cal-detail-date {
+  margin-top: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+
+.cal-detail-headline {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.cal-detail-headline em {
+  font-style: italic;
+  color: var(--accent-soft);
+}
+
+.cal-detail-rows {
+  margin: 16px 0 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.cal-detail-rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.cal-detail-rows dt {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.cal-detail-rows dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-detail-note {
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+
+.cal-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+
+/* phone: a narrower grid — the date, the moon and the AHI, no labels */
+.cal-sheet .cal-grid {
+  gap: 4px;
+}
+.cal-sheet .cal-day {
+  min-height: 64px;
+  padding: 7px 6px;
+  gap: 4px;
+}
+.cal-sheet .cal-day.outside {
+  min-height: 40px;
+}
+.cal-sheet .cal-num {
+  font-size: 13px;
+}
+.cal-sheet .cal-stat b {
+  font-size: 16px;
+}
+.cal-sheet :is(.cal-stat span, .cal-hours) {
+  display: none;
+}
+/* too small to read here: the moon's shape says it (and the label says it
+ * in words for VoiceOver) */
+.cal-sheet .cal-word {
+  display: none;
+}
+.cal-sheet .cal-month-head {
+  justify-content: space-between;
+}
+.cal-sheet .cal-legend {
+  gap: 8px 14px;
+}
+.cal-sheet .disclaimer {
+  margin-top: 16px;
+}
+
+/* ============ ALL NIGHTS — phone (NightList in NightCalendar.jsx) ============
+ * myAir's night list in Nocta's language: a month at a time, newest first,
+ * each night led by its moon (the week strip's shapes), never a score ring. */
+/* pinned while the month's nights scroll under it: an opaque band the full
+ * width of the sheet (the body's 20px gutters), softening into the list */
+.nl-month {
+  position: sticky;
+  top: -4px; /* the sheet body's top padding */
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 -20px;
+  padding: 8px 20px 14px;
+  background: var(--bg-base);
+  box-shadow: 0 12px 14px -6px var(--bg-base);
+}
+.nl-month-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.nl-month-mid h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+}
+.nl-month-mid span {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.nl-month .cal-arrow {
+  width: 48px;
+  height: 48px;
+}
+.nl-list {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  animation: obFade 0.3s var(--ease-out) both;
+}
+.nl-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 76px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--hairline);
+  border-radius: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.nl-list li:last-child .nl-row,
+.nl-list li.nl-row:last-child {
+  border-bottom: none;
+}
+button.nl-row:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+button.nl-row:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: -2px;
+  border-radius: var(--r-md);
+}
+/* the night Tonight is showing */
+.nl-row.current {
+  background: rgba(123, 149, 216, 0.1);
+  border-radius: var(--r-md);
+  border-bottom-color: transparent;
+}
+/* the moon: the night's state by shape — no disc or ring around it */
+.nl-badge {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+}
+.nl-badge .day-dot {
+  top: 12px;
+  left: auto;
+  right: 6px;
+}
+.nl-badge .day-moon {
+  color: var(--data-faint);
+}
+.nl-badge.logged .day-moon {
+  color: var(--data-1);
+}
+.nl-badge.escalation .day-moon {
+  color: var(--alert);
+  filter: drop-shadow(0 0 5px rgba(224, 122, 106, 0.55));
+}
+.nl-badge.low .day-moon {
+  color: var(--text-secondary);
+}
+.nl-badge.low .day-moon path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+.nl-badge.missed .day-moon {
+  color: rgba(255, 255, 255, 0.16);
+}
+.nl-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nl-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent-soft);
+}
+.nl-date {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.nl-facts {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.nl-row.missed .nl-date {
+  color: var(--text-secondary);
+}
+.nl-row.missed .nl-facts {
+  color: var(--text-tertiary);
+}
+.nl-chev {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+/* the phone's all-nights sheet: no title row — just the X, alone on its own
+ * line; the month (NightList) is the heading. The sheet's top glow ends above
+ * the month band so the pinned band matches what's behind it. */
+.cal-sheet {
+  background: linear-gradient(180deg, var(--surface-3) 0, var(--bg-base) 76px);
+  /* a steady height (not full-page): a short month mustn't shrink the sheet
+   * and slide the ‹ › arrows out from under the thumb while scrubbing */
+  height: 78%;
+}
+.cal-sheet .sheet-title {
+  display: none;
+}
+.cal-sheet .sheet-head {
+  justify-content: flex-end;
+}
+.cal-sheet .nl-month-mid h3 {
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+/* ============ WEEK STRIP — dates + "Last night" (WeekStrip.jsx) ============
+ * A rolling window, so each night carries its date (not a weekday — the
+ * heading above names the day); the
+ * line above pins "Last night" over the right-most night, or — on an older
+ * stretch — its dates and the way back. Desktop's fortnight shares it. */
+.week .day {
+  aspect-ratio: auto;
+  padding: 8px 0 7px;
+  gap: 4px;
+}
+/* the date alone: the heading above already names the day */
+.day .d-num {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+.day.selected .d-num {
+  color: var(--text-primary);
+}
+.day.empty .d-num {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+.week-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 22px;
+  margin: 0 2px 4px;
+}
+/* right-aligned, so it sits over the newest night */
+.week-head-last {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.week-head-range {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+/* a 48pt target in a short line: the negative margin keeps the row compact */
+.week-head-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 48px;
+  margin: -13px -4px -13px auto;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ============ QUICK QUESTIONS (ProfileReminder + ProfileQuestionsSheet) ============
+ * A skipped onboarding question, asked again now and then. Quiet: a module
+ * like the check-in, never a banner. */
+.pq-card {
+  padding: 14px 16px 6px;
+}
+.pq-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pq-card-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-soft);
+}
+.pq-card-later {
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+.pq-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 2px 0 10px;
+  text-align: left;
+  color: var(--text-tertiary);
+}
+.pq-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pq-card-q {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.pq-card-why {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.pq-why {
+  margin: 0 0 6px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.pq-count {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+.pq-mask {
+  margin-bottom: 4px;
+}
+.pq-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 18px;
+}
+.pq-actions .btn.primary.not-ready {
+  opacity: 0.45;
+}
+.pq-stop {
+  display: block;
+  min-height: 48px;
+  margin: 6px auto 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+/* events by type: every clock hour under its own bar (NightTimeline) */
+.hour-row {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+.hour-row span {
+  min-width: 0;
+  white-space: nowrap;
+}
+.hour-row .off {
+  opacity: 0.4;
+}
+
+/* Tonight, before any import: the nights shown are the bundled sample */
+.sample-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline-strong);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  vertical-align: 1px;
+}
+
+/* the placeholder avatar fills whatever frame it's in, like a photo would */
+.avatar-placeholder {
+  display: block;
+}
+.avatar .avatar-placeholder,
+.st-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============ SETTINGS — profile photo, change password, delete account ============ */
+.st-photo {
+  gap: 14px;
+}
+.st-avatar {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+.st-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.st-photo-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: -10px;
+}
+.st-photo-actions .ob-link.subtle {
+  color: var(--text-tertiary);
+}
+.cp-form,
+.del {
+  display: flex;
+  flex-direction: column;
+}
+.del-lede {
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+.del-h {
+  margin: 8px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.del-list {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.del-list.keep {
+  color: var(--text-secondary);
+}
+.del-export {
+  margin: 8px 0 10px;
+}
+.del-go {
+  margin-top: 16px;
 }

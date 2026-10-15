@@ -6,6 +6,10 @@
  * cold load the splash may start silent; the first tap or key anywhere
  * unlocks it. Every call here quietly no-ops while audio isn't running. */
 
+/* off for now: the splash plays silently. Flip to true to bring the sound
+ * back — nothing else changes (with it off, no audio context is ever made). */
+export const SOUND_ENABLED = false;
+
 let ac = null;
 let master = null;
 let wet = null;
@@ -55,7 +59,7 @@ function noise() {
 
 /* the context if it's running, else null (and a nudge to resume) */
 function ready() {
-  if (!init()) return null;
+  if (!SOUND_ENABLED || !init()) return null;
   if (ac.state !== 'running' && !resuming) {
     resuming = true;
     ac.resume()
@@ -68,7 +72,7 @@ function ready() {
 }
 
 // unlock on the first gesture (resume() only succeeds inside one)
-if (typeof window !== 'undefined') {
+if (SOUND_ENABLED && typeof window !== 'undefined') {
   const GESTURES = ['pointerdown', 'keydown', 'touchend'];
   const unlock = () => {
     if (!init()) return;

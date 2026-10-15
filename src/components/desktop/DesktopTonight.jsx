@@ -1,230 +1,256 @@
-/* Nocta — desktop Tonight view. The nightly story as hero, with metrics, the
- * night timeline, pattern, and connected-device body data laid out as a
- * two-column dashboard. Reuses the same components as the mobile screen. */
-import { useState } from 'react';
+/* Nocta — desktop Tonight view. The same story as the mobile screen, laid out
+ * wide: the night sky behind the page head, the open why-horizon hero (verdict,
+ * the night's shape, the one action) across the full width, then the morning
+ * check-in and last night's numbers side by side, then the wearable modules.
+ * Reuses the mobile components. */
+import { firstName } from '../../data/account.js';
+import { Fragment, useEffect, useState } from 'react';
 import { useStore } from '../../lib/store.jsx';
-import { FIXTURES } from '../../data/fixtures.js';
+import { FIXTURES, stripAround, nightsEnding, DEFAULT_FIXTURE } from '../../data/fixtures.js';
+import { LAST_NIGHT, THERAPY_START, addDays } from '../../data/history.js';
+import { MEDICAL_NOTE } from '../../data/account.js';
 import { Icon } from '../Icons.jsx';
-import { WhyCard } from '../WhyCard.jsx';
-import { NightTimeline } from '../NightTimeline.jsx';
-import { nightMarks } from '../WeekStrip.jsx';
-import { PatternCard } from '../PatternCard.jsx';
+import { NightSky, SKY_FOR_STATE } from '../NightSky.jsx';
+import { WhyHorizon } from '../WhyHorizon.jsx';
+import { CheckinPrompt } from '../CheckinPrompt.jsx';
+import { ProfileReminder } from '../ProfileReminder.jsx';
+import { MetricSecondary } from '../MetricSecondary.jsx';
 import { BodyResponse } from '../BodyResponse.jsx';
-import { BaselineBar, MetricSpark } from '../Charts.jsx';
+import { TonightSkeleton } from '../Skeleton.jsx';
+import { nightMarks, StripHead } from '../WeekStrip.jsx';
 import { activeBodyResponses } from '../../lib/bodySource.js';
 
-/* The desktop top bar shows the current 14-night strip. Therapy started
- * Sep 30 (history.js), so the first three days are before night 1 and there
- * is no older fortnight to page back to. Nights 1–4 had sessions but no
- * authored detail fixture, so they show as logged but aren't clickable. */
-const WEEK14 = [
-  { key: '2026-09-27', day: '27', fixtureId: null, state: 'none' },
-  { key: '2026-09-28', day: '28', fixtureId: null, state: 'none' },
-  { key: '2026-09-29', day: '29', fixtureId: null, state: 'none' },
-  { key: '2026-09-30', day: '30', fixtureId: null, state: 'logged' },
-  { key: '2026-10-01', day: '1', fixtureId: null, state: 'logged' },
-  { key: '2026-10-02', day: '2', fixtureId: null, state: 'logged' },
-  { key: '2026-10-03', day: '3', fixtureId: null, state: 'logged' },
-  { key: '2026-10-04', day: '4', fixtureId: 'steady' },
-  { key: '2026-10-05', day: '5', fixtureId: 'win' },
-  { key: '2026-10-06', day: '6', fixtureId: 'escalation' },
-  { key: '2026-10-07', day: '7', fixtureId: 'insufficient' },
-  { key: '2026-10-08', day: '8', fixtureId: null, state: 'missed' },
-  { key: '2026-10-09', day: '9', fixtureId: null, state: 'missed' },
-  { key: '2026-10-10', day: '10', fixtureId: 'anomaly' },
-];
+/* The 14-night strip under the page head: the latest two weeks, or the
+ * stretch around an older night picked from the calendar. The arrows either
+ * side page it a week at a time without changing the night on screen. */
+const STRIP_DAYS = 14;
+const PAGE_DAYS = 7;
 
-function buildWindow() {
-  return WEEK14;
-}
+const EMPTY_SAYS = { missed: 'no session recorded' };
 
 const fmtShort = (iso) =>
-  new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const fmtLong = (iso) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-export function DesktopTonight() {
-  const { fixtureId, setFixtureId, openSheet, deviceConnections, deviceEnabled, deviceReads } = useStore();
-  /* paging through past fortnights; offset 0 = current */
-  const [weekOffset, setWeekOffset] = useState(0);
-  /* highlight is tracked by the day's unique date (not fixtureId — several days
-   * reuse a fixture, so keying on it would light up every steady night). Seed
-   * from the current fixture, preferring the most recent matching day. */
-  const [selectedKey, setSelectedKey] = useState(
-    () => [...WEEK14].reverse().find((d) => d.fixtureId === fixtureId)?.key ?? null
-  );
-  const days = buildWindow(weekOffset);
-  const rangeLabel = `${fmtShort(days[0].key)} – ${fmtShort(days[days.length - 1].key)}`;
-  const fx = FIXTURES[fixtureId];
-  const bodyCards = activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads);
-  const hasAhi = fx.ahi.value != null;
-  const ahiMax = Math.max(20, Math.ceil(Math.max(fx.ahi.value ?? 0, fx.ahi.avgSoFar) * 1.6));
+const rangeLabel = (days) => `${fmtShort(days[0].date)} – ${fmtShort(days.at(-1).date)}`;
+
+/* which 14 days the strip shows: the stretch around the selected night,
+ * until the arrows page it; picking another night snaps back to it */
+function useStripEnd(fixtureId) {
+  const around = () => stripAround(fixtureId, STRIP_DAYS).at(-1).date;
+  const [end, setEnd] = useState(around);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setEnd(around()), [fixtureId]);
+  const first = addDays(THERAPY_START, STRIP_DAYS - 1); // the earliest end: night 1 on the left
+  const page = (dir) =>
+    setEnd((e) => {
+      const next = addDays(e, dir * PAGE_DAYS);
+      return next > LAST_NIGHT ? LAST_NIGHT : next < first ? first : next;
+    });
+  return { end, setEnd, page, atStart: end <= first, atEnd: end >= LAST_NIGHT };
+}
+
+/* the 14-night strip, on its own full-width row under the page head */
+function Fortnight({ strip }) {
+  const { fixtureId, setFixtureId, showToast } = useStore();
+  const days = nightsEnding(strip.end, STRIP_DAYS);
 
   return (
-    <>
+    <div className="dash-weeknav">
+      {/* "Last night" over the newest night, or the way back (as on the phone);
+       * the range already sits in the page head */}
+      <StripHead
+        days={days}
+        showRange={false}
+        onLatest={() => {
+          strip.setEnd(LAST_NIGHT);
+          setFixtureId(DEFAULT_FIXTURE);
+        }}
+      />
+      <div className="dash-week-row">
+        <button
+          className="dash-week-arrow"
+          type="button"
+          onClick={() => strip.page(-1)}
+          disabled={strip.atStart}
+          aria-label="Previous week"
+          title="Previous week"
+        >
+          <Icon name="chevronLeft" size={18} />
+        </button>
+        <div className="dash-week week" role="group" aria-label="14 nights. Click a night to open it">
+          {days.map((d) => {
+            const nightFx = d.fixtureId ? FIXTURES[d.fixtureId] : null;
+            const state = nightFx ? nightFx.dayState : d.state;
+            if (!nightFx) {
+              // say why there's nothing to open, as the mobile strip does
+              const says = EMPTY_SAYS[d.state];
+              return (
+                <button
+                  key={d.date}
+                  type="button"
+                  className={`day ${state} empty`}
+                  aria-label={`${fmtLong(d.date)}, ${says}`}
+                  onClick={(e) => {
+                    const el = e.currentTarget;
+                    el.classList.remove('nudge');
+                    void el.offsetWidth; // restart the nudge animation
+                    el.classList.add('nudge');
+                    showToast(`${fmtShort(d.date)}: ${says}`, 'moon');
+                  }}
+                >
+                  <Icon name="moon" size={19} className="day-moon" />
+                  <span className="d-num tnum">{Number(d.date.slice(8))}</span>
+                </button>
+              );
+            }
+            const selected = d.fixtureId === fixtureId;
+            const marks = nightMarks(nightFx);
+            return (
+              <button
+                key={d.date}
+                type="button"
+                className={`day ${state}${selected ? ' selected' : ''}`}
+                aria-current={selected ? 'date' : undefined}
+                aria-label={`${nightFx.dayName}, ${nightFx.dateLabel}${marks.a11y}`}
+                onClick={() => setFixtureId(d.fixtureId)}
+              >
+                {marks.suggests && <span className="day-dot" aria-hidden="true" />}
+                <Icon name="moon" size={19} className="day-moon" />
+                <span className="d-num tnum">{Number(d.date.slice(8))}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          className="dash-week-arrow"
+          type="button"
+          onClick={() => strip.page(1)}
+          disabled={strip.atEnd}
+          aria-label="Next week"
+          title="Next week"
+        >
+          <Icon name="chevronRight" size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function DesktopTonight() {
+  const { fixtureId, openSheet, deviceConnections, deviceEnabled, deviceReads, syncing, syncNonce, checkin, authUser, cardData } =
+    useStore();
+  const fx = FIXTURES[fixtureId];
+  const bodyCards = activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads);
+  const strip = useStripEnd(fixtureId);
+
+  return (
+    <div className="dash-tonight">
+      <NightSky condition={SKY_FOR_STATE[fx.insight.card_state] ?? 'clear'} className="dash-sky" />
+
+      {/* the day on the left (click it for every night), the dates the strip
+       * shows on the right; the strip itself spans the row beneath */}
       <header className="dash-topbar">
         <div>
-          <div className="dash-eyebrow">{fx.greeting}</div>
-          <h1 className="dash-h1">{fx.dayName}</h1>
-          <div className="dash-sub">{fx.dateLabel}</div>
-        </div>
-        <div className="dash-weeknav">
-          <div className="dash-weeknav-row">
-            <button
-              className="dash-week-arrow"
-              onClick={() => setWeekOffset((o) => o + 1)}
-              disabled
-              title="Your first night was Sep 30"
-              aria-label="Previous 14 nights: none yet, your first night was Sep 30"
-            >
-              <Icon name="chevronLeft" size={18} />
-            </button>
-            <div className="dash-week week" role="group" aria-label="14 nights. Click a night to open it">
-              {days.map((d) => {
-                const nightFx = d.fixtureId ? FIXTURES[d.fixtureId] : null;
-                const state = nightFx ? nightFx.dayState : d.state;
-                if (!nightFx) {
-                  return (
-                    <div key={d.key} className={`day ${state} empty`} aria-hidden="true">
-                      <Icon name="moon" size={19} className="day-moon" />
-                      <span className="d-label">{d.day}</span>
-                    </div>
-                  );
-                }
-                const selected = d.key === selectedKey;
-                const marks = nightMarks(nightFx);
-                return (
-                  <button
-                    key={d.key}
-                    type="button"
-                    className={`day ${state}${selected ? ' selected' : ''}`}
-                    aria-current={selected ? 'date' : undefined}
-                    aria-label={`${nightFx.dayName}, ${nightFx.dateLabel}${marks.a11y}`}
-                    onClick={() => {
-                      setFixtureId(d.fixtureId);
-                      setSelectedKey(d.key);
-                    }}
-                  >
-                    {marks.suggests && <span className="day-dot" aria-hidden="true" />}
-                    <Icon name="moon" size={19} className="day-moon" />
-                    <span className="d-label">{d.day}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              className="dash-week-arrow"
-              onClick={() => setWeekOffset((o) => Math.max(0, o - 1))}
-              disabled={weekOffset === 0}
-              aria-label="Next 14 nights"
-            >
-              <Icon name="chevronRight" size={18} />
-            </button>
+          <div className="dash-eyebrow">
+            {fx.greeting}
+            {fixtureId === LAST_NIGHT && firstName(authUser) ? `, ${firstName(authUser)}` : ''}
           </div>
-          <div className="dash-week-range">
-            {rangeLabel}
-            {weekOffset === 0 ? ' · this fortnight' : ''}
+          {/* the day is the way to every night: click it for the calendar */}
+          <h1 className="dash-h1">
+            <button className="day-picker" type="button" onClick={() => openSheet('calendar')} aria-haspopup="dialog">
+              {fx.dayName}
+              <Icon name="chevronDown" size={22} />
+              <span className="sr-only">, see all nights</span>
+            </button>
+          </h1>
+          <div className="dash-sub">
+            {fx.dateLabel}
+            {/* nothing imported: these are the bundled sample nights, not theirs */}
+            {!cardData && <span className="sample-tag">Sample data</span>}
           </div>
         </div>
+        <span className="dash-week-range tnum">{rangeLabel(nightsEnding(strip.end, STRIP_DAYS))}</span>
       </header>
+      <Fortnight strip={strip} />
 
-      {/* hero row: the nightly story beside its pattern card */}
-      <div className={`dash-tonight-hero${fx.pattern ? '' : ' solo'}`}>
-        <WhyCard
-          insight={fx.insight}
-          spark={fx.spark}
-          sparkKind={fx.sparkKind}
-          onDoctor={() => openSheet('doctor')}
-        />
-        {fx.pattern && <PatternCard pattern={fx.pattern} />}
-      </div>
-
-      {/* the night itself — the signature timeline, promoted to a full-width
-       * band so the story reads top-down: why → the actual night → the numbers */}
-      <div className="dash-head">
-        <h3>The night</h3>
-        <div className="dash-head-right">
-          <span className="dash-head-meta">{fx.session.start}–{fx.session.end}</span>
-          <button className="dash-head-action" onClick={() => openSheet('compare')}>
-            Compare nights
-            <Icon name="chevronRight" size={14} />
-          </button>
+      {syncing ? (
+        <div className="dash-tonight-skeleton">
+          <TonightSkeleton />
         </div>
-      </div>
-      <NightTimeline
-        timeline={fx.timeline}
-        session={fx.session}
-        ahi={fx.ahi.value}
-        escalated={fx.insight.escalation_flag === 'hard'}
-        fixtureId={fixtureId}
-        sleepStages={fx.bodyResponse?.stages}
-        onOpen={() => openSheet('fullnight')}
-      />
+      ) : (
+        // keyed on the night (and each completed sync) so switching nights
+        // replays the staggered entrance instead of swapping text in place
+        <Fragment key={`${fixtureId}-${syncNonce}`}>
+          <div className="dash-tonight-grid">
+            {/* the one hero: verdict, the night's horizon, tonight's action.
+             * No Nox face here on desktop — Ask Nox lives in the sidebar */}
+            <WhyHorizon
+              insight={fx.insight}
+              timeline={fx.timeline}
+              session={fx.session}
+              usual={fx.ahi.avgSoFar}
+              fixtureId={fixtureId}
+              onWhy={() => openSheet('why')}
+              onAsk={() => openSheet('coach', { context: { kind: 'why' } })}
+              onDoctor={() => openSheet('doctor')}
+            />
 
-      {/* KPI row — uniform stat cards fill the full width */}
-      <div className="dash-head">
-        <h3>Last night</h3>
-      </div>
-      <div className="dash-kpis">
-        <div className="dash-kpi primary">
-          <div className="dash-kpi-top">
-            <span className="dash-kpi-k">AHI · events/hr</span>
-            {hasAhi && fx.ahi.delta != null && (
-              <span className={`delta-pill ${fx.ahi.dir === 'down' ? 'good' : ''}`}>
-                {fx.ahi.dir !== 'flat' && <Icon name={fx.ahi.dir === 'down' ? 'triDown' : 'triUp'} size={9} />}
-                {fx.ahi.delta.toFixed(1)}
-              </span>
-            )}
-          </div>
-          <div className="dash-kpi-v tnum">
-            {hasAhi ? fx.ahi.value.toFixed(1) : '—'}
-          </div>
-          <div className="dash-kpi-chart">
-            {hasAhi && <BaselineBar value={fx.ahi.value} avg={fx.ahi.avgSoFar} max={ahiMax} height={10} />}
-          </div>
-          <div className="dash-kpi-sub">
-            {hasAhi ? `vs your average so far, ${fx.ahi.avgSoFar.toFixed(1)}` : 'Last night was too short to score'}
-          </div>
-        </div>
-        {fx.secondary.map((m) => (
-          <button
-            key={m.key}
-            className="dash-kpi"
-            onClick={() => openSheet('coach', { context: { kind: 'metric', label: m.label } })}
-          >
-            <div className="dash-kpi-top">
-              <span className="dash-kpi-k">{m.label}</span>
-            </div>
-            <div className="dash-kpi-v tnum">
-              {m.value}
-              <span className="dash-kpi-u">{m.unit}</span>
-            </div>
-            <div className="dash-kpi-chart">
-              <MetricSpark values={m.spark} hot={m.hot} height={38} />
-            </div>
-            <div className="dash-kpi-sub">{m.sub}</div>
-          </button>
-        ))}
-      </div>
+            <div className="dash-tonight-pair">
+              {/* the check-in is half of what Nox learns from, so it leads
+               * the row right under the night's suggestion */}
+              {/* last night only, as on the phone */}
+              {fixtureId === LAST_NIGHT && (
+                <CheckinPrompt
+                  checkin={checkin}
+                  mascot={false}
+                  onStart={(initial) => openSheet('checkin', { initial })}
+                />
+              )}
 
-      {/* connected-device body data — wearable cards lay out side by side, the
-       * empty state spans the row */}
-      <div className="dash-head">
-        <h3>Your body overnight</h3>
-      </div>
-      <div className={`dash-tonight-body${bodyCards.length > 0 ? '' : ' empty'}`}>
-        {bodyCards.length > 0 ? (
-          bodyCards.map((data) => (
-            <BodyResponse key={data.deviceKey} data={data} session={fx.session} />
-          ))
-        ) : (
-          <div className="ghost-card">
-            <b>No wearable connected</b>
-            <span>
-              Pair a watch or ring in the mobile app to see how your heart rate
-              and sleep stages responded to therapy overnight.
-            </span>
+              <section className="tn-module">
+                <div className="section-head">
+                  {/* every night reads from its own morning, so it's "Last night"
+                   * on older nights too (the eyebrow already says Looking back) */}
+                  <h3>Last night</h3>
+                  <span className="meta tnum">
+                    {fx.session.start}–{fx.session.end}
+                  </span>
+                </div>
+                {/* AHI itself leads the hero, so this card holds the rest */}
+                <MetricSecondary items={fx.secondary} />
+                <button className="row-cta" onClick={() => openSheet('fullnight')}>
+                  <span>Open full-night view</span>
+                  <Icon name="chevronRight" size={16} />
+                </button>
+                <button className="row-cta" onClick={() => openSheet('compare')}>
+                  <span>Compare with another night</span>
+                  <Icon name="chevronRight" size={16} />
+                </button>
+              </section>
+            </div>
+
+            {/* a skipped onboarding question, now and then (lib/profile.js) */}
+            <ProfileReminder />
           </div>
-        )}
-      </div>
-    </>
+
+          {bodyCards.length > 0 && (
+            <section className="tn-module dash-body-module">
+              <div className="section-head">
+                <h3>Your body overnight</h3>
+              </div>
+              <div className="dash-body-grid">
+                {bodyCards.map((data) => (
+                  <BodyResponse key={data.deviceKey} data={data} session={fx.session} />
+                ))}
+              </div>
+            </section>
+          )}
+        </Fragment>
+      )}
+
+      <p className="disclaimer">{MEDICAL_NOTE}</p>
+    </div>
   );
 }

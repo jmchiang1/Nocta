@@ -1,7 +1,6 @@
 /* Nocta — app shell: phone frame, tab routing, sheet routing. */
 import { useEffect } from 'react';
 import { StoreProvider, useStore } from './lib/store.jsx';
-import { DynamicIsland } from './components/DynamicIsland.jsx';
 import { LiquidGlassFilters } from './components/LiquidGlass.jsx';
 import { TabBar } from './components/TabBar.jsx';
 import { DevPanel } from './components/DevPanel.jsx';
@@ -24,9 +23,16 @@ import { DoctorSummarySheet } from './screens/DoctorSummarySheet.jsx';
 import { Onboarding } from './screens/Onboarding.jsx';
 import { MetricDetailSheet } from './screens/MetricDetailSheet.jsx';
 import { WhySheet } from './screens/WhySheet.jsx';
+import { CalendarSheet } from './screens/CalendarSheet.jsx';
+import { ImportSheet } from './screens/CardImport.jsx';
+import { ProfileQuestionsSheet } from './screens/ProfileQuestionsSheet.jsx';
+import { ChangePasswordSheet } from './screens/ChangePasswordSheet.jsx';
+import { DeleteAccountSheet } from './screens/DeleteAccountSheet.jsx';
 import { DesktopApp } from './components/desktop/DesktopApp.jsx';
+import { StatusPill } from './components/StatusPill.jsx';
 import { DesktopFullNight } from './components/desktop/DesktopFullNight.jsx';
 import { DesktopCompare } from './components/desktop/DesktopCompare.jsx';
+import { DesktopCalendar } from './components/desktop/DesktopCalendar.jsx';
 
 const SCREENS = {
   tonight: TonightScreen,
@@ -48,11 +54,18 @@ const SHEETS = {
   journal: JournalSheet,
   doctor: DoctorSummarySheet,
   why: WhySheet,
+  cardImport: ImportSheet,
+  profileQuestions: ProfileQuestionsSheet,
+  changePassword: ChangePasswordSheet,
+  deleteAccount: DeleteAccountSheet,
   metricDetail: MetricDetailSheet,
+  calendar: CalendarSheet,
 };
 
 /* drill-down subpages push in from the right; everything else is a modal */
 const PAGE_SHEETS = new Set([
+  'changePassword',
+  'deleteAccount',
   'account',
   'settings',
   'deviceDetail',
@@ -62,24 +75,43 @@ const PAGE_SHEETS = new Set([
   'metricDetail',
 ]);
 
+/* wide dialogs the desktop dashboard draws itself (not Sheet-based) */
+const DESKTOP_DIALOGS = new Set(['fullnight', 'compare', 'calendar']);
+
 function Shell() {
-  const { tab, tabNonce, tabDir, sheet, sheets, sheetLeaving, onboarded, viewMode, closeSheet, startSync, tonightLayout } =
+  const { tab, tabNonce, tabDir, sheet, sheets, sheetLeaving, onboarded, viewMode, closeSheet, tonightLayout, onboardingNonce } =
     useStore();
 
-  // opening the app pulls last night from SleepHQ (mock) — the Dynamic Island
-  // shows the live activity while Tonight renders skeletons
+  // the desktop-only dialogs aren't built on Sheet, so they need their own Escape
+  const desktopDialog = viewMode === 'desktop' && DESKTOP_DIALOGS.has(sheet?.kind);
   useEffect(() => {
-    if (onboarded) startSync();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!desktopDialog) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') closeSheet();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [desktopDialog, closeSheet]);
+
+  if (!onboarded && viewMode === 'desktop') {
+    // the same flow as the phone, full-window: the sky fills the page and
+    // each step sits in a centred column (desktop.css › desktop onboarding)
+    return (
+      <div className="desktop-stage desktop-onboarding">
+        <DevPanel />
+        <Onboarding key={onboardingNonce} />
+        <StatusPill />
+      </div>
+    );
+  }
 
   if (!onboarded) {
     return (
       <div className="stage">
         <DevPanel />
         <div className="phone">
-          <Onboarding />
-          <DynamicIsland />
+          <Onboarding key={onboardingNonce} />
+          <StatusPill />
         </div>
       </div>
     );
@@ -110,6 +142,10 @@ function Shell() {
               <div className="desktop-dialog cmp2-dialog">
                 <DesktopCompare />
               </div>
+            ) : sheet.kind === 'calendar' ? (
+              <div className="desktop-dialog cal-dialog">
+                <DesktopCalendar />
+              </div>
             ) : (
               ActiveSheet && <ActiveSheet />
             )}
@@ -121,7 +157,8 @@ function Shell() {
 
   // Tonight has a proposed-layout test page (DevPanel › Tonight, or ?layout=proposed)
   const Screen = tab === 'tonight' && tonightLayout === 'proposed' ? TonightProposedScreen : SCREENS[tab];
-  const sheetUp = !!sheet && !sheetLeaving;
+  // a sheet only counts on the phone if it has a phone view (compare doesn't)
+  const sheetUp = !!sheet && Boolean(SHEETS[sheet.kind]) && !sheetLeaving;
   const isPage = sheet && PAGE_SHEETS.has(sheet.kind);
   // iOS depth cues: a modal sheet shrinks the app behind it into a card;
   // a pushed page slides the app left underneath it (parallax)
@@ -143,11 +180,12 @@ function Shell() {
         </div>
         {/* sheets stack: one opened from another (the check-in from the
          * full-night page) layers over it, so its own backdrop stays put */}
+        {/* (a desktop-only dialog, e.g. compare, isn't a phone sheet: skipped) */}
         {sheets.map((s, i) => {
           const SheetView = SHEETS[s.kind];
           return SheetView ? <SheetView key={`${i}-${s.kind}`} /> : null;
         })}
-        <DynamicIsland />
+        <StatusPill />
       </div>
     </div>
   );

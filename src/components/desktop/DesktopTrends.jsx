@@ -1,24 +1,26 @@
-/* Nocta — desktop Trends view. Range selector + summary tiles, then a 2×2 grid
- * of the trend charts, best/worst night, and journal patterns. Reuses the same
- * getTrends() data and chart primitives as the mobile screen. */
+/* Nocta — desktop Trends view. Same model as the mobile screen: the four metric
+ * tiles are tabs that switch one large chart, so every metric shows once
+ * (number on the tile, shape in the chart), with the journal patterns
+ * beneath. The reading rail beside it holds what stands out (with the way in
+ * to Nox), the best/worst night and the journal. Same getTrends() data. */
 import { useState } from 'react';
 import { THERAPY_START, LAST_NIGHT } from '../../data/history.js';
 import { getTrends } from '../../data/trends.js';
-import { PRESSURE_RANGE } from '../../data/therapy.js';
+import { pressureRange } from '../../data/therapy.js';
+import { journalHistory } from '../../data/journal.js';
 import { useStore } from '../../lib/store.jsx';
+import { CountUp } from '../../lib/motion.jsx';
 import { Icon } from '../Icons.jsx';
+import { Mascot } from '../Mascot.jsx';
 import { Rich } from '../Rich.jsx';
 import { PatternCard } from '../PatternCard.jsx';
-import { LineChart, StackedBars, Bars, MetricSpark } from '../Charts.jsx';
+import { LineChart, StackedBars, Bars } from '../Charts.jsx';
 
 const RANGE_LABEL = { '7d': '7 days', '30d': '30 days', '90d': '90 days', custom: 'Custom' };
 const RANGE_TABS = ['7d', '30d', '90d', 'custom'];
 const GOOD_WHEN_DOWN = ['ahi', 'leak'];
+const CHART_H = 260;
 
-function norm(arr) {
-  const max = Math.max(...arr) || 1;
-  return arr.map((v) => v / max);
-}
 function tileTone(key, dir) {
   if (dir === 'flat') return 'flat';
   const goodDown = GOOD_WHEN_DOWN.includes(key);
@@ -31,8 +33,9 @@ function fmtDate(iso) {
 }
 
 export function DesktopTrends() {
-  const { fixtureId, openSheet } = useStore();
-  const [range, setRange] = useState('30d');
+  const { fixtureId, openSheet, checkin } = useStore();
+  const [range, setRange] = useState('7d');
+  const [metric, setMetric] = useState('ahi'); // which tile's chart is showing
   const [customStart, setCustomStart] = useState(THERAPY_START);
   const [customEnd, setCustomEnd] = useState(LAST_NIGHT);
 
@@ -47,24 +50,40 @@ export function DesktopTrends() {
       : null;
 
   const t = getTrends(fixtureId, range, custom);
-  const ahiTotals = t.ahiSeries.map((d) => d.csa + d.osa + d.hyp);
-  const sparks = {
-    ahi: norm(ahiTotals),
-    leak: norm(t.leakSeries),
-    hours: norm(t.hoursSeries),
-    pressure: norm(t.pressureSeries.slice(0, 14)),
-  };
+  const rx = pressureRange(); // the prescribed window the machine records, if any
 
-  const insightList = (
-    <section className="insight-list" aria-label="Trend insights">
-      {t.insights.map((ins, i) => (
-        <div className="il-row" key={i}>
-          <div className="il-icon"><Icon name={ins.icon} size={15} /></div>
-          <div className="il-text"><Rich text={ins.text} /></div>
-        </div>
-      ))}
-    </section>
-  );
+  const CHARTS = {
+    ahi: {
+      title: 'AHI (events an hour)',
+      meta: `avg ${t.ahiAvg}/h`,
+      body: (
+        <>
+          <div className="legend dash-legend">
+            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--alert)' }} /> Central</span>
+            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-deep)' }} /> Obstructive</span>
+            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-1)' }} /> Hypopnea</span>
+          </div>
+          <StackedBars series={t.ahiSeries} height={CHART_H} />
+        </>
+      ),
+    },
+    leak: {
+      title: 'Leak rate',
+      meta: 'L/min · 24 threshold',
+      body: <LineChart values={t.leakSeries} color="data" threshold={24} height={CHART_H} />,
+    },
+    hours: {
+      title: 'Usage',
+      meta: 'hours · 4 h compliance bar',
+      body: <Bars values={t.hoursSeries} color="data" target={4} height={CHART_H} />,
+    },
+    pressure: {
+      title: 'Pressure',
+      meta: rx ? `cmH₂O · shaded: prescribed ${rx[0]}–${rx[1]}` : 'cmH₂O',
+      body: <LineChart values={t.pressureSeries} color="data" band={rx ?? undefined} height={CHART_H} />,
+    },
+  };
+  const chart = CHARTS[metric];
 
   return (
     <>
@@ -74,9 +93,15 @@ export function DesktopTrends() {
           <div className="dash-sub">{t.rangeLabel}</div>
         </div>
         <div className="dash-range">
-          <div className="segmented" role="tablist">
+          <div className="segmented" role="tablist" aria-label="Date range">
             {RANGE_TABS.map((r) => (
-              <button key={r} className={r === range ? 'on' : ''} onClick={() => setRange(r)}>
+              <button
+                key={r}
+                role="tab"
+                aria-selected={r === range}
+                className={r === range ? 'on' : ''}
+                onClick={() => setRange(r)}
+              >
                 {RANGE_LABEL[r]}
               </button>
             ))}
@@ -108,124 +133,150 @@ export function DesktopTrends() {
         </div>
       </header>
 
-      <div className="dash-tiles">
-        {t.tiles.map((tile) => {
-          const tone = tileTone(tile.key, tile.dir);
-          return (
-            <div key={tile.key} className="trend-tile">
-              <div className="tt-label">{tile.label}</div>
-              <div className="tt-value tnum">
-                {tile.value}
-                <span className="u">{tile.unit}</span>
-              </div>
-              <span className={`delta-pill ${tone}`}>
-                {tile.dir !== 'flat' && (
-                  <Icon name={tile.dir === 'down' ? 'triDown' : 'triUp'} size={9} />
-                )}
-                {tile.dir === 'flat' ? tile.note ?? 'steady' : tile.delta}
-              </span>
-              <MetricSpark values={sparks[tile.key]} />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* one full-width column: the four trend charts, then best/worst, then the
-       * narrative (insights, journal patterns) as a full-width rail beneath */}
       <div className="dash-trends-layout">
-      <div className="dash-trends-main">
-      <div className="dash-trends-charts">
-        <div className="panel">
-          <div className="panel-head">
-            <h3>AHI events</h3>
-            <span className="panel-meta">avg {t.ahiAvg}/h</span>
+        <div className="dash-trends-main">
+          {/* the four tiles are tabs: each switches the one large chart below */}
+          <div className="trend-grid dash-tiles" role="tablist" aria-label="Choose a metric to chart">
+            {t.tiles.map((tile) => {
+              const tone = tileTone(tile.key, tile.dir);
+              const on = tile.key === metric;
+              return (
+                <button
+                  key={tile.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  className={`trend-tile${on ? ' on' : ''}`}
+                  onClick={() => setMetric(tile.key)}
+                >
+                  <div className="tt-label">{tile.label}</div>
+                  <div className="tt-row">
+                    <div className="tt-value tnum">
+                      <CountUp value={tile.value} duration={800} />
+                      <span className="u">{tile.unit}</span>
+                    </div>
+                    <span className={`delta-pill ${tone}`}>
+                      {tile.dir !== 'flat' && <Icon name={tile.dir === 'down' ? 'triDown' : 'triUp'} size={9} />}
+                      {tile.dir === 'flat' ? tile.note ?? 'steady' : tile.delta}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-          <div className="legend dash-legend">
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--alert)' }} /> Central</span>
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-deep)' }} /> Obstructive</span>
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-1)' }} /> Hypopnea</span>
-          </div>
-          <StackedBars series={t.ahiSeries} height={188} />
-          <div className="chart-axis">{t.xLabels.map((l, i) => <span key={i}>{l}</span>)}</div>
-        </div>
 
-        <div className="panel">
-          <div className="panel-head">
-            <h3>Pressure</h3>
-            <span className="panel-meta">cmH₂O · shaded: prescribed {PRESSURE_RANGE[0]}–{PRESSURE_RANGE[1]}</span>
-          </div>
-          <LineChart values={t.pressureSeries} color="data" height={188} band={PRESSURE_RANGE} />
-          <div className="chart-axis">{t.xLabels.map((l, i) => <span key={i}>{l}</span>)}</div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-head">
-            <h3>Leak rate</h3>
-            <span className="panel-meta">L/min · 24 threshold</span>
-          </div>
-          <LineChart values={t.leakSeries} color="data" threshold={24} height={188} />
-          <div className="chart-axis">{t.xLabels.map((l, i) => <span key={i}>{l}</span>)}</div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-head">
-            <h3>Usage</h3>
-            <span className="panel-meta">hours · 4h compliance</span>
-          </div>
-          <Bars values={t.hoursSeries} color="data" target={4} height={188} />
-          <div className="chart-axis">{t.xLabels.map((l, i) => <span key={i}>{l}</span>)}</div>
-        </div>
-      </div>
-
-      {t.bestWorst && (
-        <section className="dash-bestworst">
-          <div className="dash-head">
-            <h3>Best &amp; worst night</h3>
-            <button className="dash-head-action" onClick={() => openSheet('compare')}>
-              Compare nights
-              <Icon name="chevronRight" size={14} />
-            </button>
-          </div>
-          <div className="compare">
-            <div className="cmp-card best">
-              <div className="cmp-tag">Best</div>
-              <div className="cmp-date">{t.bestWorst.best.date}</div>
-              <div className="cmp-ahi tnum">{t.bestWorst.best.ahi}</div>
-              <div className="cmp-sub">{t.bestWorst.best.note}</div>
+          <section className="chart-card trend-chart dash-trend-chart" key={`${metric}-${range}`} aria-label={chart.title}>
+            <div className="tc-head">
+              <h3>{chart.title}</h3>
+              <span className="meta">{chart.meta}</span>
             </div>
-            <div className="cmp-card worst">
-              <div className="cmp-tag">Worst</div>
-              <div className="cmp-date">{t.bestWorst.worst.date}</div>
-              <div className="cmp-ahi tnum">{t.bestWorst.worst.ahi}</div>
-              <div className="cmp-sub">{t.bestWorst.worst.note}</div>
+            {chart.body}
+            <div className="chart-axis">
+              {t.xLabels.map((l, i) => (
+                <span key={i}>{l}</span>
+              ))}
             </div>
-          </div>
-        </section>
-      )}
-      </div>
+          </section>
 
-      <aside className="dash-rail" aria-label="Trend highlights">
-        <div>
+          {t.patterns.length > 0 && (
+            <section>
+              <div className="dash-head">
+                <h3>Patterns</h3>
+                <span className="dash-head-meta">from your journal</span>
+              </div>
+              <div className="dash-patterns">
+                {t.patterns.map((p, i) => (
+                  <PatternCard key={i} pattern={p} window={t.window} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <aside className="dash-rail" aria-label="Trend highlights">
           <div className="dash-head">
             <h3>What stands out</h3>
           </div>
-          {insightList}
-        </div>
+          <section className="insight-list" aria-label="Trend insights">
+            {t.insights.map((ins, i) => (
+              <div className="il-row" key={i}>
+                <div className="il-icon">
+                  <Icon name={ins.icon} size={15} />
+                </div>
+                <div className="il-text">
+                  <Rich text={ins.text} />
+                </div>
+              </div>
+            ))}
+            <button
+              className="ask-row"
+              type="button"
+              onClick={() =>
+                openSheet('coach', {
+                  context: {
+                    kind: 'trends',
+                    range: t.rangeLabel,
+                    summary: t.insights[0]?.text,
+                    worst: t.bestWorst?.worst.date,
+                  },
+                })
+              }
+            >
+              <Mascot size={22} />
+              <span>Ask Nox about these trends</span>
+              <Icon name="chevronRight" size={15} className="ask-chev" />
+            </button>
+          </section>
 
-        {t.patterns.length > 0 && (
-          <div>
-            <div className="dash-head">
-              <h3>From your journal</h3>
-            </div>
-            <div className="dash-patterns">
-              {t.patterns.map((p, i) => (
-                <PatternCard key={i} pattern={p} window={t.window} />
-              ))}
-            </div>
+          {t.bestWorst && (
+            <>
+              <div className="dash-head">
+                <h3>Best &amp; worst night</h3>
+                <button className="dash-head-action" onClick={() => openSheet('compare')}>
+                  Compare nights
+                  <Icon name="chevronRight" size={14} />
+                </button>
+              </div>
+              <div className="compare">
+                <div className="cmp-card best">
+                  <div className="cmp-tag">Best</div>
+                  <div className="cmp-date">{t.bestWorst.best.date}</div>
+                  <div className="cmp-ahi tnum">
+                    <CountUp value={t.bestWorst.best.ahi} duration={900} />
+                  </div>
+                  <div className="cmp-sub">{t.bestWorst.best.note}</div>
+                </div>
+                <div className="cmp-card worst">
+                  <div className="cmp-tag">Worst</div>
+                  <div className="cmp-date">{t.bestWorst.worst.date}</div>
+                  <div className="cmp-ahi tnum">
+                    <CountUp value={t.bestWorst.worst.ahi} duration={900} />
+                  </div>
+                  <div className="cmp-sub">{t.bestWorst.worst.note}</div>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="dash-head">
+            <h3>Sleep journal</h3>
           </div>
-        )}
-      </aside>
+          <div className="list">
+            <button className="list-row" onClick={() => openSheet('journal')}>
+              <div className="lr-icon bare">
+                <Icon name="doc" size={17} />
+              </div>
+              <div className="lr-main">
+                <div className="lr-title">View all entries</div>
+                <div className="lr-sub">{journalHistory(checkin).length} nights logged</div>
+              </div>
+              <Icon name="chevronRight" size={17} />
+            </button>
+          </div>
+        </aside>
       </div>
+
+      <p className="disclaimer">Trends describe your data. They are not a diagnosis.</p>
     </>
   );
 }

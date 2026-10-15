@@ -1,12 +1,16 @@
 /* Nocta — desktop dashboard. A full-width sidebar + multi-panel layout that
  * reuses the mobile components and the shared design tokens. Only active when
- * the Layout toggle is set to Desktop. */
+ * the DevPanel's Layout toggle is set to Desktop.
+ *
+ * Many of the mobile refinements in motion.css are scoped to `.phone`; where
+ * the dashboard reuses one of those components, the matching rule is mirrored
+ * here under `.dash` rather than unscoping the phone rule. */
 
 /* ===== stage + floating dev control ===== */
 .desktop-stage {
   min-height: 100vh;
   background:
-    radial-gradient(120% 70% at 50% -10%, rgba(240, 164, 122, 0.05), transparent 60%),
+    radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 60%),
     linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 40%, var(--bg-grad-bottom) 100%);
 
   /* the desktop dashboard runs a tighter, flatter radius than mobile — every
@@ -18,52 +22,32 @@
   --r-xl: var(--r-sm);
 }
 
-/* no phone to dock beside in desktop mode — the collapsed tab sits bottom-left */
-.desktop-stage .dev-handle {
-  top: auto;
-  bottom: 16px;
-  left: 16px;
-  transform: none;
-}
-
-.desktop-stage .dev-panel {
-  position: fixed;
-  top: auto;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 600;
-  flex-direction: row;
-  align-items: center;
-  width: max-content;
-  max-width: calc(100vw - 32px);
-  flex-wrap: wrap;
-  justify-content: center;
-  row-gap: 0.5rem;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  background: rgba(16, 20, 36, 0.9);
-  backdrop-filter: blur(12px);
-}
-
 /* ===== shell ===== */
 .dash {
+  --side-w: 248px;
   display: flex;
   align-items: flex-start;
   min-height: 100vh;
+}
+
+/* collapsed: icons only (the toggle in the brand row, or a narrow window) */
+.dash.collapsed {
+  --side-w: 76px;
 }
 
 /* ----- sidebar ----- */
 .dash-sidebar {
   position: sticky;
   top: 0;
+  z-index: 2;
   height: 100vh;
-  width: 248px;
+  width: var(--side-w);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   padding: 26px 18px;
+  overflow: hidden;
+  transition: width 0.28s var(--ease-out), padding 0.28s var(--ease-out);
   border-right: 1px solid var(--hairline);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%);
 }
@@ -72,8 +56,26 @@
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 6px 10px 0;
-  margin-bottom: 36px;
+  min-height: 40px;
+  padding: 0 0 0 10px;
+  margin-bottom: 30px;
+}
+
+.dash-collapse {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  color: var(--text-tertiary);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dash-collapse:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .dash-logo {
@@ -109,9 +111,11 @@
   display: flex;
   align-items: center;
   gap: 13px;
-  padding: 12px 14px;
+  white-space: nowrap;
+  min-height: 48px;
+  padding: 0 14px;
   border-radius: var(--r-md);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--text-secondary);
   transition: background 0.15s ease, color 0.15s ease;
@@ -127,37 +131,29 @@
   color: var(--accent);
 }
 
-.dash-nav-item.active svg {
-  color: var(--accent);
-}
-
-/* persistent AI entry point — desktop's equivalent of the mobile Coach FAB.
- * peach is the sacred AI accent; this is the only peach fill in the chrome.
- * margin-top:auto anchors it (and the footer below) to the bottom of the rail */
+/* persistent AI entry point: a plain row like the nav items, Nox's face
+ * carries the peach. margin-top:auto anchors it to the bottom of the rail */
 .dash-coach {
   margin-top: auto;
   display: flex;
   align-items: center;
   gap: 11px;
   width: 100%;
+  min-height: 56px;
   text-align: left;
-  padding: 11px 13px;
+  white-space: nowrap;
+  padding: 0 10px;
   border-radius: var(--r-md);
-  border: 1px solid rgba(240, 164, 122, 0.22);
-  background:
-    linear-gradient(180deg, rgba(240, 164, 122, 0.14), rgba(240, 164, 122, 0.07));
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .dash-coach:hover {
-  border-color: rgba(240, 164, 122, 0.4);
-  background: linear-gradient(180deg, rgba(240, 164, 122, 0.2), rgba(240, 164, 122, 0.1));
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .dash-coach-icon {
   flex-shrink: 0;
-  width: 34px;
+  width: 28px;
   height: 34px;
   display: grid;
   place-items: center;
@@ -170,84 +166,124 @@
 }
 
 .dash-coach-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
 .dash-coach-sub {
-  font-size: 11.5px;
-  color: var(--accent-soft);
-}
-
-.dash-side-foot {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--hairline);
-}
-
-/* connected-product signal: a live sync line above the user chip */
-.dash-sync {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 8px 12px;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--text-tertiary);
-  font-weight: 500;
-  letter-spacing: 0.01em;
 }
 
-.dash-sync-dot {
-  flex-shrink: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--good);
+/* ----- collapsed sidebar: icons only ----- */
+.dash.collapsed .dash-sidebar {
+  padding: 26px 12px;
 }
 
-.dash-user {
+.dash.collapsed :is(.dash-logo, .dash-wordmark, .dash-label) {
+  display: none;
+}
+
+/* the expand toggle sits above the logo */
+.dash.collapsed .dash-brand {
+  flex-direction: column-reverse;
+  gap: 14px;
+  padding: 0;
+}
+
+.dash.collapsed .dash-collapse {
+  margin: 0;
+}
+
+.dash.collapsed :is(.dash-nav-item, .dash-coach) {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ----- status pill (components/StatusPill.jsx): system feedback in both
+ * layouts — centred over the main column, below a phone's notch ----- */
+.dstatus-host {
+  position: fixed;
+  top: max(18px, calc(env(safe-area-inset-top) + 8px));
+  max-width: calc(100vw - 24px);
+  left: calc(50% + var(--side-w, 0px) / 2); /* centred over the main column */
+  transform: translateX(-50%);
+  z-index: 750; /* above dialogs: an import finishing inside one should be seen */
+  pointer-events: none;
+}
+
+.dstatus {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 6px 8px;
+  gap: 10px;
+  padding: 8px 16px 8px 10px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--bg-base) 88%, transparent);
+  border: 1px solid var(--hairline-strong);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  white-space: nowrap;
+  min-width: 0;
+  animation: dstatusIn 0.4s var(--ease-spring) both;
 }
 
-.dash-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  flex-shrink: 0;
+@keyframes dstatusIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+}
+
+.dstatus-icon {
   display: grid;
   place-items: center;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--text-on-accent);
-  background: linear-gradient(150deg, var(--accent-soft), var(--accent-deep));
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--data-1);
+  background: color-mix(in srgb, var(--data-1) 14%, transparent);
 }
 
-.dash-user-name {
-  font-size: 13.5px;
+.dstatus-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dstatus-text {
+  min-width: 0;
+}
+
+.dstatus-text :is(b, span) {
+  overflow: hidden;
+  text-overflow: ellipsis; /* a long message trims rather than runs off a phone */
+}
+
+.dstatus-text b {
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.dash-user-sub {
-  font-size: 11.5px;
+.dstatus-text span {
+  font-size: 12px;
   color: var(--text-tertiary);
 }
 
 /* ----- main ----- */
 .dash-main {
+  position: relative;
+  isolation: isolate;
   flex: 1;
   min-width: 0;
-  max-width: 1440px;
   /* generous bottom padding so the floating dev panel never sits on content */
   padding: 30px 40px 130px;
 }
 
-/* one row: page title block on the left, that page's control (week strip,
+/* one row: page title block on the left, that page's control (night strip,
  * range picker) on the right — wraps back to stacked when space runs out */
 .dash-topbar {
   display: flex;
@@ -259,63 +295,10 @@
 }
 
 .dash-eyebrow {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--accent-soft);
   font-style: italic;
   font-family: var(--font-display);
-}
-
-/* right-aligned meta cluster for pages whose topbar has no page control
- * (Therapy, You) — keeps every header balanced instead of a lone left title */
-.dash-topbar-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.dash-meta-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
-  border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--hairline);
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-feature-settings: 'tnum' 1;
-}
-
-.dash-meta-pill .dash-sync-dot {
-  width: 7px;
-  height: 7px;
-}
-
-.dash-topbar-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--hairline-strong);
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.dash-topbar-action:hover {
-  background: rgba(255, 255, 255, 0.09);
-}
-
-.dash-topbar-action.done {
-  color: var(--good);
-  border-color: rgba(125, 201, 154, 0.3);
-  background: rgba(125, 201, 154, 0.08);
 }
 
 .dash-h1 {
@@ -328,8 +311,48 @@
 }
 
 .dash-sub {
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--text-tertiary);
+}
+
+/* ----- the 14-night strip (Tonight): its own full-width row ----- */
+.dash-weeknav {
+  margin: -6px 0 30px;
+}
+
+/* the strip between its week arrows */
+.dash-week-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-week-row .dash-week {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-week-arrow {
+  flex-shrink: 0;
+  width: 40px;
+  height: 48px;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dash-week-arrow:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dash-week-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .dash-week {
@@ -337,6 +360,7 @@
   gap: 5px;
   flex-wrap: nowrap;
   width: 100%;
+  margin: 0;
   justify-content: space-between;
 }
 
@@ -344,7 +368,7 @@
 .dash-week .day {
   width: auto;
   min-width: 0;
-  max-width: 54px;
+  max-width: 64px;
   flex: 1 1 0;
   padding: 0.55rem 0;
   gap: 8px;
@@ -352,75 +376,40 @@
   height: auto;
 }
 
-.dash-week .day .d-label {
+/* weekday small, the date large (as on the phone, a size up) */
+.dash-week .day {
+  gap: 6px;
+}
+.dash-week .day .d-num {
   font-size: 1rem;
+  margin-top: -2px;
 }
 
-.week {
-  margin: 0;
+.dash-week .day.empty {
+  cursor: default;
 }
 
-/* ----- week pager (arrows on either end to cycle past fortnights) ----- */
-.dash-weeknav {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  /* shares the topbar row with the title; shrinks before it wraps under */
-  flex: 0 1 860px;
-  min-width: 460px;
+.dash-week .day.nudge .day-moon {
+  animation: dayNudge 0.4s ease;
 }
 
-/* arrows live in the same row as the strip so they're vertically centered
- * with the day cells (not with the strip + range label together) */
-.dash-weeknav-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-}
-
-.dash-weeknav-row .dash-week {
-  flex: 1;
-  min-width: 0;
-}
-
-.dash-week-arrow {
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--hairline);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.dash-week-arrow:hover:not(:disabled) {
-  background: var(--accent-glow);
-  color: var(--accent);
-  border-color: rgba(240, 164, 122, 0.3);
-}
-
-.dash-week-arrow:disabled {
-  opacity: 0.32;
-  cursor: not-allowed;
+@keyframes dayNudge {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
 }
 
 .dash-week-range {
-  text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--text-tertiary);
-  font-feature-settings: 'tnum' 1;
-  margin-top: 2px;
 }
 
 /* ----- range control (Trends): segmented + optional custom date picker ----- */
-/* the segmented control is shared with mobile, where it stretches full-width;
- * in the desktop topbar it sizes to content with roomier gap and padding */
 .dash-range {
   display: flex;
   flex-direction: row-reverse;
@@ -429,6 +418,8 @@
   gap: 12px 16px;
 }
 
+/* the segmented control stretches full-width on mobile; in the desktop
+ * topbar it sizes to content */
 .dash .segmented {
   width: max-content;
   gap: 5px;
@@ -437,215 +428,15 @@
 }
 
 .dash .segmented button {
-  padding: 9px 20px;
-  font-size: 13px;
+  min-height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
 }
 
 .dash .date-range {
   width: 360px;
   max-width: 100%;
   margin-bottom: 0;
-}
-
-/* ===== full-night / coach modal on desktop (phone-shaped dialog) ===== */
-.desktop-modal-wrap {
-  position: fixed;
-  inset: 0;
-  z-index: 700;
-  display: grid;
-  place-items: center;
-  background: rgba(5, 7, 14, 0.62);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  animation: fade 0.25s ease both;
-}
-
-/* re-style the shared mobile Sheet markup into a centered desktop card:
- * drop the phone bottom-sheet positioning + grip, present it as a dialog */
-.desktop-modal-wrap>.sheet-scrim {
-  display: none;
-}
-
-.desktop-modal-wrap>.sheet {
-  position: relative;
-  inset: auto;
-  top: auto;
-  bottom: auto;
-  left: auto;
-  right: auto;
-  width: min(620px, 94vw);
-  max-width: 620px;
-  max-height: 86vh;
-  margin: 0;
-  border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-xl);
-  box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
-  transform: none;
-  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
-  padding-top: 0px;
-}
-
-.desktop-modal-wrap>.sheet.full,
-.desktop-modal-wrap>.sheet.page {
-  top: auto;
-  bottom: auto;
-  left: auto;
-  right: auto;
-  max-height: 86vh;
-  border-radius: var(--r-xl);
-  transform: none;
-  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
-  padding-top: 0px;
-}
-
-.desktop-modal-wrap>.sheet.closing {
-  animation: fadeOut 0.25s ease both;
-}
-
-.desktop-modal-wrap>.sheet .sheet-grip {
-  display: none;
-}
-
-.desktop-modal-wrap>.sheet .sheet-head {
-  padding-top: 20px;
-}
-
-/* wide desktop dialog (full-night) */
-.desktop-dialog {
-  width: min(960px, 94vw);
-  max-height: 88vh;
-  overflow-y: auto;
-  scrollbar-width: none;
-  background: linear-gradient(180deg, var(--surface-2) 0%, var(--bg-base) 22%);
-  border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-xl);
-  box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
-  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-.desktop-dialog::-webkit-scrollbar {
-  display: none;
-}
-
-@keyframes dfn-pop {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.985);
-  }
-}
-
-.dfn {
-  padding: 28px 30px 26px;
-}
-
-.dfn-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-
-.dfn-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 6px;
-}
-
-.dfn-title {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 27px;
-  letter-spacing: -0.01em;
-}
-
-.dfn-close {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--hairline);
-}
-
-.dfn-close:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.dfn-stats {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.dfn-stat {
-  flex: 1;
-  padding: 16px 18px;
-  border-radius: var(--r-md);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-}
-
-.dfn-stat-k {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 6px;
-}
-
-.dfn-stat b {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 30px;
-  letter-spacing: -0.01em;
-}
-
-.dfn-charts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-
-.dfn-lower {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.dfn-col {
-  min-width: 0;
-}
-
-.dfn-col .section-head:first-child {
-  margin-top: 0;
-}
-
-.dfn .disclaimer {
-  margin-top: 22px;
-}
-
-.disclaimer {
-  font-size: 12px;
-  text-align: left;
-}
-
-@media (max-width: 760px) {
-
-  .dfn-charts,
-  .dfn-lower {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ===== headings ===== */
@@ -671,18 +462,12 @@
   font-weight: 600;
 }
 
-.dash-head-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
 /* quiet inline action that lives in a section heading (e.g. "Compare nights") */
 .dash-head-action {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--accent-soft);
   transition: color 0.15s ease, gap 0.15s ease;
@@ -693,7 +478,578 @@
   gap: 6px;
 }
 
-/* ===== compare-two-nights dialog ===== */
+.dash .disclaimer {
+  margin-top: 28px;
+  font-size: 12px;
+  text-align: left;
+}
+
+/* ===== Tonight ===== */
+/* the night sky sits behind the page head and hero, inside the main column
+ * (the sidebar stays plain). Its glows are sized for a phone, so they're
+ * scaled up to fill a wide column. */
+.dash-sky.sky {
+  height: 820px;
+  z-index: -1;
+}
+
+.dash-sky .sky-glow.a {
+  width: 52%;
+  height: 420px;
+  left: -8%;
+  top: -120px;
+}
+
+.dash-sky .sky-glow.b {
+  width: 40%;
+  height: 380px;
+  right: -6%;
+  top: 20px;
+}
+
+.dash-sky .sky-glow.c {
+  width: 70%;
+  height: 360px;
+  left: 10%;
+  top: 340px;
+}
+
+/* the hero across the full width, then the check-in + last night's
+ * numbers side by side beneath it */
+.dash-tonight-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.dash .why-horizon {
+  padding-top: 0;
+}
+
+.dash .wh-headline {
+  font-size: 56px;
+}
+
+/* the horizon spans its column instead of bleeding past phone padding */
+.dash .wh-figure {
+  margin: 10px 0 0;
+}
+
+.dash .wh-usual-label {
+  right: 0;
+}
+
+.dash .wh-ask:hover {
+  transform: scale(1.06);
+}
+
+.dash-tonight-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* older nights have no check-in beside it, so last night's numbers take the
+ * whole row rather than half of it */
+.dash-tonight-pair > :only-child {
+  grid-column: 1 / -1;
+}
+
+/* the pair shares one height; the check-in's shorter content sits centred
+ * rather than leaving an empty band at the bottom */
+.dash-tonight-pair > .ck-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* once checked in, the card folds to one line — it becomes a slim bar
+ * above last night instead of a tall, mostly empty half */
+.dash-tonight-pair:has(> .ck-card.done) {
+  grid-template-columns: 1fr;
+}
+
+.dash .tn-module {
+  margin: 0;
+}
+
+.dash-body-module {
+  margin-top: 28px !important;
+}
+
+/* wearables lay out side by side inside the one module */
+.dash-body-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0 32px;
+}
+
+.dash-body-grid .body-card + .body-card {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* secondary metrics: three equal columns (mirrors .phone .metrics-row) */
+.dash .metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 4px;
+  padding: 0;
+  overflow: visible;
+}
+
+.dash .metric {
+  min-width: 0;
+  padding: 13px 12px 11px;
+}
+
+.dash .metric .m-value {
+  white-space: nowrap;
+}
+
+.dash .metric .m-unit {
+  font-size: 12px;
+  line-height: 1.35;
+  min-height: 2.7em; /* two lines, so all three cards keep the same height */
+}
+
+.dash .tn-module .row-cta {
+  min-height: 48px;
+}
+
+.dash-tonight-skeleton .sk-horizon {
+  margin: 34px 0 0;
+}
+
+/* ===== Trends ===== */
+/* the tiles + the one large chart on the left, a reading rail on the right */
+.dash-trends-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr);
+  gap: 18px 28px;
+  align-items: start;
+}
+
+.dash-trends-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* patterns follow the chart; their heading owns the space above */
+.dash-trends-main > section > .dash-head {
+  margin-top: 8px;
+}
+
+.dash .trend-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.dash .trend-tile {
+  min-height: 76px;
+}
+
+.dash .trend-tile:hover:not(.on) {
+  border-color: var(--hairline-strong);
+}
+
+.dash-trend-chart {
+  margin: 0;
+  padding: 20px 20px 16px;
+}
+
+.dash-legend {
+  margin: 0 0 12px;
+  padding: 0;
+  border: none;
+}
+
+.dash-rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-rail > .dash-head:first-child {
+  margin-top: 0;
+}
+
+.dash-rail .insight-list,
+.dash-rail .compare {
+  margin: 0;
+}
+
+/* best/worst stack in the rail instead of two squeezed columns */
+.dash-rail .compare {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.dash-patterns {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dash-patterns > .pattern,
+.dash-patterns > .pattern-card {
+  margin: 0;
+}
+
+/* ===== Therapy ===== */
+.therapy-hero .projection {
+  margin: 0;
+  padding: 22px 24px 18px;
+}
+
+.dash-grid {
+  display: grid;
+  gap: 0 28px;
+  align-items: start;
+}
+
+.dash-grid-therapy {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 8px;
+}
+
+.dash-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-col > .device-card,
+.dash-col > .list,
+.dash-col > .equip,
+.dash-col > .profile-card {
+  margin: 0;
+}
+
+.dash-export {
+  margin: 0;
+}
+
+/* the SD-card import follows the equipment list in the right column */
+.dash-col > .sd-card {
+  margin: 18px 0 0;
+}
+
+/* buttons on the dashboard take its square-ish corners, not pills */
+.dash .btn {
+  border-radius: var(--r-sm);
+}
+
+/* ===== You ===== */
+/* the profile across the top, then Account + devices beside Settings, all
+ * inline (on mobile these are separate pages) */
+.dash-profile {
+  background: var(--surface-1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px 40px;
+  padding: 20px 24px;
+}
+
+.dash .profile-card .profile-head {
+  padding: 0;
+}
+
+.dash-profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 40px;
+  margin: 0;
+}
+
+.dash-profile-facts dt {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.dash-profile-facts dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dash-you {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 40px;
+  align-items: start;
+}
+
+.dash-you-title {
+  margin: 34px 0 2px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.dash-you .settings-note {
+  margin: 0 0 12px;
+}
+
+/* ===== panel (surface card — used for raw charts) ===== */
+.panel {
+  background: linear-gradient(180deg, var(--surface-1) 0%, color-mix(in srgb, var(--surface-1) 70%, var(--bg-base)) 100%);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: 20px 20px 16px;
+  height: 100%;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel-head h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.panel-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+/* ===== sheets as desktop dialogs ===== */
+/* buttons in every desktop dialog take the desktop's square-ish corners */
+.desktop-modal-wrap .btn {
+  border-radius: var(--r-sm);
+}
+
+.desktop-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 7, 14, 0.62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: fade 0.25s ease both;
+}
+
+/* re-style the shared mobile Sheet markup into a centered desktop card:
+ * drop the phone bottom-sheet positioning, grip and status bar */
+.desktop-modal-wrap > .sheet-scrim {
+  display: none;
+}
+
+.desktop-modal-wrap > .sheet,
+.desktop-modal-wrap > .sheet.full,
+.desktop-modal-wrap > .sheet.page {
+  position: relative;
+  inset: auto;
+  width: min(620px, 94vw);
+  max-width: 620px;
+  height: auto;
+  max-height: 86vh;
+  margin: 0;
+  padding-top: 0;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-xl);
+  /* flat on desktop: no blue gradient wash, no check-in sky */
+  background: var(--bg-base);
+  box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
+  transform: none;
+  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.desktop-modal-wrap > .sheet.ck-sheet::before {
+  display: none;
+}
+
+.desktop-modal-wrap > .sheet.closing {
+  animation: fadeOut 0.25s ease both;
+}
+
+.desktop-modal-wrap > .sheet > .statusbar,
+.desktop-modal-wrap > .sheet .sheet-grip,
+.desktop-modal-wrap > .sheet .sheet-edge {
+  display: none;
+}
+
+.desktop-modal-wrap > .sheet .sheet-head {
+  padding-top: 20px;
+}
+
+/* the coach dialog: no "Nox / Ask anything" title — Nox himself (flown in
+ * from the sidebar) opens it; the close button keeps its corner */
+.desktop-modal-wrap > .coach-sheet .sheet-title {
+  display: none;
+}
+
+.desktop-modal-wrap > .coach-sheet .sheet-close {
+  margin-left: auto;
+}
+
+/* the round close / back buttons (their glass style is phone-scoped) */
+.desktop-modal-wrap .sheet-close,
+.desktop-modal-wrap .sheet-back {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hairline);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.desktop-modal-wrap .sheet-close:hover,
+.desktop-modal-wrap .sheet-back:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* wide desktop dialog (full night, compare) */
+.desktop-dialog {
+  width: min(980px, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  background: var(--bg-base);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-xl);
+  box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
+  animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.desktop-dialog::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes dfn-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+/* ----- full night ----- */
+.dfn {
+  padding: 28px 30px 26px;
+}
+
+.dfn-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.dfn-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.dfn-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+}
+
+.dfn-close {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hairline);
+}
+
+.dfn-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dfn .fn-summary-card {
+  margin: 0 0 4px;
+}
+
+.dfn .night-card {
+  margin: 0;
+}
+
+.dfn-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* each machine graph is a button that opens its metric page */
+.dfn-metric {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.dfn-metric:hover {
+  border-color: var(--hairline-strong);
+  transform: translateY(-1px);
+}
+
+.dfn-metric:hover .panel-meta {
+  color: var(--text-secondary);
+}
+
+.dfn-lower {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+
+.dfn-col {
+  min-width: 0;
+}
+
+.dfn-lower.solo {
+  grid-template-columns: 1fr;
+}
+
+.dfn .disclaimer {
+  margin-top: 22px;
+  font-size: 12px;
+  text-align: left;
+}
+
+/* ----- compare two nights ----- */
 .cmp2-dialog {
   width: min(720px, 94vw);
 }
@@ -711,12 +1067,10 @@
 }
 
 .cmp2-eyebrow {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 6px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
 }
 
 .cmp2-title {
@@ -763,15 +1117,16 @@
 
 .cmp2-select {
   width: 100%;
+  min-height: 48px;
   appearance: none;
   -webkit-appearance: none;
-  padding: 11px 34px 11px 14px;
+  padding: 0 34px 0 14px;
   border-radius: var(--r-md);
   background: var(--surface-1);
   border: 1px solid var(--hairline-strong);
   color: var(--text-primary);
   font-family: var(--font-body);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s ease;
@@ -780,7 +1135,7 @@
 .cmp2-select:hover,
 .cmp2-select:focus-visible {
   outline: none;
-  border-color: rgba(240, 164, 122, 0.4);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
 .cmp2-select-caret {
@@ -792,11 +1147,11 @@
   pointer-events: none;
 }
 
-/* state tag under each picker — colors follow the why-card state language */
+/* state tag under each picker. A condition, never a grade: steady/better
+ * nights stay neutral blue, only a doctor-worthy night takes the coral */
 .cmp2-state {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.04em;
   padding: 4px 11px;
   border-radius: var(--r-pill);
   color: var(--text-secondary);
@@ -810,16 +1165,16 @@
 
 .cmp2-state.win,
 .cmp2-state.steady {
-  color: var(--good);
-  background: rgba(125, 201, 154, 0.12);
+  color: var(--data-1);
+  background: color-mix(in srgb, var(--data-1) 12%, transparent);
 }
 
 .cmp2-state.escalation {
   color: var(--alert);
-  background: rgba(224, 122, 106, 0.12);
+  background: color-mix(in srgb, var(--alert) 12%, transparent);
 }
 
-.cmp2-state.insufficient {
+.cmp2-state.insufficient_data {
   color: var(--text-tertiary);
 }
 
@@ -842,21 +1197,16 @@
   font-size: 30px;
   letter-spacing: -0.01em;
   color: var(--text-primary);
-}
-
-.cmp2-val.steady {
-  color: var(--good);
+  font-feature-settings: 'tnum' 1;
 }
 
 .cmp2-flag {
   display: block;
   margin-top: 4px;
   font-family: var(--font-body);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--good);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
 .cmp2-metric {
@@ -868,21 +1218,20 @@
 }
 
 .cmp2-metric-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
 .cmp2-metric-unit {
-  font-size: 10.5px;
+  font-size: 12px;
   color: var(--text-tertiary);
 }
 
 .cmp2-verdicts {
   gap: 0 16px;
   margin-top: 18px;
+  align-items: stretch;
 }
 
 .cmp2-verdict {
@@ -899,22 +1248,19 @@
 
 .cmp2-verdict:last-child {
   grid-column: 3;
-  height: -webkit-fill-available;
 }
 
 .cmp2-verdict-k {
   display: block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-tertiary);
   margin-bottom: 8px;
 }
 
 .cmp2-verdict p {
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 400;
   line-height: 1.3;
   color: var(--text-primary);
@@ -922,10 +1268,317 @@
 
 .cmp2 .disclaimer {
   margin-top: 22px;
+  font-size: 12px;
+  text-align: left;
+}
+
+/* ----- all nights (calendar) ----- */
+.cal-dialog {
+  width: min(1060px, 94vw);
+}
+
+.cal {
+  padding: 28px 30px 24px;
+}
+
+/* the night's detail sits beside the month, as tall as it, with its one
+ * action pinned to the bottom of the card */
+.cal-dialog .cal-body {
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.cal-dialog .cal-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-dialog .cal-detail .btn {
+  margin-top: auto;
+}
+
+.cal-dialog .cal-detail-note {
+  margin-bottom: 16px;
+}
+
+.cal .disclaimer {
+  margin-top: 20px;
+  font-size: 12px;
+  text-align: left;
+}
+
+/* ===== desktop onboarding =====
+ * The phone's first-run flow (screens/Onboarding.jsx), full-window on the
+ * night sky. Every screen (splash, questionnaire, sign in, save your setup,
+ * welcome) is one centred column, never a card or a modal. Desktop touches:
+ * no phone status bar, square-ish corners, option lists two-up, and a step's
+ * actions in one row right under it, the whole group centred vertically. */
+.desktop-onboarding {
+  --side-w: 0px; /* the status pill centres on the window, no sidebar */
+  --ob-col: min(640px, 100% - 64px);
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.desktop-onboarding .statusbar {
+  display: none;
+}
+
+.desktop-onboarding .btn,
+.desktop-onboarding .ob-intro-peek span {
+  border-radius: var(--r-sm);
+}
+
+/* the glass back / close buttons are phone-scoped; a desktop look instead */
+.desktop-onboarding :is(.ob-back, .sheet-close) {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hairline);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.desktop-onboarding :is(.ob-back, .sheet-close):hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ----- splash: centred, as on the phone, at a desktop scale. The copy
+ * follows right under the logo lockup (at 30% of the height) instead of
+ * sitting at the bottom of the window as it does on the phone ----- */
+.desktop-onboarding :is(.ob-intro-main, .ob-intro-foot) {
+  width: min(520px, 100% - 48px);
+  margin-inline: auto;
+}
+
+.desktop-onboarding .ob-intro-main {
+  flex: none;
+  margin-top: calc(30vh + 96px);
+  padding-bottom: 0;
+}
+
+.desktop-onboarding .ob-intro-title {
+  font-size: 56px;
+}
+
+.desktop-onboarding .ob-intro-copy {
+  max-width: 420px;
+  font-size: 18px;
+}
+
+/* the two ways in, side by side and centred */
+.desktop-onboarding .ob-intro-foot {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding-top: 32px;
+}
+
+.desktop-onboarding .ob-intro-foot .btn {
+  width: auto;
+  padding: 0 28px;
+}
+
+/* the splash's "Look around first": in line with the back button on every
+ * other screen, not the phone's below-the-status-bar offset */
+.desktop-onboarding .ob-intro-peek {
+  top: 24px;
+  right: 24px;
+}
+
+/* ----- every other screen: one centred column, one fixed frame -----
+ * The same frame on every screen: Back + progress at its top, the actions
+ * pinned to its bottom (the primary always bottom-right, so Continue never
+ * moves between steps), and the step centred in the space between. Screens
+ * whose buttons belong inline (sign in, email) centre as one group. */
+.desktop-onboarding :is(.ob-screen, .welcome) {
+  padding-block: max(32px, calc((100vh - 820px) / 2));
+}
+
+.desktop-onboarding
+  .ob-screen
+  > :is(.ob-nav, .ob-account-note, .ob-body, .ob-foot, .si-screen) {
+  width: var(--ob-col);
+  margin-inline: auto;
+}
+
+.desktop-onboarding .ob-nav {
+  padding: 0;
+}
+
+/* sign in / sign up / email: a narrower column than the questionnaire —
+ * its buttons and fields read better at a form's width */
+.desktop-onboarding .ob-screen:has(> .si-screen) > :is(.ob-nav, .si-screen) {
+  width: min(440px, 100% - 64px);
+}
+
+/* the step centres in the space between the nav and the actions; with no
+ * action row (sign in), it centres in the whole space below the nav */
+.desktop-onboarding :is(.ob-screen, .si-screen) > .ob-body {
+  flex: 0 1 auto;
+  margin-block: auto;
+}
+
+.desktop-onboarding .ob-content {
+  padding: 32px 0;
+}
+
+.desktop-onboarding .ob-title {
+  font-size: 40px;
+}
+
+.desktop-onboarding .ob-copy {
+  font-size: 18px;
+}
+
+/* option lists go two-up */
+.desktop-onboarding .ob-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* actions in one row: the primary always on the right, Skip / later on the
+ * left, any fine print on its own line above them */
+.desktop-onboarding .ob-foot {
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0 0;
+}
+
+.desktop-onboarding .ob-foot .btn {
+  width: auto;
+  min-width: 180px;
+  padding: 0 28px;
+}
+
+.desktop-onboarding .ob-foot .btn.subtle {
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.desktop-onboarding .ob-foot > :not(.btn) {
+  order: -1;
+  flex-basis: 100%;
+  margin: 0 0 4px;
+  max-width: none;
+}
+
+/* Meet Nox flies in from off-stage: let his path show past the body */
+.desktop-onboarding .ob-body:has(.mc-screen) {
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* ----- welcome: the same frame, its one action bottom-right ----- */
+.desktop-onboarding :is(.wl-body, .wl-foot) {
+  width: var(--ob-col);
+  margin-inline: auto;
+}
+
+.desktop-onboarding .wl-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0 0;
+}
+
+.desktop-onboarding .wl-foot .btn {
+  width: auto;
+  min-width: 180px;
+  padding: 0 28px;
+  margin: 0;
+}
+
+/* info tips + the SD card import: a centred card sized to its content,
+ * not a full-width (or 92%-tall) bottom sheet */
+.desktop-onboarding .sheet {
+  left: max(0px, calc(50% - 300px));
+  right: max(0px, calc(50% - 300px));
+  top: 0;
+  bottom: 0;
+  height: fit-content;
+  max-height: calc(100% - 48px);
+  margin-block: auto;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--hairline-strong);
+  background: var(--bg-base);
+}
+
+.desktop-onboarding .sheet .sheet-grip {
+  display: none;
+}
+
+/* ===== responsive ===== */
+@media (max-width: 1180px) {
+  .dash-tonight-pair,
+  .dash-trends-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* the rail reflows beside itself once it has the full width */
+  .dash-rail .compare {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .dash-grid-therapy,
+  .dash-you,
+  .cal-dialog .cal-body {
+    grid-template-columns: 1fr;
+  }
+
+  .dash .trend-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  /* a narrow window always gets the icon rail */
+  .dash {
+    --side-w: 76px;
+  }
+
+  .dash-sidebar {
+    padding: 26px 12px;
+  }
+
+  .dash :is(.dash-wordmark, .dash-label, .dash-collapse) {
+    display: none;
+  }
+
+  .dash-brand {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .dash :is(.dash-nav-item, .dash-coach) {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .dash-main {
+    padding: 24px 20px 64px;
+  }
+
+  .dfn-charts,
+  .dfn-lower {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
-
   .cmp2-cols,
   .cmp2-row,
   .cmp2-verdicts {
@@ -934,630 +1587,5 @@
 
   .cmp2-val {
     font-size: 24px;
-  }
-}
-
-.dash-section-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin: 20px 0 12px;
-}
-
-/* ===== grids ===== */
-/* one rhythm everywhere: 18px between cards and grid tracks, headings own the
- * 26px band above each section — nothing else adds vertical margin */
-.dash-grid {
-  display: grid;
-  gap: 18px;
-  align-items: stretch;
-}
-
-.dash-grid-tonight {
-  grid-template-columns: 1.35fr 1fr;
-}
-
-/* hero row — why-card beside its pattern card, same column split as the grid
- * below so the two stay aligned. `.solo` lets the why-card fill the row when a
- * night has no pattern. */
-.dash-tonight-hero {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 18px;
-  align-items: stretch;
-  margin-bottom: 18px;
-}
-
-.dash-tonight-hero.solo {
-  grid-template-columns: 1fr;
-}
-
-.dash-tonight-hero>.why-card,
-.dash-tonight-hero>.pattern-card {
-  margin: 0;
-  height: 100%;
-}
-
-/* the night timeline runs full-width as a hero band; the following section
- * heading owns the gap beneath it */
-.dash-main>.night-card {
-  margin: 0;
-}
-
-/* wearable body cards lay out side by side and reflow; the empty state spans
- * the whole row rather than sitting in a lonely narrow column */
-.dash-tonight-body {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 18px;
-  align-items: start;
-}
-
-.dash-tonight-body.empty {
-  display: block;
-}
-
-.dash-tonight-body>* {
-  margin: 0;
-}
-
-/* KPI stat-card row (AHI + secondary metrics) — uniform cards, full width.
- * No bottom margin: the next section's heading owns the space below. */
-.dash-kpis {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.dash-kpi {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-  min-width: 0;
-  padding: 18px 18px 16px;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--hairline);
-  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
-  transition: border-color 0.18s ease, transform 0.18s ease;
-}
-
-button.dash-kpi {
-  cursor: pointer;
-}
-
-button.dash-kpi:hover {
-  border-color: var(--hairline-strong);
-  transform: translateY(-2px);
-  box-shadow: 0 16px 30px -22px rgba(0, 0, 0, 0.8);
-}
-
-button.dash-kpi:focus-visible {
-  outline: none;
-  border-color: rgba(240, 164, 122, 0.5);
-}
-
-/* AHI is the hero metric, but its card shares the same surface, border, and
- * label treatment as the other KPIs so the row reads as one consistent set —
- * only the numeral is larger, distinguishing it by size rather than colour */
-.dash-kpi.primary .dash-kpi-v {
-  font-size: 44px;
-}
-
-.dash-kpi-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 20px;
-}
-
-.dash-kpi-k {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-
-.dash-kpi-v {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 34px;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  margin-top: 10px;
-}
-
-.dash-kpi-u {
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--text-tertiary);
-  margin-left: 3px;
-}
-
-.dash-kpi-chart {
-  margin: 14px 0 10px;
-}
-
-.dash-kpi-sub {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: auto;
-}
-
-.dash-grid-charts {
-  grid-template-columns: 1fr 1fr;
-  margin-top: 18px;
-}
-
-.dash-grid-2 {
-  grid-template-columns: 1fr 1fr;
-  margin-top: 18px;
-}
-
-/* a section label already owns the space above the grid it introduces */
-.dash-section-label+.dash-grid-2 {
-  margin-top: 0;
-}
-
-.dash-grid-therapy {
-  grid-template-columns: 1fr 1fr;
-}
-
-/* ===== Therapy: status strip + compliance hero ===== */
-/* four at-a-glance stat cards (compliance, projection, next replacement,
- * device sync) so the page opens with a real overview row */
-.dash-statline {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  margin-bottom: 18px;
-}
-
-.stat-mini {
-  min-width: 0;
-  padding: 16px 18px 14px;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--hairline);
-  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
-}
-
-.stat-mini .sm-k {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-
-.stat-mini .sm-v {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 22px;
-  letter-spacing: -0.01em;
-  margin: 8px 0 4px;
-  font-feature-settings: 'tnum' 1;
-}
-
-.stat-mini .sm-sub {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-/* the compliance projection is the page's most important content — give it
- * the full row under the strip rather than burying it in a column */
-.therapy-hero {
-  margin-bottom: 18px;
-}
-
-.therapy-hero .projection {
-  margin: 0;
-  padding: 22px 24px 18px;
-}
-
-.dash-grid-you {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.dash-col {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/* the single card inside a Tonight column fills its stretched column so the
- * night-card and body-card end up the same height */
-.dash-grid-tonight .dash-col>.night-card,
-.dash-grid-tonight .dash-col>.body-card {
-  flex: 1;
-}
-
-/* Trends: 2×2 chart grid on the left, a narrow reading rail on the right with
- * the insights, journal patterns, and best/worst night stacked in priority
- * order — gives the page a clear primary/secondary split instead of one long
- * undifferentiated scroll */
-/* one full-width column: the chart grid, then best/worst, then the highlights
- * rail — each stretched across the whole page rather than charts-beside-rail */
-.dash-trends-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
-  align-items: start;
-  margin-top: 18px;
-}
-
-/* left column: the chart grid with best/worst stacked beneath it */
-.dash-trends-main {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  min-width: 0;
-}
-
-.dash-trends-charts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-/* best/worst sits below the charts now — full left-column width, two cards */
-.dash-bestworst .dash-head {
-  margin: 0 0 12px;
-}
-
-.dash-bestworst .compare {
-  margin: 0;
-}
-
-/* full-width band beneath best/worst: the two highlight sections sit side by
- * side so the list copy doesn't stretch the whole page. align-items: stretch
- * lets both columns share the taller one's height. */
-.dash-rail {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  align-items: stretch;
-  min-width: 0;
-}
-
-/* each section is heading + card; make it a flex column so the card can grow to
- * fill the shared row height — "What stands out" and "From your journal" match */
-.dash-rail > div {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.dash-rail .dash-head {
-  margin: 0 0 10px;
-}
-
-.dash-rail .insight-list,
-.dash-rail .pattern,
-.dash-rail .compare {
-  margin: 0;
-}
-
-/* both cards grow to fill their (now equal-height) column */
-.dash-rail .insight-list,
-.dash-rail .dash-patterns {
-  flex: 1;
-}
-
-/* best/worst stack vertically in the rail instead of two squeezed columns */
-.dash-rail .compare {
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-.dash-patterns {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.dash-patterns>.pattern {
-  flex: 1;
-  margin: 0;
-}
-
-.dash-cell {
-  min-width: 0;
-}
-
-/* quiet empty state for the body column when no wearable is connected */
-.ghost-card {
-  flex: 1;
-  display: grid;
-  gap: 6px;
-  place-content: center;
-  text-align: center;
-  padding: 28px 24px;
-  border: 1px dashed var(--hairline-strong);
-  border-radius: var(--r-lg);
-  color: var(--text-tertiary);
-}
-
-.ghost-card b {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.ghost-card span {
-  font-size: 12.5px;
-  line-height: 1.5;
-  max-width: 340px;
-  margin: 0 auto;
-}
-
-/* inside a column, cards already carry an 18px bottom margin — a following
- * section head only adds a small extra band, and the first head hugs the top */
-.dash-col>.dash-head {
-  margin-top: 8px;
-}
-
-.dash-cell>.dash-head:first-child,
-.dash-col>.dash-head:first-child {
-  margin-top: 0;
-}
-
-/* ===== panel (surface card — used for raw charts + profile) ===== */
-.panel {
-  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-  padding: 20px 20px 16px;
-  height: 100%;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
-}
-
-.panel-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.panel-head h3 {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 16px;
-}
-
-.panel-meta {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  font-weight: 600;
-}
-
-.dash-legend {
-  margin: 0 0 12px;
-  padding: 0;
-  border: none;
-}
-
-/* ===== trend tiles row ===== */
-.dash-tiles {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  /* the layout grid below owns the gap (margin-top: 18px) so it stays uniform */
-  margin-bottom: 0;
-}
-
-/* ===== You profile ===== */
-.dash-profile-panel {
-  margin-bottom: 22px;
-}
-
-.dash-profile-panel .profile-head {
-  margin: 0;
-}
-
-/* ===== You — settings with a left sub-nav and a readable content column =====
- * settings rows were stretching the full ~1200px content width; the grid caps
- * the column at 720px with the section nav alongside, like every good web
- * settings page */
-.dash-you {
-  display: grid;
-  grid-template-columns: 208px minmax(0, 720px);
-  gap: 40px;
-  align-items: start;
-}
-
-.dash-tabs {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  position: sticky;
-  top: 30px;
-}
-
-.dash-tab {
-  padding: 11px 14px;
-  font-size: 14px;
-  font-weight: 600;
-  text-align: left;
-  border-radius: var(--r-md);
-  color: var(--text-tertiary);
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.dash-tab:hover {
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.dash-tab.active {
-  color: var(--accent);
-  background: var(--accent-glow);
-}
-
-.dash-settings-body {
-  width: 100%;
-  min-width: 0;
-}
-
-.dash-settings-body .dash-head:first-child {
-  margin-top: 0;
-}
-
-/* ===== reuse fixups inside the dashboard ===== */
-/* the secondary-metrics carousel bleeds to phone edges on mobile; cancel that */
-.dash .metrics-row {
-  margin: 0;
-  padding: 0;
-  flex-wrap: wrap;
-}
-
-.dash .metric {
-  flex: 1 1 150px;
-}
-
-/* cards already carry their own margins on mobile; let the flex gap own spacing */
-.dash-col>.why-card,
-.dash-col>.metric-primary,
-.dash-col>.night-card,
-.dash-col>.device-card,
-.dash-col>.projection,
-.dash-col>.equip,
-.dash-col>.list,
-.dash-col>.mask-card,
-.dash-col>.metrics-row,
-.dash-col>.body-card {
-  margin-bottom: 18px;
-}
-
-.dash-col> :last-child {
-  margin-bottom: 0;
-}
-
-/* on desktop the device card fills the remaining column height (mobile keeps
- * the fit-content height set in screens.css) */
-.dash .device-card {
-  height: -webkit-fill-available;
-  height: stretch;
-}
-
-/* non-interactive rows on desktop (management lives in the mobile sheets) */
-.list-row.static {
-  cursor: default;
-}
-
-.list-row.static:hover {
-  background: none;
-}
-
-.dash-grid-2>.insight-list,
-.dash-grid-2>.compare,
-.dash-grid-2>.pattern-card {
-  margin: 0;
-}
-
-.dash .pattern-card {
-  margin: 0 0 16px;
-}
-
-.dash-col>.pattern-card:last-child {
-  margin-bottom: 0;
-}
-
-/* flattened Account/Settings: notes and lists sit flush inside their cell */
-.dash-cell>.settings-note {
-  margin: 0 0 12px;
-}
-
-.dash-cell>.settings-note:last-child {
-  margin-bottom: 0;
-}
-
-/* ===== responsive ===== */
-/* The Trends page is already a single full-width column; below ~1280px the two
- * highlight sections in the rail stack instead of sitting side by side. */
-@media (max-width: 1280px) {
-  .dash-rail {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 1180px) {
-
-  .dash-grid-tonight,
-  .dash-grid-therapy,
-  .dash-tonight-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .dash-kpis,
-  .dash-statline {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .dash-grid-you {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .dash-tiles {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .dash-weeknav {
-    min-width: 100%;
-  }
-
-  /* settings nav returns to a horizontal row above the content column */
-  .dash-you {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .dash-tabs {
-    flex-direction: row;
-    flex-wrap: wrap;
-    position: static;
-  }
-}
-
-@media (max-width: 820px) {
-  .dash-sidebar {
-    width: 76px;
-    padding: 22px 12px;
-  }
-
-  .dash-wordmark,
-  .dash-nav-item span,
-  .dash-coach-text,
-  .dash-sync-text,
-  .dash-user-meta {
-    display: none;
-  }
-
-  .dash-nav-item {
-    justify-content: center;
-  }
-
-  .dash-coach,
-  .dash-sync {
-    justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .dash-brand {
-    justify-content: center;
-    padding: 6px 0 0;
-  }
-
-  .dash-main {
-    padding: 24px 20px 64px;
-  }
-
-  .dash-grid-charts,
-  .dash-grid-2,
-  .dash-grid-you {
-    grid-template-columns: 1fr;
   }
 }

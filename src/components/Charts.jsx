@@ -401,7 +401,9 @@ const DEFAULT_LAYERS = [
   { key: 'osa', color: 'dataDeep', label: 'Obstructive' },
   { key: 'hyp', color: 'dataSoft', label: 'Hypopnea' },
 ];
-export function StackedBars({ series, height = 132, layers = DEFAULT_LAYERS }) {
+/* `centered`: each bar in the middle of its own slot, so a row of labels
+ * laid out in equal columns sits exactly under the bars (events by hour) */
+export function StackedBars({ series, height = 132, layers = DEFAULT_LAYERS, centered = false }) {
   const mk = (key, hex, label) => ({
     label,
     data: series.map((d) => d[key]),
@@ -430,7 +432,7 @@ export function StackedBars({ series, height = 132, layers = DEFAULT_LAYERS }) {
       },
     },
     scales: {
-      x: { ...HIDDEN_AXES.x, stacked: true },
+      x: { ...HIDDEN_AXES.x, stacked: true, offset: centered },
       y: { ...HIDDEN_AXES.y, stacked: true },
     },
   };

@@ -15,7 +15,7 @@
  * re-weighting lines and dots for its current size (constellationWeights),
  * so it lands looking exactly like the artwork.
  *
- * Sound (lib/sound.js) follows the same timeline: a low pad comes up with the
+ * Sound (lib/sound.js — currently switched off, SOUND_ENABLED) follows the same timeline: a low pad comes up with the
  * sky, each star rings a bell as it's found, each line draws with a breath of
  * air, the closed constellation blooms into a chord, and the glide to the top
  * rises with a swell and settles with one soft note.
@@ -105,13 +105,14 @@ function offsetWithin(el, stage) {
   return [x, y];
 }
 
-export function ConstellationReveal({ className = '', stageRef, onResolve, handoff = false }) {
+/* `settled` starts on the finished artwork (the splash revisited) */
+export function ConstellationReveal({ className = '', stageRef, onResolve, handoff = false, settled = false }) {
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const onResolveRef = useRef(onResolve);
   onResolveRef.current = onResolve;
-  const [swap, setSwap] = useState(prefersReducedMotion); // artwork showing
-  const [done, setDone] = useState(prefersReducedMotion); // canvas retired
+  const [swap, setSwap] = useState(() => settled || prefersReducedMotion()); // artwork showing
+  const [done, setDone] = useState(() => settled || prefersReducedMotion()); // canvas retired
 
   // wait for the glide to the top to finish, then crossfade to the artwork
   useEffect(() => {

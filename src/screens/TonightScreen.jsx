@@ -1,4 +1,6 @@
 /* Nocta — Tonight tab. The hero why-card + last night's metrics + the night timeline. */
+import { firstName } from '../data/account.js';
+import { LAST_NIGHT } from '../data/history.js';
 import { Fragment } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { FIXTURES } from '../data/fixtures.js';
@@ -8,6 +10,7 @@ import { TonightSkeleton } from '../components/Skeleton.jsx';
 import { WeekStrip } from '../components/WeekStrip.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { CheckinPrompt } from '../components/CheckinPrompt.jsx';
+import { ProfileReminder } from '../components/ProfileReminder.jsx';
 import { WhyHorizon } from '../components/WhyHorizon.jsx';
 import { NightSwiper } from '../components/NightSwiper.jsx';
 import { MetricSecondary } from '../components/MetricSecondary.jsx';
@@ -25,24 +28,40 @@ export function TonightScreen() {
     syncing,
     syncNonce,
     checkin,
-    startSync,
-  } = useStore();
+    authUser, cardData } = useStore();
   const fx = FIXTURES[fixtureId];
   const bodyCards = activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads);
 
   return (
     <ScreenFrame
       title={`${fx.dayName}, ${fx.dateLabel.split(' · ')[0]}`}
-      onRefresh={startSync}
-      refreshing={syncing}
       className="tonight-open"
       sky={SKY_FOR_STATE[fx.insight.card_state] ?? 'clear'}
     >
       <header className="page-head">
         <div>
-          <div className="eyebrow">{fx.greeting}</div>
-          <h1>{fx.dayName}</h1>
-          <div className="sub">{fx.dateLabel}</div>
+          <div className="eyebrow">
+            {fx.greeting}
+            {fixtureId === LAST_NIGHT && firstName(authUser) ? `, ${firstName(authUser)}` : ''}
+          </div>
+          {/* the day is the way to every night: tap it for the calendar */}
+          <h1>
+            <button
+              className="day-picker"
+              type="button"
+              onClick={() => openSheet('calendar')}
+              aria-haspopup="dialog"
+            >
+              {fx.dayName}
+              <Icon name="chevronDown" size={20} />
+              <span className="sr-only">, see all nights</span>
+            </button>
+          </h1>
+          <div className="sub">
+            {fx.dateLabel}
+            {/* nothing imported: these are the bundled sample nights, not theirs */}
+            {!cardData && <span className="sample-tag">Sample data</span>}
+          </div>
         </div>
       </header>
 
@@ -70,13 +89,20 @@ export function TonightScreen() {
 
           {/* the check-in is half of what Nox learns from, so it sits right
            * under the night's suggestion rather than inside the full night */}
-          <CheckinPrompt checkin={checkin} onStart={(initial) => openSheet('checkin', { initial })} />
+          {/* the check-in is about last night, so it only shows there (on an
+           * older night it would save to the wrong night) */}
+          {fixtureId === LAST_NIGHT && (
+            <CheckinPrompt checkin={checkin} onStart={(initial) => openSheet('checkin', { initial })} />
+          )}
+
+          {/* a skipped onboarding question, now and then (lib/profile.js) */}
+          <ProfileReminder />
 
           {/* below the open hero, each section sits in its own soft module
            * (like Weather): grouping without heavy boxes */}
           <section className="tn-module">
             <div className="section-head">
-              <h3>Last night</h3>
+              <h3>{fixtureId === LAST_NIGHT ? 'Last night' : 'This night'}</h3>
               <span className="meta">
                 {fx.session.start}–{fx.session.end}
               </span>

@@ -37,14 +37,23 @@ const weekday = (iso) => toDate(iso).toLocaleDateString('en-US', { weekday: 'lon
 const listJoin = (xs) =>
   xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`;
 
-/* what made particular nights stand out (best/worst cards) */
-const NIGHT_NOTES = {
-  '2026-09-30': 'First night on CPAP · mostly on your stomach',
-  '2026-10-04': 'Side sleeping · in bed before midnight',
-  '2026-10-05': 'Side sleeping · exercised that day',
-  '2026-10-06': 'Central events through the night',
-  '2026-10-10': 'Stomach sleeping · wine + late meal · leak after 2 a.m.',
-};
+/* what made a night stand out (best/worst cards), from its own numbers */
+const LEAK_NOTE = 24;
+function nightNote(x) {
+  const parts = [];
+  if (x.ahi?.csa > 5) parts.push('Central events ran high');
+  if (x.leak > LEAK_NOTE) parts.push(`Leak ran high (${Math.round(x.leak)} L/min, 95th percentile)`);
+  parts.push(`${x.hours} h on the mask`);
+  return parts.join(' · ');
+}
+
+/* share of the window's events that were central (weighted by hours) */
+function centralShare(nights) {
+  const scored = nights.filter((x) => x.ahi);
+  const total = scored.reduce((a, x) => a + (x.ahi.csa + x.ahi.osa + x.ahi.hyp) * x.hours, 0);
+  if (!total) return null;
+  return scored.reduce((a, x) => a + x.ahi.csa * x.hours, 0) / total;
+}
 
 /* Early journal signal — stomach nights vs the rest, using only nights up to
  * `anchor`. It's the only pattern this little history can support, so it is
@@ -76,8 +85,6 @@ function stomachSignal(anchor) {
     ],
   };
 }
-/* as of the real last night — the Saturday why-card shares this */
-export const STOMACH_SIGNAL = stomachSignal(LAST_NIGHT);
 
 /* 7 evenly spaced axis slots: first, middle, last date */
 function axis(nights) {
@@ -89,19 +96,18 @@ function axis(nights) {
 function tiles(win, prior, nightsInWindow) {
   const tile = (key, label, value, unit, cur, prev, extra = {}) => {
     if (value == null) return { key, label, value: '—', unit: '', dir: 'flat', note: 'no data' };
-    if (prev == null) return { key, label, value, unit, dir: 'flat', ...extra };
+    // nothing earlier to compare with: say so, rather than "steady"
+    if (prev == null) return { key, label, value, unit, dir: 'flat', note: 'no earlier nights', ...extra };
     // leak reads in whole L/min, so its change does too
     const delta = key === 'leak' ? Math.round(cur - prev) : round1(cur - prev);
-    if (Math.abs(delta) < (key === 'leak' ? 1 : 0.3)) return { key, label, value, unit, dir: 'flat', ...extra };
+    if (Math.abs(delta) < (key === 'leak' ? 1 : 0.3)) return { key, label, value, unit, dir: 'flat', note: 'about the same as before', ...extra };
     return { key, label, value, unit, delta: Math.abs(delta), dir: delta > 0 ? 'up' : 'down' };
   };
   return [
     tile('ahi', 'AHI', win.ahi?.toFixed(1), '/h', win.ahi, prior?.ahi, {
-      note: `${win.scored} scored nights`,
+      note: `${win.scored} scored`,
     }),
-    tile('leak', 'Leak P95', win.leak == null ? null : String(Math.round(win.leak)), 'L/m', win.leak, prior?.leak, {
-      note: 'steady',
-    }),
+    tile('leak', 'Leak P95', win.leak == null ? null : String(Math.round(win.leak)), 'L/m', win.leak, prior?.leak),
     // usage is always "on nights used", with how many nights that was
     {
       key: 'hours',
@@ -109,16 +115,10 @@ function tiles(win, prior, nightsInWindow) {
       value: win.hours?.toFixed(1) ?? '—',
       unit: win.hours == null ? '' : 'h',
       dir: 'flat',
-      note: `${win.used} of ${nightsInWindow} nights`,
+      note: `${win.used} of ${nightsInWindow}`,
     },
-    {
-      key: 'pressure',
-      label: 'Pressure',
-      value: win.pressure?.toFixed(1) ?? '—',
-      unit: win.pressure == null ? '' : 'cmH₂O',
-      dir: 'flat',
-      note: 'steady',
-    },
+    // median pressure, compared with the window before like the others
+    tile('pressure', 'Pressure', win.pressure?.toFixed(1), 'cmH₂O', win.pressure, prior?.pressure),
   ];
 }
 
@@ -129,7 +129,7 @@ function bestWorst(nights) {
   const card = (x) => ({
     date: fmtDayShort(x.date),
     ahi: ahiTotal(x).toFixed(1),
-    note: NIGHT_NOTES[x.date] || `${x.hours} h on the mask`,
+    note: nightNote(x),
   });
   return { best: card(by[0]), worst: card(by.at(-1)) };
 }
@@ -233,7 +233,7 @@ function insights(scope, nights, anchor, days) {
   if (scored.length >= 2) {
     lines.push({
       icon: 'ahi',
-      text: `Across these **${nights.length}** nights your AHI averaged **${win.ahi}**, from a low of **${Math.min(...scored)}** to a high of **${Math.max(...scored)}**.`,
+      text: `Across these **${nights.length}** nights your AHI averaged **${win.ahi.toFixed(1)}**, from a low of **${Math.min(...scored).toFixed(1)}** to a high of **${Math.max(...scored).toFixed(1)}**.`,
     });
   } else {
     lines.push({ icon: 'ahi', text: lastNightLine(last, before) });
@@ -241,18 +241,30 @@ function insights(scope, nights, anchor, days) {
   const leak = leakLine(nights, 'all');
   if (leak) lines.push({ icon: 'leak', text: leak });
   const sofar = NIGHTS.filter((x) => x.date <= anchor).length;
-  lines.push({
-    icon: 'spark',
-    text: `It’s early. Nocta needs about two weeks of nights before it calls anything a trend. You’re at **${sofar}**.`,
-  });
+  const share = centralShare(nights);
+  if (sofar < 14) {
+    lines.push({
+      icon: 'spark',
+      text: `It’s early. Nocta needs about two weeks of nights before it calls anything a trend. You’re at **${sofar}**.`,
+    });
+  } else if (share != null && share > 0.5) {
+    // most events central, across many nights: a soft escalation (CLAUDE.md)
+    lines.push({
+      icon: 'ahi',
+      text: `**${Math.round(share * 100)}%** of your events in this range were central. That’s a pattern worth mentioning to your sleep doctor at your next visit.`,
+    });
+  } else {
+    lines.push({ icon: 'spark', text: `These numbers rest on **${nights.filter((x) => x.hours > 0).length}** nights with a session.` });
+  }
   return lines;
 }
 
 function series(nights) {
   return {
-    ahiSeries: nights.map((x) => x.ahi || { csa: 0, osa: 0, hyp: 0 }),
+    // unscored / no-session nights are gaps, not zeros
+    ahiSeries: nights.map((x) => x.ahi || { csa: null, osa: null, hyp: null }),
+    hoursSeries: nights.map((x) => (x.hours > 0 ? x.hours : null)),
     leakSeries: nights.map((x) => x.leak),
-    hoursSeries: nights.map((x) => x.hours),
     pressureSeries: nights.map((x) => x.pressure),
   };
 }

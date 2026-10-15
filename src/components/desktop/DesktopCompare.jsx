@@ -4,18 +4,21 @@
  * same fixtures as every other screen. No clinical scoring bands — "steadier"
  * is a neutral, per-metric note in the established sage = in-range language. */
 import { useState } from 'react';
-import { FIXTURES } from '../../data/fixtures.js';
-import { NIGHTS as HISTORY, dateForFixture } from '../../data/history.js';
+import { FIXTURES, FIXTURE_ORDER, EXAMPLE_FIXTURE } from '../../data/fixtures.js';
+import { NIGHTS as HISTORY, dateForFixture, toDate } from '../../data/history.js';
 import { useStore } from '../../lib/store.jsx';
 import { Icon } from '../Icons.jsx';
 import { Rich } from '../Rich.jsx';
 
-/* friendly { id, label, state } for each authored night */
-const NIGHTS = Object.values(FIXTURES).map((f) => ({
-  id: f.id,
-  label: `${f.dayName} · ${f.dateLabel.split(' · ')[0]}`,
-  state: f.insight?.card_state ?? 'steady',
-}));
+/* every night with a session, newest first, labelled with its year (a
+ * year of nights repeats month names) */
+const nightOptions = () =>
+  HISTORY.filter((x) => x.hours > 0)
+    .reverse()
+    .map((x) => ({
+      id: x.date,
+      label: toDate(x.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+    }));
 
 const STATE_LABEL = {
   anomaly: 'Off-baseline',
@@ -68,7 +71,7 @@ function NightSelect({ value, onChange, exclude }) {
         onChange={(e) => onChange(e.target.value)}
         aria-label="Choose a night to compare"
       >
-        {NIGHTS.map((n) => (
+        {nightOptions().map((n) => (
           <option key={n.id} value={n.id} disabled={n.id === exclude}>
             {n.label}
           </option>
@@ -83,7 +86,11 @@ export function DesktopCompare() {
   const { closeSheet, fixtureId } = useStore();
   /* default: the night you're on vs a clearly contrasting one */
   const [aId, setAId] = useState(fixtureId);
-  const [bId, setBId] = useState(fixtureId === 'win' ? 'anomaly' : 'win');
+  // contrast with a recent night that went differently
+  const [bId, setBId] = useState(() => {
+    if (fixtureId !== EXAMPLE_FIXTURE) return EXAMPLE_FIXTURE;
+    return FIXTURE_ORDER.find((id) => id !== fixtureId) ?? fixtureId;
+  });
 
   const a = FIXTURES[aId];
   const b = FIXTURES[bId];

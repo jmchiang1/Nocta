@@ -1,31 +1,35 @@
-/* Nocta — account, settings, masks, and connected-device data.
- * Mock for v1. None of this hits a backend; the toggles and pickers update
- * local store state so the subpages feel real. */
+/* Nocta — account, settings, masks, and wearable definitions. Nothing here
+ * stands in for real data: who you are comes from sign-in, therapy from the
+ * card, and no wearable is connected until one actually is. */
 
-import { NIGHTS_ON_THERAPY } from './history.js';
+import { NIGHTS_USED, THERAPY_START, toDate } from './history.js';
 
+/* Who's using Nocta comes from their sign-in (lib/auth.jsx → authUser):
+ * the name and photo Google shares, or the email they signed up with. Nothing
+ * is filled in when it isn't known: no placeholder name, no plan, no
+ * diagnosis. Therapy facts come from the card. */
 export const USER = {
-  name: 'Jonathan Chiang',
-  email: 'jonathan@example.com',
-  initials: 'JC', // fallback if the photo fails to load
-  photo: '/avatar.jpg',
-  joinedDate: 'Sep 30, 2026',
-  plan: 'Nocta · free trial',
-  planSub: 'Trial ends Oct 14 · 4 days left', // 14-day trial from Sep 30
-  daysOnTherapy: NIGHTS_ON_THERAPY,
-  condition: 'OSA',
+  get daysOnTherapy() {
+    return NIGHTS_USED;
+  },
+  get therapyStart() {
+    return THERAPY_START
+      ? toDate(THERAPY_START).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : null;
+  },
 };
 
-/* Static settings preferences. Notification switches are interactive (local
- * sheet state); the rest are display-only for the prototype. */
-export const SETTINGS_DEFAULTS = {
-  checkinReminder: true,
-  weeklySummary: true,
-  syncOverCellular: false,
+/* the name to greet someone by: their first name if their sign-in gave one */
+export const firstName = (authUser) => authUser?.name?.trim().split(/\s+/)[0] ?? null;
+export const initialsOf = (authUser) => {
+  const parts = authUser?.name?.trim().split(/\s+/) ?? [];
+  if (parts.length) return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join('');
+  return authUser?.email ? authUser.email[0].toUpperCase() : null;
 };
 
+/* where the data lives, said plainly */
 export const PRIVACY_NOTE =
-  'Your CPAP data is stored on Nocta servers and encrypted at rest. We never sell it or share it with insurers or employers. You can delete your account and all associated data from this screen at any time.';
+  'Your CPAP nights, check-ins and answers are kept on this device, read from your SD card. Your sign-in is held by Nocta’s account service. Nothing is sold or shared with insurers or employers. You can export it all, or delete your account, below.';
 
 /* the one medical disclaimer — onboarding, the Tonight footer and Settings
  * all render this, so the three never drift apart */
@@ -39,8 +43,12 @@ import { MASKS, MASK_BRANDS, MASK_TYPES } from './onboarding.js';
 export { MASKS, MASK_BRANDS, MASK_TYPES };
 export const MASK_BRAND_LABEL = Object.fromEntries(MASK_BRANDS.map((b) => [b.id, b.label]));
 export const MASK_TYPE_LABEL = Object.fromEntries(MASK_TYPES.map((t) => [t.id, t.label]));
-export const DEFAULT_MASK_ID = 'rm-p30i';
-export const maskById = (id) => MASKS.find((m) => m.id === id) || MASKS[0];
+/* no default mask: it's whatever the person picked or told us, else none */
+export const maskById = (id) => (id ? (MASKS.find((m) => m.id === id) ?? null) : null);
+
+/* the mask TYPE the machine itself records (CurrentSettings.json) */
+const CARD_MASK = { Pillows: 'Nasal pillow', Nasal: 'Nasal', FullFace: 'Full face' };
+export const cardMaskType = (settings) => CARD_MASK[settings?.maskType] ?? null;
 
 /* Third-party body-data sources. Apple Health is the iPhone aggregator
  * (HealthKit); Watch and Oura write to it. `reads` is the per-source list
@@ -53,7 +61,6 @@ export const CONNECTED_DEVICES = [
     short: 'Series 10',
     blurb: 'Heart rate, sleep, and recovery from your wrist.',
     reads: ['Heart rate', 'Heart-rate variability', 'Sleep stages', 'Blood oxygen', 'Respiratory rate'],
-    lastSync: '2 hours ago',
   },
   {
     key: 'health',
@@ -63,7 +70,6 @@ export const CONNECTED_DEVICES = [
     blurb:
       'Aggregator on your iPhone. Nocta reads what other apps have written here: workouts, weight, and manual entries.',
     reads: ['Steps', 'Workouts', 'Body mass', 'Manual entries'],
-    lastSync: null,
   },
   {
     key: 'oura',
@@ -72,7 +78,6 @@ export const CONNECTED_DEVICES = [
     short: 'Ring data',
     blurb: 'Sleep stages and recovery signals from your Oura ring.',
     reads: ['Sleep stages', 'Heart-rate variability', 'Heart rate', 'Body temperature', 'Readiness score'],
-    lastSync: null,
   },
   {
     key: 'fitbit',
@@ -81,7 +86,6 @@ export const CONNECTED_DEVICES = [
     short: 'Wrist data',
     blurb: 'Heart rate, sleep stages, and breathing rate from your Fitbit.',
     reads: ['Heart rate', 'Heart-rate variability', 'Sleep stages', 'Blood oxygen', 'Respiratory rate'],
-    lastSync: null,
   },
   {
     key: 'garmin',
@@ -90,7 +94,6 @@ export const CONNECTED_DEVICES = [
     short: 'Wrist data',
     blurb: 'Heart rate, Pulse Ox, and sleep from your Garmin watch.',
     reads: ['Heart rate', 'Heart-rate variability', 'Sleep stages', 'Blood oxygen', 'Respiratory rate'],
-    lastSync: null,
   },
   {
     key: 'samsung',
@@ -99,7 +102,6 @@ export const CONNECTED_DEVICES = [
     short: 'Wrist data',
     blurb: 'Heart rate, blood oxygen, and sleep from your Galaxy Watch.',
     reads: ['Heart rate', 'Sleep stages', 'Blood oxygen'],
-    lastSync: null,
   },
   {
     key: 'whoop',
@@ -108,12 +110,12 @@ export const CONNECTED_DEVICES = [
     short: 'Strain & recovery',
     blurb: 'Strain, recovery, and sleep from your Whoop strap.',
     reads: ['Strain', 'Recovery score', 'Sleep performance', 'Heart rate'],
-    lastSync: null,
   },
 ];
 
+/* nothing is connected until a real connection exists (none can be made yet) */
 export const DEFAULT_DEVICE_CONNECTIONS = {
-  watch: true,
+  watch: false,
   health: false,
   oura: false,
   fitbit: false,

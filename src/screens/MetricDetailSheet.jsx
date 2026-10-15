@@ -8,16 +8,18 @@ import { nightSeries } from '../lib/nightSeries.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Mascot } from '../components/Mascot.jsx';
-import { LineChart, Waveform, Bars } from '../components/Charts.jsx';
+import { LineChart, Bars } from '../components/Charts.jsx';
 import { TimeAxis } from '../components/TimeAxis.jsx';
-import { PRESSURE_RANGE } from '../data/therapy.js';
+import { pressureRange } from '../data/therapy.js';
 
 const CHART_H = 240;
 
 function MetricChart({ metric, series }) {
-  if (metric === 'flow') return <Waveform amps={series.flow} color="data" height={CHART_H} />;
+  const s = series[metric];
+  if (!s) return <div className="fn-nodata md-nodata">Not recorded this night</div>;
+  if (metric === 'resp') return <LineChart values={s} color="data" height={CHART_H} />;
   if (metric === 'pressure')
-    return <LineChart values={series.pressure} color="data" height={CHART_H} band={PRESSURE_RANGE} />;
+    return <LineChart values={series.pressure} color="data" height={CHART_H} band={pressureRange() ?? undefined} />;
   if (metric === 'leak' && !series.leak)
     return <div className="fn-nodata md-nodata">No leak recorded this night</div>;
   if (metric === 'leak') return <LineChart values={series.leak} color="data" height={CHART_H} threshold={24} />;
@@ -55,8 +57,10 @@ export function MetricDetailSheet() {
             <MetricChart metric={key} series={series} />
             <TimeAxis session={fx.session} />
           </div>
-          {key === 'pressure' && (
-            <p className="md-note">Shaded: your prescribed range, {PRESSURE_RANGE[0]}–{PRESSURE_RANGE[1]} cmH₂O</p>
+          {key === 'pressure' && pressureRange() && (
+            <p className="md-note">
+              Shaded: your prescribed range from the machine, {pressureRange()[0]}–{pressureRange()[1]} cmH₂O
+            </p>
           )}
           {key === 'leak' && series.leak && <p className="md-note">Dashed line: 24 L/min</p>}
 

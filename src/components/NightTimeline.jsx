@@ -8,7 +8,7 @@ import { Icon } from './Icons.jsx';
 import { StackedBars } from './Charts.jsx';
 import { TimeAxis } from './TimeAxis.jsx';
 import { hypnogramFor } from './SleepStages.jsx';
-import { nightBins } from '../lib/nightSeries.js';
+import { nightHours } from '../lib/nightSeries.js';
 
 const BUCKETS = 9;
 const STAGE_NAME = { rem: 'REM', deep: 'Deep sleep', light: 'Light sleep', awake: 'Awake' };
@@ -27,11 +27,13 @@ function fmtMin(min) {
 /* Scrub layer: hover (mouse) or drag sideways (touch) across the night to
  * read any moment — clock time, sleep stage, and the events in that slice.
  * The other slices dim so the one you're on stands out. */
-function Scrubber({ bins, stageAt, session }) {
+function Scrubber({ bins, stageAt, session, hourly }) {
   const ref = useRef(null);
   const [f, setF] = useState(null); // 0..1 across the night, or null
-  const start = toMin(session.start);
-  let end = toMin(session.end);
+  const n = bins.length;
+  // hourly bars span whole clock hours; the fallback spans the session
+  const start = hourly ? bins[0].hour * 60 : toMin(session.start);
+  let end = hourly ? start + n * 60 : toMin(session.end);
   if (end <= start) end += 1440;
 
   const track = (e) => {
@@ -41,7 +43,7 @@ function Scrubber({ bins, stageAt, session }) {
 
   let readout = null;
   if (f != null) {
-    const i = Math.floor(f * BUCKETS);
+    const i = Math.floor(f * n);
     const b = bins[i];
     const stage = stageAt(f);
     const parts = [
@@ -53,9 +55,10 @@ function Scrubber({ bins, stageAt, session }) {
     readout = {
       i,
       x: f,
-      time: fmtMin(start + f * (end - start)),
+      // an hourly bar reads as its hour ("2–3 AM"), not a minute it can't resolve
+      time: hourly ? `${fmtMin(start + i * 60).replace(':00', '')}–${fmtMin(start + (i + 1) * 60).replace(':00', '')}` : fmtMin(start + f * (end - start)),
       stage: stage ? STAGE_NAME[stage] : null,
-      events: parts.length ? parts.join(' · ') : 'No breathing events',
+      events: hourly && b.worn === 0 ? 'Mask off' : parts.length ? parts.join(' · ') : 'No breathing events',
     };
   }
 
@@ -73,11 +76,8 @@ function Scrubber({ bins, stageAt, session }) {
     >
       {readout && (
         <>
-          <span className="scrub-dim" style={{ left: 0, width: `${(readout.i / BUCKETS) * 100}%` }} />
-          <span
-            className="scrub-dim"
-            style={{ left: `${((readout.i + 1) / BUCKETS) * 100}%`, right: 0 }}
-          />
+          <span className="scrub-dim" style={{ left: 0, width: `${(readout.i / n) * 100}%` }} />
+          <span className="scrub-dim" style={{ left: `${((readout.i + 1) / n) * 100}%`, right: 0 }} />
           <span className="scrub-line" style={{ left: `${readout.x * 100}%` }} />
           <span
             className="scrub-readout"
@@ -126,9 +126,10 @@ export function binEvents(events, total, buckets = BUCKETS) {
  * totals from history, placed around its episodes) so they match the horizon
  * and the episode list. sleepStages: the watch's stages, for the readout. */
 export function NightTimeline({ timeline, session, ahi, escalated = false, onOpen, fixtureId, sleepStages }) {
-  const bins = fixtureId
-    ? nightBins(fixtureId, BUCKETS)
-    : binEvents(timeline.events, timeline.eventCount);
+  // a real night: one bar per clock hour, labelled underneath. The older
+  // fixture shape (no night id) keeps its proportional buckets.
+  const hourly = Boolean(fixtureId);
+  const bins = hourly ? nightHours(fixtureId).bins : binEvents(timeline.events, timeline.eventCount);
   const hyp = sleepStages ? hypnogramFor(sleepStages) : null;
   const stageAt = (f) => {
     if (hyp) return hyp[Math.min(hyp.length - 1, Math.floor(f * hyp.length))];
@@ -161,10 +162,21 @@ export function NightTimeline({ timeline, session, ahi, escalated = false, onOpe
       </div>
 
       <div className="scrub-wrap">
-        <StackedBars series={bins} height={104} layers={layers} />
-        <Scrubber bins={bins} stageAt={stageAt} session={session} />
+        <StackedBars series={bins} height={104} layers={layers} centered={hourly} />
+        <Scrubber bins={bins} stageAt={stageAt} session={session} hourly={hourly} />
       </div>
-      <TimeAxis session={session} />
+      {hourly ? (
+        // every hour, under its own bar; hours with the mask off are dimmed
+        <div className="hour-row tnum" style={{ '--n': bins.length }} aria-hidden="true">
+          {bins.map((b, i) => (
+            <span key={i} className={b.worn === 0 ? 'off' : undefined}>
+              {b.label}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <TimeAxis session={session} />
+      )}
 
       <div className="legend">
         <span>

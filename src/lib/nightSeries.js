@@ -1,26 +1,22 @@
 /* Nocta — the night's data, shared by every chart of a single night (the
  * horizon on Tonight, the full-night page and its metric pages, desktop) so
- * they always agree with each other and with history.js:
- *   - nightSeries: flow / pressure / leak / snore. Generated shapes, anchored
- *     to what history recorded: pressure centres on the night's median and
- *     reaches the levels the episodes quote (never below the prescribed
- *     floor); leak scales so its 95th percentile is the night's P95.
- *   - nightBins: breathing events per time bucket, by type. Each type's total
- *     is history's rate × hours (summing to the night's event count), placed
- *     around that night's listed episodes so the chart, the episode list and
- *     the copy ("2–5 a.m.") line up.
+ * they always agree with each other and with history.js. All of it comes
+ * from the CPAP card (data/history.js › cardNight):
+ *   - nightSeries: the machine's per-minute readings across the night's
+ *     sessions — pressure, leak, breathing rate, snore. The 25 Hz flow
+ *     waveform isn't read (lib/resmed), so there's no breath-by-breath trace.
+ *   - nightBins: the night's recorded events per time bucket, by type, plus
+ *     the buckets where leak ran above the line.
  *   - session helpers for clock-time axes. */
-import { genBreathing, genSeries } from './format.js';
-import { NIGHTS, dateForFixture } from '../data/history.js';
-import { FIXTURES, EPISODES } from '../data/fixtures.js';
-import { PRESSURE_RANGE } from '../data/therapy.js';
+import { NIGHTS, cardNight, dateForFixture } from '../data/history.js';
 
 export const pct = (arr, p) => {
   const s = [...arr].sort((a, b) => a - b);
   return s[Math.min(s.length - 1, Math.floor(p * (s.length - 1)))];
 };
 
-const nightFor = (fixtureId) => NIGHTS.find((x) => x.date === dateForFixture(fixtureId));
+const LEAK_LINE = 24;
+const MAX_POINTS = 180; // plenty for a chart; keeps a 9-hour night light
 
 /* ---- clock time ---- */
 
@@ -46,111 +42,114 @@ export function hourLabel(minFromNoon) {
 
 /* ---- machine series ---- */
 
-const PRESSURE_NUM = /(\d+(?:\.\d+)?)\s*cmH/g;
+const ms = (at) => Date.parse(`${at}Z`); // wall clock, read as UTC: only differences matter
 
-export function nightSeries(fixtureId) {
-  const night = nightFor(fixtureId);
-  const flow = genBreathing(fixtureId + 'flow', 72);
-  let pressure = genSeries(fixtureId + 'pr', 60, 6.2, 1.6);
-  let leak = genSeries(fixtureId + 'lk', 48, 10, 14);
-  const snore = genSeries(fixtureId + 'sn', 40, 2.4, 3).map((v) => Math.min(10, v));
-
-  if (night?.pressure) {
-    const med = pct(pressure, 0.5);
-    pressure = pressure.map((v) => v - med + night.pressure);
-    // the episodes quote the pressure at their peak; the line should reach it
-    const quoted = (EPISODES[fixtureId] || []).flatMap((ep) =>
-      [...`${ep.pressure} ${ep.response}`.matchAll(PRESSURE_NUM)].map((x) => Number(x[1]))
-    );
-    const epMax = quoted.length ? Math.max(...quoted) : null;
-    const max = Math.max(...pressure);
-    if (epMax && max < epMax) {
-      const k = (epMax - night.pressure) / (max - night.pressure || 1);
-      pressure = pressure.map((v) => (v > night.pressure ? night.pressure + (v - night.pressure) * k : v));
-    }
-    pressure = pressure.map((v) => Math.min(PRESSURE_RANGE[1], Math.max(PRESSURE_RANGE[0], v)));
-  }
-  if (night && night.leak == null) {
-    leak = null; // nothing recorded: no made-up line
-  } else if (night?.leak) {
-    const p95 = pct(leak, 0.95) || 1;
-    leak = leak.map((v) => (v * night.leak) / p95);
-  }
-  return { flow, pressure, leak, snore };
-}
-
-/* ---- breathing events by type ---- */
-
-const TYPE_KEY = { OSA: 'osa', CSA: 'csa', Hypopnea: 'hyp' };
-const KERNEL_MIN = 38; // how widely each listed episode spreads its type's events
-
-/* split `total` across weights so the parts are whole numbers summing exactly */
-function allocate(total, weights) {
-  const sum = weights.reduce((a, b) => a + b, 0) || 1;
-  const raw = weights.map((w) => (w / sum) * total);
-  const out = raw.map(Math.floor);
-  let left = total - out.reduce((a, b) => a + b, 0);
-  raw
-    .map((r, i) => ({ i, r: r - Math.floor(r) }))
-    .sort((a, b) => b.r - a.r)
-    .forEach(({ i }) => {
-      if (left > 0) {
-        out[i] += 1;
-        left -= 1;
-      }
+/* one value per minute from the first session's start to the last one's end;
+ * the gaps between sessions (mask off) stay null so lines break there */
+function minuteSeries(raw, key) {
+  const sessions = (raw?.sessions ?? []).filter((s) => s.series?.[key]);
+  if (!sessions.length) return null;
+  const t0 = ms(sessions[0].start);
+  const len = Math.round((ms(sessions.at(-1).end) - t0) / 6e4);
+  const out = new Array(Math.max(1, len)).fill(null);
+  sessions.forEach((s) => {
+    const off = Math.round((ms(s.start) - t0) / 6e4);
+    s.series[key].forEach((v, i) => {
+      if (off + i < out.length) out[off + i] = v;
     });
+  });
   return out;
 }
 
-export function nightBins(fixtureId, buckets) {
-  const fx = FIXTURES[fixtureId];
-  const night = nightFor(fixtureId);
-  const episodes = EPISODES[fixtureId] || [];
-  const { start, span } = sessionSpan(fx.session);
-  const count = fx.timeline?.eventCount ?? 0;
+/* average down to at most MAX_POINTS (a bucket's max for leak, so a short
+ * spike isn't averaged away) */
+function downsample(series, peak = false) {
+  if (!series || series.length <= MAX_POINTS) return series;
+  const k = series.length / MAX_POINTS;
+  return Array.from({ length: MAX_POINTS }, (_, i) => {
+    const slice = series.slice(Math.floor(i * k), Math.floor((i + 1) * k)).filter((v) => v != null);
+    if (!slice.length) return null;
+    return peak ? Math.max(...slice) : slice.reduce((a, b) => a + b, 0) / slice.length;
+  });
+}
+/* gaps (mask off between sessions) stay null, so charts break there instead
+ * of drawing readings the machine never took */
+const filled = (series) => series;
 
-  // per-type totals: history's rate × hours, made to sum to the night's count
-  const types = ['osa', 'csa', 'hyp'];
-  let totals;
-  if (night?.ahi) {
-    const parts = allocate(
-      count,
-      types.map((t) => night.ahi[t] * night.hours)
-    );
-    totals = Object.fromEntries(types.map((t, i) => [t, parts[i]]));
-  } else {
-    totals = { osa: 0, csa: 0, hyp: 0 };
-    episodes.forEach((ep) => {
-      const k = TYPE_KEY[ep.type];
-      if (k) totals[k] += 1;
-    });
-  }
-
-  // where each type happened: around that type's listed episodes
-  const centers = (k) => {
-    const own = episodes.filter((ep) => TYPE_KEY[ep.type] === k);
-    return (own.length ? own : episodes).map((ep) => clockMin(ep.time) - start);
+const seriesCache = new Map();
+export function nightSeries(fixtureId) {
+  const date = dateForFixture(fixtureId);
+  const raw = cardNight(date);
+  const key = `${date}:${raw?.sessions?.length ?? 0}:${NIGHTS.length}`;
+  if (seriesCache.has(key)) return seriesCache.get(key);
+  const out = {
+    resp: filled(downsample(minuteSeries(raw, 'respRate')), true),
+    pressure: filled(downsample(minuteSeries(raw, 'pressure')), true),
+    leak: filled(downsample(minuteSeries(raw, 'leak'), true)),
+    snore: filled(downsample(minuteSeries(raw, 'snore'), true)),
   };
-  const bucketMid = (i) => ((i + 0.5) / buckets) * span;
+  seriesCache.set(key, out);
+  return out;
+}
+
+/* ---- breathing events by type, per time bucket ---- */
+
+const TYPE = { osa: 'osa', apnea: 'osa', csa: 'csa', hyp: 'hyp' };
+
+export function nightBins(fixtureId, buckets) {
+  const date = dateForFixture(fixtureId);
+  const raw = cardNight(date);
   const bins = Array.from({ length: buckets }, () => ({ osa: 0, csa: 0, hyp: 0, leak: 0 }));
-  types.forEach((k) => {
-    const cs = centers(k);
-    const w = Array.from({ length: buckets }, (_, i) =>
-      cs.length
-        ? cs.reduce((a, c) => a + Math.exp(-(((bucketMid(i) - c) / KERNEL_MIN) ** 2)), 0) + 0.02
-        : 1
-    );
-    allocate(totals[k], w).forEach((n, i) => {
-      bins[i][k] = n;
+  const sessions = raw?.sessions ?? [];
+  if (!sessions.length) return bins;
+  const t0 = ms(sessions[0].start);
+  const span = ms(sessions.at(-1).end) - t0 || 1;
+  const at = (t) => Math.min(buckets - 1, Math.max(0, Math.floor(((t - t0) / span) * buckets)));
+
+  (raw.eventList ?? []).forEach((e) => {
+    const k = TYPE[e.type];
+    if (k) bins[at(ms(e.at))][k] += 1;
+  });
+  // leak spells: a marker in each bucket where leak ran above the line
+  sessions.forEach((s) => {
+    (s.series?.leak ?? []).forEach((v, i) => {
+      if (v > LEAK_LINE) bins[at(ms(s.start) + i * 6e4)].leak = 1;
     });
   });
-
-  // leak spells from the timeline's markers (not breathing events, not counted)
-  (fx.timeline?.events || [])
-    .filter((e) => e.type === 'leak')
-    .forEach((e) => {
-      const i = Math.min(buckets - 1, Math.max(0, Math.floor((e.l / 100) * buckets)));
-      bins[i].leak += 1;
-    });
   return bins;
+}
+
+/* ---- breathing events by type, per CLOCK hour ----
+ * One bar per hour the night touched (from the hour the mask first went on
+ * to the hour it last came off), so each bar sits over its own hour label.
+ * `worn` is minutes on the mask in that hour: an hour between sessions shows
+ * as worn 0 rather than as a quiet hour. Times are the machine's wall clock. */
+const HOUR = 36e5;
+const hourName = (h) => `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`;
+
+export function nightHours(fixtureId) {
+  const raw = cardNight(dateForFixture(fixtureId));
+  const sessions = raw?.sessions ?? [];
+  if (!sessions.length) return { bins: [], startMs: 0 };
+  const first = Math.floor(ms(sessions[0].start) / HOUR) * HOUR;
+  const last = Math.ceil(ms(sessions.at(-1).end) / HOUR) * HOUR;
+  const n = Math.max(1, Math.round((last - first) / HOUR));
+  const bins = Array.from({ length: n }, (_, i) => {
+    const h = new Date(first + i * HOUR).getUTCHours();
+    return { hour: h, label: hourName(h), osa: 0, csa: 0, hyp: 0, leak: 0, worn: 0 };
+  });
+  const at = (t) => Math.min(n - 1, Math.max(0, Math.floor((t - first) / HOUR)));
+  (raw.eventList ?? []).forEach((e) => {
+    const k = TYPE[e.type];
+    if (k) bins[at(ms(e.at))][k] += 1;
+  });
+  sessions.forEach((s) => {
+    const t0 = ms(s.start);
+    // minutes on the mask, minute by minute, into their hour
+    for (let m = 0; m < Math.round(s.minutes); m += 1) bins[at(t0 + m * 6e4)].worn += 1;
+    (s.series?.leak ?? []).forEach((v, i) => {
+      if (v > LEAK_LINE) bins[at(t0 + i * 6e4)].leak = 1;
+    });
+  });
+  return { bins, startMs: first };
 }

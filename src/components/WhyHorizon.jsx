@@ -13,6 +13,7 @@ import { Mascot } from './Mascot.jsx';
 import { RevealText } from '../lib/motion.jsx';
 import { binEvents } from './NightTimeline.jsx';
 import { nightBins, clockMin, hourLabel } from '../lib/nightSeries.js';
+import { LAST_NIGHT } from '../data/history.js';
 
 const STATE_CLASS = {
   anomaly: 'state-anomaly',
@@ -82,12 +83,12 @@ function useWidth(fallback) {
 
 /* the one action, led by a guiding star: Nocta's suggestion is the thing to
  * follow tonight. The first sentence is the instruction; the rest, the reason. */
-function GuidingStar({ text }) {
+function GuidingStar({ text, past }) {
   const m = /^(.+?[.!?])\s+(.+)$/s.exec(text);
   const head = m ? m[1] : text;
   const reason = m ? m[2] : null;
   return (
-    <section className="wh-guide" aria-label="Tonight's suggestion">
+    <section className="wh-guide" aria-label={past ? 'What Nox suggested that morning' : "Tonight's suggestion"}>
       <span className="wh-guide-mark" aria-hidden="true">
         <svg className="wh-star" width="28" height="28" viewBox="0 0 24 24">
           <path d="M12 1.5 13.6 10.4 22.5 12 13.6 13.6 12 22.5 10.4 13.6 1.5 12 10.4 10.4Z" />
@@ -95,7 +96,8 @@ function GuidingStar({ text }) {
         <span className="wh-guide-trail" />
       </span>
       <span className="wh-guide-body">
-        <span className="wh-guide-label">Tonight</span>
+        {/* an older night's suggestion was for the night after it */}
+        <span className="wh-guide-label">{past ? 'That morning, Nox suggested' : 'Tonight'}</span>
         <span className={`wh-guide-head${head.length > 44 ? ' long' : ''}`}>{head}</span>
         {reason && <span className="wh-guide-reason">{reason}</span>}
       </span>
@@ -109,6 +111,8 @@ export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy
   const glance = insight.glance ?? {};
   const action = !NO_ACTION.has(state) && insight.recommended_action;
   const doctorPath = insight.escalation_flag === 'hard' && onDoctor;
+  // an older night (picked from the strip or calendar), not last night
+  const past = Boolean(fixtureId) && fixtureId !== LAST_NIGHT;
 
   // breathing events per hour across the night (same binning as the night chart)
   const start = clockMin(session?.start);
@@ -149,14 +153,14 @@ export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy
   }
 
   return (
-    <section className={`why-horizon ${STATE_CLASS[state] || 'state-insufficient'}`} aria-label="Last night's insight">
+    <section className={`why-horizon ${STATE_CLASS[state] || 'state-insufficient'}`} aria-label={past ? 'That night’s insight' : "Last night's insight"}>
       <div className="wh-head">
         <h2 className="wh-headline">
           <RevealText text={glance.headline ?? insight.headline} />
         </h2>
         {/* Nocta's face is the way in to the Coach for this night */}
         {onAsk && (
-          <button className="wh-ask" type="button" onClick={onAsk} aria-label="Ask Nox about last night" title="Ask Nox about last night">
+          <button className="wh-ask" type="button" onClick={onAsk} aria-label={past ? 'Ask Nox about this night' : 'Ask Nox about last night'} title={past ? 'Ask Nox about this night' : 'Ask Nox about last night'}>
             <Mascot size={38} state="idle" />
           </button>
         )}
@@ -230,7 +234,7 @@ export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy
             <Icon name="chevronRight" size={18} />
           </button>
         ) : (
-          <GuidingStar text={action.action} />
+          <GuidingStar text={action.action} past={past} />
         ))}
     </section>
   );

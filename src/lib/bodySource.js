@@ -19,17 +19,8 @@ const FIELD_READ = {
   stages: 'Sleep stages',
 };
 
-/* Tiny per-device deltas so two cards on the same night don't look identical.
- * Real devices disagree by a few bpm / ms — this mimics that without us having
- * to hand-author a second fixture series per device. */
-const DEVICE_TUNE = {
-  watch: { hrShift: 0, hrvShift: 0 },
-  oura: { hrShift: -2, hrvShift: 4 },
-  fitbit: { hrShift: 1, hrvShift: 2 },
-  garmin: { hrShift: -1, hrvShift: -2 },
-  samsung: { hrShift: 2, hrvShift: 0 },
-  whoop: { hrShift: 1, hrvShift: -3 },
-};
+/* No per-device adjustments: a device's card shows exactly what it reported
+ * (an earlier version nudged values per device to look different — invented). */
 
 function bodyResponseFor(fx, deviceKey, deviceReads) {
   if (!fx.bodyResponse) return null;
@@ -43,7 +34,7 @@ function bodyResponseFor(fx, deviceKey, deviceReads) {
   const anyField = Object.values(FIELD_READ).some(has);
   if (!anyField) return null;
 
-  const tune = DEVICE_TUNE[deviceKey] || { hrShift: 0, hrvShift: 0 };
+  const tune = { hrShift: 0, hrvShift: 0 }; // shown as reported
   const base = fx.bodyResponse;
 
   const hr = has('Heart rate')

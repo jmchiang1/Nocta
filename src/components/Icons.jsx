@@ -79,6 +79,12 @@ const PATHS = {
     </>
   ),
   bell: <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" />,
+  mail: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="M3.5 7l8.5 6 8.5-6" />
+    </>
+  ),
   lock: (
     <>
       <rect x="4" y="11" width="16" height="10" rx="2" />
@@ -118,6 +124,20 @@ const PATHS = {
     </>
   ),
   wind: <path d="M3 8h11a3 3 0 100-6M3 12h16a3 3 0 110 6M3 16h8a2.5 2.5 0 110 5" />,
+  /* desktop: collapse / expand the sidebar */
+  sidebar: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M9 4v16" />
+    </>
+  ),
+  /* desktop: the all-nights calendar */
+  grid: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4M7.5 14h.5M11.75 14h.5M16 14h.5M7.5 17.5h.5M11.75 17.5h.5" />
+    </>
+  ),
 };
 
 /* solid-fill glyphs */

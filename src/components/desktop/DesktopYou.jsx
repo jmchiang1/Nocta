@@ -1,51 +1,21 @@
-/* Nocta — desktop You view. Profile banner + tabbed settings (Account,
- * Notifications, Devices, Privacy, Demo) rather than one big grid, so each
- * section reads as a focused settings page in a single readable column. */
-import { useState } from 'react';
+/* Nocta — desktop You view. On a wide screen the Account and Settings pages
+ * don't need to hide one click away: their sections render inline (the same
+ * AccountContent / SettingsContent the mobile pages use), with the profile and
+ * connected devices alongside. Each device row still opens its detail (with
+ * disconnect). Prototype-only resets live in the DevPanel. */
 import { useStore } from '../../lib/store.jsx';
-import {
-  USER,
-  CONNECTED_DEVICES,
-  DEVICE_PHOTO,
-  SETTINGS_DEFAULTS,
-  PRIVACY_NOTE,
-  MEDICAL_NOTE,
-} from '../../data/account.js';
+import { USER, CONNECTED_DEVICES, DEVICE_PHOTO, maskById } from '../../data/account.js';
+import { machineName } from '../../data/therapy.js';
+import { ProfileAvatar } from '../ProfileAvatar.jsx';
 import { Icon } from '../Icons.jsx';
-import { machineById } from '../../data/therapy.js';
-
-function Switch({ on, onChange, label }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      className={`switch${on ? ' on' : ''}`}
-      onClick={() => onChange(!on)}
-    >
-      <span className="switch-knob" />
-    </button>
-  );
-}
-
-const TABS = [
-  { id: 'account', label: 'Account' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'devices', label: 'Devices' },
-  { id: 'privacy', label: 'Privacy & data' },
-  { id: 'demo', label: 'Demo' },
-];
+import { AccountContent } from '../../screens/AccountSheet.jsx';
+import { SettingsContent } from '../../screens/SettingsSheet.jsx';
 
 export function DesktopYou() {
-  const { checkin, resetCheckin, resetOnboarding, deviceConnections, machineId } = useStore();
+  const { openSheet, deviceConnections, machineId, maskId, resetOnboarding, authUser } = useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
-
-  const [tab, setTab] = useState('account');
-  const [checkinReminder, setCheckinReminder] = useState(SETTINGS_DEFAULTS.checkinReminder);
-  const [weekly, setWeekly] = useState(SETTINGS_DEFAULTS.weeklySummary);
-  const [cellular, setCellular] = useState(SETTINGS_DEFAULTS.syncOverCellular);
-  const [exported, setExported] = useState(false);
+  const machine = machineName(machineId);
+  const mask = maskById(maskId);
 
   return (
     <>
@@ -54,192 +24,100 @@ export function DesktopYou() {
           <h1 className="dash-h1">You</h1>
           <div className="dash-sub">Profile, account, settings, and devices</div>
         </div>
-        <div className="dash-topbar-meta">
-          <span className="dash-meta-pill">Night {USER.daysOnTherapy} of 30</span>
-          <span className="dash-meta-pill">{USER.plan}</span>
-        </div>
       </header>
 
-      <div className="dash-you">
-        <nav className="dash-tabs" role="tablist" aria-label="Settings sections">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={tab === t.id}
-              className={`dash-tab${tab === t.id ? ' active' : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="dash-settings-body">
-        <div className="panel dash-profile-panel">
-          <div className="profile-head">
-            <div className="avatar">
-              <img src={USER.photo} alt={USER.name} />
-            </div>
-            <div>
-              <div className="ph-name">{USER.name}</div>
-              <div className="ph-sub">
-                {USER.condition} · night {USER.daysOnTherapy} of 30 · {machineById(machineId).short}
-              </div>
-            </div>
+      <section className="profile-card dash-profile" aria-label="Your profile">
+        <div className="profile-head">
+          <div className="avatar">
+            <ProfileAvatar user={authUser} />
+          </div>
+          <div>
+            {/* who: from sign-in; nothing filled in when it isn't known */}
+            <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
+            {authUser?.name && authUser?.email && <div className="ph-sub">{authUser.email}</div>}
           </div>
         </div>
-        {tab === 'account' && (
-          <div className="list">
-            <div className="list-row static">
-              <div className="lr-icon bare accent"><Icon name="star" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">{USER.plan}</div>
-                <div className="lr-sub">{USER.planSub}</div>
-              </div>
-            </div>
-            <button className="list-row">
-              <div className="lr-icon bare"><Icon name="calendar" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Manage subscription</div>
-                <div className="lr-sub">Change plan or billing</div>
-              </div>
-              <Icon name="chevronRight" size={17} />
-            </button>
-            <div className="list-row static">
-              <div className="lr-icon bare"><Icon name="clock" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Member since</div>
-                <div className="lr-sub">{USER.joinedDate}</div>
-              </div>
-            </div>
-            <button className="list-row">
-              <div className="lr-icon bare"><Icon name="lock" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Change password</div>
-                <div className="lr-sub">{USER.email}</div>
-              </div>
-              <Icon name="chevronRight" size={17} />
-            </button>
-            <button className="list-row" onClick={resetOnboarding}>
-              <div className="lr-icon bare"><Icon name="logout" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Sign out</div>
-                <div className="lr-sub">Returns to onboarding</div>
-              </div>
-            </button>
+        {/* plain facts, no scores: compliance and AHI live on Therapy and Trends */}
+        <dl className="dash-profile-facts">
+          <div>
+            <dt>On the machine</dt>
+            <dd className="tnum">{USER.daysOnTherapy} nights</dd>
           </div>
-        )}
-
-        {tab === 'notifications' && (
-          <div className="list">
-            <div className="list-row static">
-              <div className="lr-icon bare"><Icon name="bell" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Morning check-in</div>
-                <div className="lr-sub">7:00 AM · weekdays and weekends</div>
-              </div>
-              <Switch on={checkinReminder} onChange={setCheckinReminder} label="Morning check-in reminder" />
-            </div>
-            <div className="list-row static">
-              <div className="lr-icon bare"><Icon name="calendar" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Weekly summary</div>
-                <div className="lr-sub">Sundays at 9:00 AM</div>
-              </div>
-              <Switch on={weekly} onChange={setWeekly} label="Weekly summary" />
-            </div>
-            <div className="list-row static">
-              <div className="lr-icon bare"><Icon name="refresh" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Sync over cellular</div>
-                <div className="lr-sub">Use mobile data when Wi-Fi is unavailable</div>
-              </div>
-              <Switch on={cellular} onChange={setCellular} label="Sync over cellular" />
-            </div>
+          <div>
+            <dt>Since</dt>
+            <dd>{USER.therapyStart ?? '—'}</dd>
           </div>
-        )}
-
-        {tab === 'devices' && (
-          <div className="list">
-            {connectedDevices.map((d) => {
-              const photo = DEVICE_PHOTO[d.key];
-              return (
-                <div className="list-row static" key={d.key}>
-                  {photo ? (
-                    <div className="lr-icon app"><img src={photo} alt="" /></div>
-                  ) : (
-                    <div className="lr-icon"><Icon name={d.icon} size={17} /></div>
-                  )}
-                  <div className="lr-main">
-                    <div className="lr-title">{d.title}</div>
-                    <div className="lr-sub">Connected · synced {d.lastSync || 'just now'}</div>
-                  </div>
-                  <span className="conn-dot on" aria-hidden="true" />
-                </div>
-              );
-            })}
-            {connectedDevices.length === 0 && (
-              <div className="list-row static empty">
-                <div className="lr-main">
-                  <div className="lr-title">No devices connected</div>
-                  <div className="lr-sub">Pair a wearable on mobile to layer heart rate and sleep onto your therapy</div>
-                </div>
-              </div>
-            )}
+          <div>
+            <dt>Machine</dt>
+            <dd>{machine.short}</dd>
           </div>
-        )}
+          <div>
+            <dt>Mask</dt>
+            <dd>{mask ? mask.name : 'Not set'}</dd>
+          </div>
+        </dl>
+      </section>
 
-        {tab === 'privacy' && (
-          <>
-            <p className="settings-note">{PRIVACY_NOTE}</p>
+      <div className="dash-you">
+        <div className="dash-col">
+          <h2 className="dash-you-title">Account</h2>
+          {/* devices sit inside Account, just above Sign in */}
+          <AccountContent onSignOut={resetOnboarding}>
+            <div className="section-head">
+              <h3>Connected devices</h3>
+              {connectedDevices.length > 0 && <span className="meta">click to manage</span>}
+            </div>
             <div className="list">
-              <button className="list-row" onClick={() => setExported(true)}>
-                <div className="lr-icon bare accent"><Icon name="download" size={17} /></div>
-                <div className="lr-main">
-                  <div className="lr-title">Export my data</div>
-                  <div className="lr-sub">
-                    {exported ? 'Export queued. You’ll get an email when it’s ready' : 'Download everything Nocta holds'}
+              {connectedDevices.map((d) => {
+                const photo = DEVICE_PHOTO[d.key];
+                return (
+                  <button
+                    key={d.key}
+                    className="list-row"
+                    onClick={() => openSheet('deviceDetail', { deviceKey: d.key })}
+                  >
+                    {photo ? (
+                      <div className="lr-icon app">
+                        <img src={photo} alt="" />
+                      </div>
+                    ) : (
+                      <div className="lr-icon">
+                        <Icon name={d.icon} size={17} />
+                      </div>
+                    )}
+                    <div className="lr-main">
+                      <div className="lr-title">{d.title}</div>
+                      <div className="lr-sub">Connected</div>
+                    </div>
+                    <Icon name="chevronRight" size={17} />
+                  </button>
+                );
+              })}
+              {connectedDevices.length === 0 && (
+                <div className="list-row empty">
+                  <div className="lr-main">
+                    <div className="lr-title">No devices connected</div>
+                    <div className="lr-sub">Nocta reads your CPAP’s SD card. Wearables can’t be connected yet.</div>
                   </div>
                 </div>
-                <Icon name={exported ? 'check' : 'chevronRight'} size={17} />
-              </button>
-              <button className="list-row">
-                <div className="lr-icon bare"><Icon name="x" size={17} /></div>
+              )}
+              <button className="list-row add" onClick={() => openSheet('addDevice')}>
+                <div className="lr-icon bare accent">
+                  <Icon name="plus" size={17} />
+                </div>
                 <div className="lr-main">
-                  <div className="lr-title destructive">Delete account</div>
-                  <div className="lr-sub">Permanently remove all your data</div>
+                  <div className="lr-title">Wearables</div>
+                  <div className="lr-sub">Coming soon</div>
                 </div>
                 <Icon name="chevronRight" size={17} />
               </button>
             </div>
-            <div className="dash-head"><h3>Medical disclaimer</h3></div>
-            <p className="settings-note">{MEDICAL_NOTE}</p>
-          </>
-        )}
+          </AccountContent>
+        </div>
 
-        {tab === 'demo' && (
-          <div className="list">
-            <button className="list-row" onClick={resetCheckin} disabled={!checkin.done}>
-              <div className="lr-icon bare accent"><Icon name="refresh" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Reset morning check-in</div>
-                <div className="lr-sub">
-                  {checkin.done ? 'Clear logged tags to try the flow again' : 'Check-in not logged yet'}
-                </div>
-              </div>
-            </button>
-            <button className="list-row" onClick={resetOnboarding}>
-              <div className="lr-icon bare accent"><Icon name="sparkles" size={17} /></div>
-              <div className="lr-main">
-                <div className="lr-title">Replay onboarding</div>
-                <div className="lr-sub">Run the first-time setup flow again</div>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* <p className="disclaimer">Nocta 1.0 · Your therapy data arrives via SleepHQ.</p> */}
+        <div className="dash-col">
+          <h2 className="dash-you-title">Settings</h2>
+          <SettingsContent />
         </div>
       </div>
     </>
