@@ -6,6 +6,9 @@ import { useState, useEffect } from 'react';
 import { Icon } from './Icons.jsx';
 import { ProgressBar } from './Charts.jsx';
 import { equipmentStatus, logReplaced, onEquipment, TODAY } from '../lib/equipment.js';
+import { validDate } from '../lib/format.js';
+
+const EARLIEST = '2000-01-01';
 
 const ago = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -73,11 +76,15 @@ export function EquipmentList({ collapsible = true }) {
                   <input
                     type="date"
                     className="er-date"
+                    min={EARLIEST}
                     max={TODAY()}
                     defaultValue={p.replacedOn ?? ''}
                     aria-label={`When you last replaced the ${p.name.toLowerCase()}`}
                     autoFocus
-                    onChange={(e) => e.target.value && logReplaced(p.id, e.target.value)}
+                    onChange={(e) => {
+                      const v = validDate(e.target.value, EARLIEST, TODAY());
+                      if (v) logReplaced(p.id, v);
+                    }}
                     onBlur={() => setEditing(null)}
                   />
                 ) : (

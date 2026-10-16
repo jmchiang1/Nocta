@@ -2,6 +2,7 @@
  * Compliance leads: it's the one number insurance holds you to. */
 import { useStore } from '../lib/store.jsx';
 import { cardDevice, machineName, deviceCells } from '../data/therapy.js';
+import { tracksCompliance } from '../data/compliance.js';
 import { EquipmentList } from '../components/EquipmentList.jsx';
 import { openDoctorReport } from '../lib/doctorReport.js';
 import { deviceSource } from '../lib/deviceStatus.js';
@@ -12,7 +13,9 @@ import { MaskCard } from '../components/MaskCard.jsx';
 import { ComplianceCard } from '../components/ComplianceCard.jsx';
 
 export function TherapyScreen() {
-  const { machineId, openSheet, showToast, cardData } = useStore();
+  const { machineId, openSheet, showToast, cardData, hasData, authUser, profile } = useStore();
+  // compliance only for an account that said it's in a window (data/compliance.js)
+  const compliance = hasData && tracksCompliance(authUser, profile.answers);
   // the card names the machine and its settings; nothing is filled in
   const device = cardDevice();
   const machine = machineName(machineId);
@@ -33,59 +36,68 @@ export function TherapyScreen() {
         </div>
       </header>
 
-      <ComplianceCard />
+      {/* no nights yet (an account with no card): no compliance, no machine
+       * settings and no summary to show — bringing in the card comes first */}
+      {compliance && <ComplianceCard />}
 
-      <section className="device-card">
-        <h3>
-          {machine.brand} {machine.name}
-        </h3>
-        <div className="dc-sub">{source}</div>
-        {cells.length > 0 ? (
-          <div className="dc-grid">
-            {cells.map((c) => (
-              <div key={c.k} className="dc-cell">
-                <div className="dc-k">{c.k}</div>
-                <div className="dc-v">{c.v}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="dc-none">This card doesn’t record the machine’s settings.</p>
-        )}
-        {/* the card says which machine it is; only without one can it be picked */}
-        {!device && (
-          <button className="row-cta" onClick={() => openSheet('machinePicker')}>
-            <span>Change machine</span>
-            <Icon name="chevronRight" size={16} />
-          </button>
-        )}
-        {/* the mask lives with the machine: one setup, one card */}
-        <MaskCard inline />
-      </section>
+      {hasData && (
+        <section className="device-card">
+          <h3>
+            {machine.brand} {machine.name}
+          </h3>
+          <div className="dc-sub">{source}</div>
+          {cells.length > 0 ? (
+            <div className="dc-grid">
+              {cells.map((c) => (
+                <div key={c.k} className="dc-cell">
+                  <div className="dc-k">{c.k}</div>
+                  <div className="dc-v">{c.v}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="dc-none">This card doesn’t record the machine’s settings.</p>
+          )}
+          {/* the card says which machine it is; only without one can it be picked */}
+          {!device && (
+            <button className="row-cta" onClick={() => openSheet('machinePicker')}>
+              <span>Change machine</span>
+              <Icon name="chevronRight" size={16} />
+            </button>
+          )}
+          {/* the mask lives with the machine: one setup, one card */}
+          <MaskCard inline />
+        </section>
+      )}
 
       <SdImportCard card={cardData} onOpen={() => openSheet('cardImport')} />
-
+      {!hasData && <MaskCard />}
 
       <div className="section-head">
         <h3>Equipment</h3>
       </div>
       <EquipmentList />
 
-      <div className="section-head">
-        <h3>For your doctor</h3>
-      </div>
-      <div className="list">
-        <button className="list-row export-row" onClick={exportSummary}>
-          <div className="lr-main">
-            <div className="lr-title">Summary for your doctor</div>
-            <div className="lr-sub">Your last 30 nights on one page: AHI, events, leak, use. Opens to print or save as PDF.</div>
+      {hasData && (
+        <>
+          <div className="section-head">
+            <h3>For your doctor</h3>
           </div>
-          <span className="export-icon">
-            <Icon name="download" size={18} />
-          </span>
-        </button>
-      </div>
-
+          <div className="list">
+            <button className="list-row export-row" onClick={exportSummary}>
+              <div className="lr-main">
+                <div className="lr-title">Summary for your doctor</div>
+                <div className="lr-sub">
+                  Your last 30 nights on one page: AHI, events, leak, use. Opens to print or save as PDF.
+                </div>
+              </div>
+              <span className="export-icon">
+                <Icon name="download" size={18} />
+              </span>
+            </button>
+          </div>
+        </>
+      )}
     </ScreenFrame>
   );
 }

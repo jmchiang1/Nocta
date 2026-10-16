@@ -664,7 +664,8 @@
 .ob-why-stage::before {
   content: '';
   position: absolute;
-  inset: -36px -12px;
+  /* not past the card's bottom: below it the glow would make the step scroll */
+  inset: -36px -12px 0;
   z-index: -1;
   background: radial-gradient(
     60% 55% at 50% 45%,
@@ -1860,4 +1861,64 @@
     font-size: 15px;
     line-height: 1.2;
   }
+}
+
+/* ---- Your compliance plan (Onboarding.jsx › CompliancePlanFields) ---- */
+.ob-field-hint {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+.ob-field-hint .ob-link {
+  font-size: inherit;
+}
+/* the common rules, then "my plan is different": two-line options */
+.ob-chips.ob-rules {
+  margin-top: 0;
+}
+.ob-rule-option .ob-option-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ob-rule-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.ob-rule-sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+.ob-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* one row: hours, nights, of days, within */
+  gap: 10px 12px;
+  margin: 8px 0 10px;
+}
+.ob-rule-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+/* the same form on the Therapy tab's page */
+.cp-sheet .ob-field:first-child {
+  margin-top: 4px;
+}
+
+/* the rule options lose their second line on a short screen */
+@media (max-height: 780px) {
+  .ob-rule-sub,
+  .ob-hint-long {
+    display: none;
+  }
+}
+.ob-rule-grid .ob-select {
+  padding-inline: 10px;
 }

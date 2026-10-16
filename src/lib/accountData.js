@@ -6,6 +6,7 @@ import { getProfile, clearProfile } from './profile.js';
 import { checkinDates, getCheckin, clearCheckin, isLateCheckin } from './checkins.js';
 import { equipmentStatus, logReplaced, PARTS } from './equipment.js';
 import { loadImport, clearImport } from './importStore.js';
+import { allWearableNights, clearWearableCache } from './wearables.js';
 
 /* every key Nocta writes to localStorage (the dev panel's own is left) */
 const LOCAL_KEYS = [
@@ -18,6 +19,7 @@ const LOCAL_KEYS = [
   'nocta.onboarded.v1',
   'nocta.mockauth.v1',
   'nocta.guest.v1',
+  'nocta.wearableAutoSync.v1',
 ];
 
 /* a JSON file of everything, downloaded straight to the device */
@@ -33,6 +35,8 @@ export async function exportMyData(authUser) {
     checkins: Object.fromEntries(checkinDates().map((d) => [d, { tags: getCheckin(d), addedLater: isLateCheckin(d) }])),
     equipment: equipmentStatus().map(({ id, name, replacedOn }) => ({ id, name, replacedOn })),
     cpap: card ? { device: card.device, settings: card.settings, importedAt: card.importedAt, nights: card.nights } : null,
+    // nights synced from connected wearables (lib/wearables.js)
+    wearables: allWearableNights(),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -50,6 +54,7 @@ export async function exportMyData(authUser) {
 /* erase everything Nocta keeps on this device */
 export async function wipeLocalData() {
   await clearImport().catch(() => {});
+  await clearWearableCache().catch(() => {});
   clearProfile();
   checkinDates().forEach(clearCheckin);
   PARTS.forEach((p) => logReplaced(p.id, null));

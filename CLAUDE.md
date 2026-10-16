@@ -30,8 +30,11 @@ re-rendering are materially cleaner as components. Everything else in the handof
   (EDF reader + card reader), stored on the device in IndexedDB. Not yet wired into
   Tonight / Trends, which still read the fixtures.
 - **Data (v1)**: a parsed ResMed SD card drives every screen (`src/lib/dataset.js`): the
-  card imported on the device, else the bundled demo year `src/data/demoCard.json`
-  (rebuild it with `node scripts/build-demo-card.mjs "CPAP Data 1 Year"`). `history.js`
+  card imported on the device; else the bundled sample year `src/data/demoCard.json`
+  (rebuild it with `node scripts/build-demo-card.mjs "CPAP Data 1 Year"`), but only for
+  someone looking around without an account, on a device that has never held their own
+  data; else no nights at all (Tonight and Trends show the SD import card). Once someone
+  imports, the sample never shows again on that device, even after they remove the card. `history.js`
   and `fixtures.js` derive from it. No live SleepHQ or OpenAI calls — each night's
   insight JSON comes from the rule engine in `src/lib/insights.js` (detect → one
   action → the `FEATURES.md` schema), never hand-authored.

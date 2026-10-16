@@ -24,6 +24,8 @@ import { MEDICAL_NOTE } from '../data/account.js';
 import { Welcome } from './Welcome.jsx';
 import { ReturningFlow } from './Returning.jsx';
 import { saveOnboardingAnswers } from '../lib/profile.js';
+import { RULE_PRESETS, presetOf, saneRule, ruleFor, startProblem, earliestStart, todayIso } from '../data/compliance.js';
+import { THERAPY_START, LAST_NIGHT } from '../data/history.js';
 import { AuthScreen, NewPassword } from './AuthScreen.jsx';
 import { CardImport } from './CardImport.jsx';
 import {
@@ -287,13 +289,14 @@ function InfoChipGroup({ options, value, onChange, onInfo }) {
   );
 }
 
-function TextInput({ value, onChange, placeholder, type = 'text' }) {
+function TextInput({ value, onChange, placeholder, type = 'text', maxLength = 60 }) {
   return (
     <input
       className="ob-input"
       type={type}
       value={value}
       placeholder={placeholder}
+      maxLength={maxLength}
       onChange={(e) => onChange(e.target.value)}
     />
   );
@@ -647,6 +650,141 @@ function Equipment({ data, update, next }) {
   );
 }
 
+/* the person's compliance plan: when their window started, and what their
+ * plan asks for (Medicare's rule unless they set their own). Shared by the
+ * onboarding step and the Therapy tab's "Your compliance plan" page.
+ * `value` holds complianceStart / complianceRule / insuranceProvider;
+ * `onChange(patch)` takes the fields that changed. */
+const pick = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const fmtDay = (iso) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+export function CompliancePlanFields({ value, onChange }) {
+  const rule = ruleFor(value);
+  const [custom, setCustom] = useState(() => presetOf(value) === 'custom');
+  const preset = custom ? 'custom' : presetOf(value);
+  // a custom rule stays one that can be met (nights ≤ days ≤ deadline)
+  const setRule = (k, v) => onChange({ complianceRule: saneRule({ ...rule, [k]: Number(v) }) });
+  const today = todayIso();
+  const problem = startProblem(value.complianceStart, rule, today);
+  return (
+    <>
+      <Field label="When did your compliance window start?">
+        <input
+          className={`ob-input${problem ? ' invalid' : ''}`}
+          type="date"
+          value={value.complianceStart ?? ''}
+          min={earliestStart(rule, today)}
+          max={today}
+          aria-invalid={problem ? true : undefined}
+          aria-describedby="cp-start-hint"
+          onChange={(e) => onChange({ complianceStart: e.target.value || null })}
+        />
+        {problem ? (
+          <p className="au-field-err" id="cp-start-hint" role="alert">
+            {problem}
+          </p>
+        ) : (
+          <p className="ob-field-hint" id="cp-start-hint">
+            <span className="ob-hint-long">Usually the day you got your machine.</span>
+            {THERAPY_START && value.complianceStart !== THERAPY_START && !startProblem(THERAPY_START, rule, today) && (
+              <>
+                {' '}
+                <button type="button" className="ob-link" onClick={() => onChange({ complianceStart: THERAPY_START })}>
+                  Use your card’s first night, {fmtDay(THERAPY_START)}
+                </button>
+              </>
+            )}
+          </p>
+        )}
+      </Field>
+      <Field label={preset === 'custom' ? 'What your plan asks for' : 'What your plan asks for · 4+ hours a night'}>
+        <div className="ob-chips ob-rules" role="radiogroup" aria-label="What your plan asks for">
+          {RULE_PRESETS.map((p) => {
+            const sel = preset === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                role="radio"
+                aria-checked={sel}
+                className={`ob-option ob-rule-option${sel ? ' selected' : ''}`}
+                onClick={() => {
+                  setCustom(false);
+                  onChange({ complianceRule: p.id === 'medicare' ? null : p.rule });
+                }}
+              >
+                <span className="ob-option-label">
+                  <span className="ob-rule-name">{p.label}</span>
+                  <span className="ob-rule-sub">{p.sub}</span>
+                </span>
+                <Tick on={sel} />
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={preset === 'custom'}
+            className={`ob-option ob-rule-option${preset === 'custom' ? ' selected' : ''}`}
+            onClick={() => {
+              setCustom(true);
+              onChange({ complianceRule: saneRule(rule) });
+            }}
+          >
+            <span className="ob-option-label">
+              <span className="ob-rule-name">My plan is different</span>
+            </span>
+            <Tick on={preset === 'custom'} />
+          </button>
+        </div>
+        {preset === 'custom' && (
+          <div className="ob-rule-grid">
+            <label>
+              <span>Hours</span>
+              <SelectInput value={String(rule.minHours)} onChange={(v) => setRule('minHours', v)} options={pick(1, 8).map(String)} />
+            </label>
+            <label>
+              <span>Nights</span>
+              <SelectInput value={String(rule.nights)} onChange={(v) => setRule('nights', v)} options={pick(1, rule.window).map(String)} />
+            </label>
+            <label>
+              <span>Of days</span>
+              <SelectInput value={String(rule.window)} onChange={(v) => setRule('window', v)} options={pick(7, 90).map(String)} />
+            </label>
+            <label>
+              <span>Within</span>
+              <SelectInput
+                value={String(rule.within)}
+                onChange={(v) => setRule('within', v)}
+                options={[30, 60, 90, 120, 180, 365].filter((d) => d >= rule.window).map(String)}
+              />
+            </label>
+          </div>
+        )}
+        {preset === 'custom' && (
+          <p className="ob-field-hint ob-hint-long">
+            {rule.minHours}+ hours on {rule.nights} of any {rule.window} days, within your first {rule.within}.
+          </p>
+        )}
+      </Field>
+    </>
+  );
+}
+
+/* only for someone in a window: when it started and what their plan asks */
+function CompliancePlan({ data, update, next }) {
+  return (
+    <Step foot={<SkipFoot next={next} ready={Boolean(data.complianceStart) && !startProblem(data.complianceStart, ruleFor(data))} />}>
+      <StepTitle title="Your compliance plan">
+        Nocta counts your nights from the day your window started (usually the day you got your machine), against what
+        your plan asks for. Not sure of either? Your equipment supplier can tell you.
+      </StepTitle>
+      <CompliancePlanFields value={data} onChange={update} />
+    </Step>
+  );
+}
+CompliancePlan.when = (data) => data.complianceWindow === 'yes';
+
 function Compliance({ data, update, next }) {
   // already cleared compliance: nothing for Nocta to track, so the insurer /
   // supplier questions lock (and drop any answers, so none get saved)
@@ -665,6 +803,8 @@ function Compliance({ data, update, next }) {
               v === 'no'
                 ? {
                     complianceWindow: v,
+                    complianceStart: null,
+                    complianceRule: null,
                     insuranceProvider: null,
                     insuranceOther: '',
                     equipmentProvider: null,
@@ -725,25 +865,29 @@ function Compliance({ data, update, next }) {
 /* the example card scales down to the room the step leaves it, so the step
  * never scrolls on a short screen (it's a picture of the card, not the card
  * to use). Its own height is unaffected by the transform, so this settles in
- * one pass; it re-fits when the window changes size. */
+ * one pass; it re-fits when the window changes size. Never below 40%. */
 function useFitScale(innerRef, outerRef) {
   const [fit, setFit] = useState({ scale: 1, height: null });
   useLayoutEffect(() => {
     const inner = innerRef.current;
     const outer = outerRef.current;
-    const body = inner?.closest('.ob-body');
-    const content = inner?.closest('.ob-content');
-    if (!inner || !body || !content) return undefined;
+    const screen = inner?.closest('.ob-screen');
+    if (!inner || !outer || !screen) return undefined;
+    // the room is from the card's top down to the step's buttons — not the
+    // step's own box, which on desktop only grows as tall as its content
     const measure = () => {
+      const foot = screen.querySelector('.ob-foot');
+      const bottom = foot ? foot.getBoundingClientRect().top : screen.getBoundingClientRect().bottom;
       const natural = inner.offsetHeight;
-      const others = content.offsetHeight - outer.offsetHeight; // everything but the card
-      const room = body.clientHeight - others - 12; // a little air above the footer
-      const scale = Math.max(0.55, Math.min(1, room / natural));
+      // the step's own bottom padding, then a little air above the buttons
+      const pad = parseFloat(getComputedStyle(inner.closest('.ob-content') ?? inner).paddingBottom) || 0;
+      const room = bottom - outer.getBoundingClientRect().top - pad - 16;
+      const scale = Math.max(0.4, Math.min(1, room / natural));
       setFit({ scale, height: Math.round(natural * scale) });
     };
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(body);
+    ro.observe(screen);
     ro.observe(inner);
     return () => ro.disconnect();
   }, [innerRef, outerRef]);
@@ -848,6 +992,7 @@ const STEPS = [
   Pairing,
   Equipment,
   Compliance,
+  CompliancePlan, // only after "yes, I'm in a window"
   Expectations,
   MeetCoach,
   Notifications,
@@ -885,6 +1030,8 @@ const EMPTY_DATA = {
   maskSize: null,
   cushion: null,
   complianceWindow: null,
+  complianceStart: null, // when their window started (Your compliance plan)
+  complianceRule: null, // their plan's rule, if it isn't Medicare's
   insuranceProvider: null,
   insuranceOther: '',
   equipmentProvider: null,
@@ -928,6 +1075,8 @@ export function Onboarding() {
   const [started, setStarted] = useState(() => Boolean(draft) || authEntry === 'signup');
   const [step, setStep] = useState(draft?.step ?? 0);
   const [data, setData] = useState(() => ({ ...EMPTY_DATA, ...(draft?.data ?? {}) }));
+  // the steps for these answers: a step with `when` shows only if it applies
+  const flow = STEPS.filter((S) => !S.when || S.when(data));
   // the "Save your setup" account step, after the last setup step
   const [atAccount, setAtAccount] = useState(Boolean(draft?.atAccount));
   const [accountMode, setAccountMode] = useState('signup');
@@ -1004,7 +1153,7 @@ export function Onboarding() {
   const update = (patch) => setData((d) => ({ ...d, ...patch }));
   const next = () => {
     setDir('fwd');
-    if (step < STEPS.length - 1) setStep(step + 1);
+    if (step < flow.length - 1) setStep(step + 1);
     // already signed in (a new account that came in through sign-in): no account step
     else if (authUser) setDisclaimer(true);
     else setAtAccount(true);
@@ -1167,7 +1316,7 @@ export function Onboarding() {
   }
   if (disclaimer) return withSky(<Disclaimer onAccept={() => setWelcome(true)} />);
 
-  const Current = STEPS[step];
+  const Current = flow[Math.min(step, flow.length - 1)];
 
   return withSky(
     <div className={`ob-screen ${dir}`}>
@@ -1182,13 +1331,13 @@ export function Onboarding() {
           role="progressbar"
           aria-label="Setup progress"
           aria-valuemin={1}
-          aria-valuemax={STEPS.length}
+          aria-valuemax={flow.length}
           aria-valuenow={step + 1}
         >
-          <span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+          <span style={{ width: `${((step + 1) / flow.length) * 100}%` }} />
         </div>
         <span className="ob-count tnum">
-          {step + 1}/{STEPS.length}
+          {step + 1}/{flow.length}
         </span>
       </div>
       {/* a brand-new account: say whose it is, in case they meant to sign

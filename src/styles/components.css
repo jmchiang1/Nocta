@@ -3405,3 +3405,128 @@ button.nl-row:focus-visible {
   line-height: 1.45;
   color: var(--text-secondary);
 }
+
+/* the night's events: "Show" type chips and a "Sort" dropdown pill, side by
+ * side in one row (components/NightCharts.jsx › NightEvents) */
+.ev-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0 12px;
+}
+.ev-show {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.ev-show-k {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+/* the sort pill: "Sort", the choice and a chevron, with the native select
+ * stretched invisibly over the whole pill (the phone's picker, the
+ * desktop's dropdown) so any click on it opens the choices */
+.ev-sort {
+  flex-shrink: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  margin-left: auto;
+  padding: 0 12px 0 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+}
+.ev-sort-k {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.ev-sort-v {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ev-sort svg {
+  color: var(--text-secondary);
+}
+.ev-sort select {
+  position: absolute;
+  inset: -4px 0; /* 48 px tall to the touch, 40 to the eye */
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 16px; /* no zoom-on-focus in iOS Safari */
+}
+.ev-sort:has(select:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ev-sort:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.ev-chips {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 0;
+}
+.ev-chips::-webkit-scrollbar {
+  display: none;
+}
+.ev-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.06);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+.ev-chip.on {
+  background: var(--text-primary);
+  color: var(--bg-base);
+}
+.ev-chip-n {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.ev-chip.on .ev-chip-n {
+  color: color-mix(in srgb, var(--bg-base) 70%, transparent);
+}
+/* the visible chip is 40 px; the tap area reaches 48 */
+.ev-chip,
+.ev-sort-box {
+  position: relative;
+}
+.ev-chip::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+/* phone: the chip row fades at its right edge, a hint that it scrolls (the
+ * end padding lets the last chip clear the fade) */
+.phone .ev-chips {
+  padding-right: 24px;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+
+/* the kept room where "Show all" sits under another filter */
+.ev-slot {
+  visibility: hidden;
+}

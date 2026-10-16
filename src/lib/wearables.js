@@ -157,6 +157,13 @@ export async function clearWearableCache() {
 
 export const wearableNight = (provider, date) => nights[provider]?.get(date) ?? null;
 
+/* every synced night, per wearable that has any (Export my data) */
+export const allWearableNights = () =>
+  Object.fromEntries(
+    LIVE_WEARABLES.filter((p) => nights[p].size)
+      .map((p) => [p, [...nights[p].values()].sort((a, b) => a.date.localeCompare(b.date))])
+  );
+
 /* the nights before `date` (newest first), for "your usual" ranges */
 export function wearableNightsBefore(provider, date, n) {
   return [...(nights[provider]?.values() ?? [])]

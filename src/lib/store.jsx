@@ -7,7 +7,7 @@ import { NIGHTS, LAST_NIGHT } from '../data/history.js';
 import { refreshInsights } from '../data/fixtures.js';
 import { getCheckin, setCheckin as saveCheckinFor, clearCheckin, migrateOldCheckin } from './checkins.js';
 import { getProfile, onProfile } from './profile.js';
-import { setCard, getCard, isDemoData } from './dataset.js';
+import { setCard, importedCard, hasNights, setSampleAllowed } from './dataset.js';
 import { DEFAULT_MACHINE_ID } from '../data/therapy.js';
 import {
   DEFAULT_DEVICE_CONNECTIONS,
@@ -482,8 +482,9 @@ export function StoreProvider({ children }) {
 
   /* CPAP data imported from an SD card (lib/resmed, kept in IndexedDB).
    * main.jsx loaded it before the first render (lib/dataset.js); with
-   * nothing imported the app shows the demo year and cardData stays null. */
-  const [cardData, setCardData] = useState(() => (isDemoData() ? null : getCard()));
+   * nothing imported the app shows the sample year or no nights, and
+   * cardData stays null. */
+  const [cardData, setCardData] = useState(importedCard);
   /* a card that read cleanly: keep it, switch every screen onto it (open on
    * its last night), then play "bringing in last night" */
   const saveCardImport = useCallback(
@@ -501,7 +502,8 @@ export function StoreProvider({ children }) {
     },
     [startSync, setFixtureId]
   );
-  /* removing the import goes back to the demo year */
+  /* removing the import leaves no nights — the sample year doesn't come
+   * back once someone has brought in their own (lib/dataset.js) */
   const removeCardImport = useCallback(async () => {
     await clearImport();
     await setCard(null);
@@ -509,6 +511,30 @@ export function StoreProvider({ children }) {
     setFixtureId(DEFAULT_FIXTURE);
     setCheckin(loadCheckin()); // "last night" may be a different night now
   }, [setFixtureId]);
+
+  /* the sample year is only for someone looking around without an account
+   * (a guest, or not signed in yet). When that changes, the data layer swaps
+   * the sample in or out (never over an imported card) and the screens
+   * re-read. Waits for sign-in to resolve, so a stored session doesn't flash
+   * the sample first. */
+  const { authUser, authStatus } = auth;
+  const sampleOk = !authUser || authUser.kind === 'guest';
+  const [, setDataVersion] = useState(0);
+  useEffect(() => {
+    if (authStatus === 'loading') return undefined;
+    let live = true;
+    setSampleAllowed(sampleOk).then((changed) => {
+      if (!live || !changed) return;
+      setFixtureId(DEFAULT_FIXTURE);
+      setCheckin(loadCheckin());
+      setDataVersion((v) => v + 1);
+    });
+    return () => {
+      live = false;
+    };
+  }, [sampleOk, authStatus, setFixtureId]);
+  // any nights to show: false for an account with no card (or a removed one)
+  const hasData = hasNights();
 
   const value = {
     onboarded,
@@ -557,6 +583,7 @@ export function StoreProvider({ children }) {
     cardData,
     saveCardImport,
     removeCardImport,
+    hasData,
     checkin,
     checkinVersion,
     completeCheckin,

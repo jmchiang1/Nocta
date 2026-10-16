@@ -57,8 +57,10 @@ function build(date) {
   const hard = insight.escalation_flag === 'hard';
 
   // the three numbers under the hero; a doctor-worthy central night leads
-  // with centrals, since that's what the night is about
-  const leakOrCentral = hard
+  // with centrals, since that's what the night is about. A flag can land on
+  // a night that wasn't scored itself (a three-week or oxygen pattern, on a
+  // night too short to score): no central figure to show, so leak it is
+  const leakOrCentral = hard && row.ahi
     ? { key: 'central', label: 'Central', value: String(row.ahi.csa), unit: '/h', sub: `Usually ${base.csa ?? '—'}` }
     : row.leak == null
       ? { key: 'leak', label: 'Leak', value: '—', unit: '', sub: 'Not recorded' }

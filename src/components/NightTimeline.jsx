@@ -160,17 +160,18 @@ export function NightTimeline({ timeline, session, ahi, escalated = false, onOpe
     const s = timeline.stages?.find((x) => f * 100 >= x.l && f * 100 < x.l + x.w);
     return s ? s.stage : null;
   };
-  const central = escalated ? 'alert' : 'dataLight';
+  // the event-type colours the full night's event tags use too (--ev-*)
+  const central = escalated ? 'alert' : 'evCsa';
   const layers = [
-    { key: 'osa', color: 'data', label: 'Obstructive' },
-    { key: 'hyp', color: 'dataDeep', label: 'Hypopnea' },
+    { key: 'osa', color: 'evOsa', label: 'Obstructive' },
+    { key: 'hyp', color: 'evHyp', label: 'Hypopnea' },
     { key: 'csa', color: central, label: 'Central' },
     { key: 'leak', color: 'muted', label: 'Leak' },
   ];
   const swatch = {
-    obstructive: 'data-1',
-    hypopnea: 'data-deep',
-    central: escalated ? 'alert' : 'stage-rem',
+    obstructive: 'ev-obstructive',
+    hypopnea: 'ev-hypopnea',
+    central: escalated ? 'alert' : 'ev-central',
     leak: 'text-tertiary',
   };
 

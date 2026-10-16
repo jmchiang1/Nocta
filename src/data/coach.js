@@ -265,7 +265,9 @@ const REPLIES = [
     text: (fx) =>
       fx?.insight?.observation
         ? `Here's what I'm seeing. ${fx.insight.observation}`
-        : "Pick a night on Tonight and I'll walk you through what changed against your usual: the events, when they happened, and what leak was doing.",
+        : NIGHTS.length
+          ? "Pick a night on Tonight and I'll walk you through what changed against your usual: the events, when they happened, and what leak was doing."
+          : "I don't have any nights from you yet. Once your SD card is in, I'll walk you through what changed against your usual: the events, when they happened, and what leak was doing.",
   },
   {
     match: ['cushion', 'replace', 'filter', 'equipment'],

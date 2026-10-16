@@ -87,10 +87,10 @@ export function DesktopFullNight() {
         </div>
       </div>
 
-      {/* events split by type: obstructive vs central matters most on a
-       * doctor-worthy night, so it leads the detail */}
+      {/* the night's events at a glance, by hour and type; the full list,
+       * each with its breathing, is "Events by type" at the bottom */}
       <div className="section-head">
-        <h3>Events by type</h3>
+        <h3>Events summary</h3>
       </div>
       <NightTimeline
         timeline={fx.timeline}

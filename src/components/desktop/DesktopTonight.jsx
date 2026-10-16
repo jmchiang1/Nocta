@@ -36,12 +36,16 @@ const fmtLong = (iso) =>
 const rangeLabel = (days) => `${fmtShort(days[0].date)} – ${fmtShort(days.at(-1).date)}`;
 
 /* which 14 days the strip shows: the stretch around the selected night,
- * until the arrows page it; picking another night snaps back to it */
+ * until the arrows page it. Picking a night already on show leaves the
+ * strip where it is; one outside it (from the calendar) brings it into view */
 function useStripEnd(fixtureId) {
   const around = () => stripAround(fixtureId, STRIP_DAYS).at(-1).date;
   const [end, setEnd] = useState(around);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => setEnd(around()), [fixtureId]);
+  useEffect(
+    () => setEnd((e) => (nightsEnding(e, STRIP_DAYS).some((d) => d.date === fixtureId) ? e : around())),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fixtureId]
+  );
   const first = addDays(THERAPY_START, STRIP_DAYS - 1); // the earliest end: night 1 on the left
   const page = (dir) =>
     setEnd((e) => {

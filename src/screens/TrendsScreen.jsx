@@ -1,4 +1,5 @@
 /* Nocta — Trends tab. Range selector, trend charts, journal patterns, best/worst night. */
+import { validDate } from '../lib/format.js';
 import { useState } from 'react';
 import { THERAPY_START, LAST_NIGHT } from '../data/history.js';
 import { getTrends, trendAxes } from '../data/trends.js';
@@ -121,7 +122,10 @@ export function TrendsScreen() {
               value={customStart}
               min={THERAPY_START}
               max={customEnd}
-              onChange={(e) => setCustomStart(e.target.value)}
+              onChange={(e) => {
+                const v = validDate(e.target.value, THERAPY_START, customEnd);
+                if (v) setCustomStart(v);
+              }}
             />
           </label>
           <label className="dr-field">
@@ -131,7 +135,10 @@ export function TrendsScreen() {
               value={customEnd}
               min={customStart}
               max={LAST_NIGHT}
-              onChange={(e) => setCustomEnd(e.target.value)}
+              onChange={(e) => {
+                const v = validDate(e.target.value, customStart, LAST_NIGHT);
+                if (v) setCustomEnd(v);
+              }}
             />
           </label>
         </div>
@@ -278,7 +285,7 @@ export function TrendsScreen() {
         </button>
       </div>
 
-      <p className="disclaimer">Trends describe your data. They are not a diagnosis.</p>
+      {/* <p className="disclaimer">Trends describe your data. They are not a diagnosis.</p> */}
     </ScreenFrame>
   );
 }

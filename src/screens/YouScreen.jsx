@@ -17,9 +17,9 @@ import { SettingsContent } from './SettingsSheet.jsx';
 import { AccountContent } from './AccountSheet.jsx';
 
 export function YouScreen() {
-  const { openSheet, deviceConnections, machineId, authUser, authConfigured, wearables, resetOnboarding } = useStore();
+  const { openSheet, deviceConnections, machineId, authUser, authConfigured, wearables, resetOnboarding, hasData } =
+    useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
-
 
   return (
     <ScreenFrame title="You">
@@ -33,11 +33,18 @@ export function YouScreen() {
           <div>
             {/* who: from sign-in. What: from the card. Nothing filled in */}
             <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
-            <div className="ph-sub">{machineName(machineId).name}</div>
+            {/* the machine and its nights come from the card: none yet, none shown */}
+            {hasData && <div className="ph-sub">{machineName(machineId).name}</div>}
             {/* one plain milestone; compliance and AHI live on Therapy and Trends */}
             <div className="ph-meta tnum">
-              {USER.daysOnTherapy} nights on the machine
-              {USER.therapyStart && ` · since ${USER.therapyStart}`}
+              {hasData ? (
+                <>
+                  {USER.daysOnTherapy} nights on the machine
+                  {USER.therapyStart && ` · since ${USER.therapyStart}`}
+                </>
+              ) : (
+                'No nights yet'
+              )}
             </div>
             <PhotoLinks />
           </div>
@@ -51,11 +58,7 @@ export function YouScreen() {
         {connectedDevices.map((d) => {
           const photo = DEVICE_PHOTO[d.key];
           return (
-            <button
-              key={d.key}
-              className="list-row"
-              onClick={() => openSheet('deviceDetail', { deviceKey: d.key })}
-            >
+            <button key={d.key} className="list-row" onClick={() => openSheet('deviceDetail', { deviceKey: d.key })}>
               {photo ? (
                 <div className="lr-icon app">
                   <img src={photo} alt="" />
@@ -77,7 +80,11 @@ export function YouScreen() {
           <div className="list-row empty">
             <div className="lr-main">
               <div className="lr-title">No devices connected</div>
-              <div className="lr-sub">{authConfigured ? 'Connect a wearable to see your body overnight.' : 'Nocta reads your CPAP’s SD card. Wearables can’t be connected yet.'}</div>
+              <div className="lr-sub">
+                {authConfigured
+                  ? 'Connect a wearable to see your body overnight.'
+                  : 'Nocta reads your CPAP’s SD card. Wearables can’t be connected yet.'}
+              </div>
             </div>
           </div>
         )}

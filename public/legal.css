@@ -1,0 +1,114 @@
+/* Nocta — the privacy and terms pages (public/privacy.html, public/terms.html).
+ * Standalone pages outside the app, so the token values are mirrored from
+ * src/styles/tokens.css; keep them in sync. */
+:root {
+  --bg-base: #090d1a;
+  --surface-1: #141a2e;
+  --hairline: rgba(255, 255, 255, 0.06);
+  --hairline-strong: rgba(255, 255, 255, 0.1);
+  --text-primary: #ecf0fb;
+  --text-secondary: #9aa3c0;
+  --text-tertiary: #6b7396;
+  --accent: #f0a47a;
+  --accent-soft: #f4b896;
+  --font-display: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --r-md: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 16px 80px;
+}
+
+.legal-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.legal-home img {
+  width: 28px;
+  height: 28px;
+}
+
+h1 {
+  margin: 28px 0 6px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.legal-date {
+  margin: 0 0 28px;
+  color: var(--text-tertiary);
+  font-size: 15px;
+}
+
+h2 {
+  margin: 40px 0 10px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+p,
+li {
+  margin: 0 0 12px;
+}
+
+ul {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: var(--accent-soft);
+}
+
+footer {
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hairline);
+  color: var(--text-tertiary);
+  font-size: 15px;
+}
+footer a {
+  display: inline-block;
+  min-height: 48px;
+  line-height: 48px;
+  margin-right: 20px;
+}

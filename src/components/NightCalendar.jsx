@@ -38,9 +38,11 @@ const monthLabel = (key) =>
 const longDate = (date) =>
   toDate(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-/* every month from the first night to the last, oldest first */
+/* every month from the first night to the last, oldest first (none
+ * without nights) */
 function therapyMonths() {
   const out = [];
+  if (!THERAPY_START || !LAST_NIGHT) return out;
   const d = toDate(`${monthKey(THERAPY_START)}-01`);
   const end = monthKey(LAST_NIGHT);
   for (;;) {

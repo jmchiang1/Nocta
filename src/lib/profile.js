@@ -96,7 +96,8 @@ export const onProfile = (fn) => {
  * "skipped", so they're dropped rather than stored as answers) */
 export function saveOnboardingAnswers(data) {
   const answers = {};
-  Object.entries(data).forEach(([k, v]) => {
+  Object.entries(data).forEach(([k, raw]) => {
+    const v = typeof raw === 'string' ? raw.trim() : raw; // "  Aetna " is "Aetna"
     if (v == null || v === '' || v === false) return;
     if (Array.isArray(v) && !v.length) return;
     answers[k] = v;

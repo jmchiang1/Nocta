@@ -134,3 +134,16 @@ export function fmtDelta(n) {
   const v = Math.abs(n);
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
+
+/* a YYYY-MM-DD from a date input, if it's a real day inside [min, max];
+ * null for a half-typed, cleared or out-of-range value (the input then
+ * keeps showing the last good date) */
+export function validDate(v, min, max) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v ?? '')) return null;
+  // a real calendar day (no Feb 30), checked in UTC so no timezone shifts it
+  const [y, m, d] = v.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d));
+  if (t.getUTCFullYear() !== y || t.getUTCMonth() !== m - 1 || t.getUTCDate() !== d) return null;
+  if ((min && v < min) || (max && v > max)) return null;
+  return v;
+}

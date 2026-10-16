@@ -380,8 +380,7 @@ export function CardImport({ onFinish, onCancel }) {
           ) : (
             <div className="confirm-row">
               <p className="confirm-text">
-                Remove all {cardData.nights.length} imported nights from this phone? The card
-                itself isn’t touched.
+                Remove all {cardData.nights.length} imported nights from this phone?
               </p>
               <div className="confirm-actions">
                 <button className="btn ghost" onClick={() => setConfirmRemove(false)}>

@@ -50,4 +50,5 @@ export const AUTH_COPY = {
 
 export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 export const MIN_PASSWORD = 8;
+export const MAX_PASSWORD = 72; // Supabase's limit (bcrypt)
 export const RESEND_SECONDS = 30;

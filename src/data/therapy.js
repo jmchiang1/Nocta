@@ -1,7 +1,6 @@
 /* Nocta — Therapy tab data: device, settings, compliance. The machine, its
  * settings and compliance come from the CPAP card; equipment ages from the
  * replacement dates the person logs (lib/equipment.js). */
-import { NIGHTS, LAST_NIGHT, metCompliance, fmtShort } from './history.js';
 import { getCard } from '../lib/dataset.js';
 
 /* The machine and its settings, as the card records them. Nothing here is a
@@ -61,102 +60,5 @@ export function machineName(machineId) {
   return { brand: m.brand, name: m.name, short: m.short };
 }
 
-/* Compliance: insurers ask for 4+ hours on 21 of the first 30 nights.
- * Computed from history.js *as of* a given night, so the Trends card can
- * follow the night picked on Tonight without drifting from anything else. */
-const WINDOW = 30;
-const REQUIRED = 21;
-
-/* past the first 30 nights: the bar was the first 30, so say when it was
- * cleared, then track the most recent 30 (many plans keep checking ~70%) */
-function rollingAsOf(nights) {
-  let count = 0;
-  let clearedOn = null;
-  nights.slice(0, WINDOW).forEach((x, i) => {
-    if (metCompliance(x)) count += 1;
-    if (count === REQUIRED && clearedOn == null) clearedOn = i + 1;
-  });
-  const last = nights.slice(-WINDOW);
-  const status = last.map((x) => (metCompliance(x) ? 'met' : 'missed'));
-  const met = status.filter((x) => x === 'met').length;
-  const cleared = clearedOn
-    ? `You cleared the ${REQUIRED}-of-${WINDOW} bar on night ${clearedOn}.`
-    : `The first ${WINDOW} nights didn't reach ${REQUIRED} with 4+ hours.`;
-  return {
-    eyebrow: 'Compliance · last 30 nights',
-    headline:
-      met >= REQUIRED
-        ? `*${met} of your last ${WINDOW}* nights had 4+ hours.`
-        : `*${met} of your last ${WINDOW}* nights had 4+ hours, under the ${REQUIRED} plans look for.`,
-    body:
-      `${cleared} Many plans keep checking about 70% use, so this follows your most recent ${WINDOW}.` +
-      (met >= REQUIRED ? '' : ' A few more full nights brings it back up.'),
-    met,
-    missed: WINDOW - met,
-    stillNeeded: Math.max(0, REQUIRED - met),
-    earliest: null,
-    slack: null,
-    progressPct: Math.round((met / WINDOW) * 100),
-    targetPct: Math.round((REQUIRED / WINDOW) * 100),
-    scale: [fmtShort(last[0].date), "", fmtShort(last.at(-1).date)], // the bar needs no middle mark here
-    nights: status,
-  };
-}
-
-export function projectionAsOf(anchor = LAST_NIGHT) {
-  const nights = NIGHTS.filter((x) => x.date <= anchor);
-  if (nights.length > WINDOW) return rollingAsOf(nights);
-  const elapsed = nights.map((x) => (metCompliance(x) ? 'met' : 'missed'));
-  const met = elapsed.filter((x) => x === 'met').length;
-  const missed = elapsed.length - met;
-  const stillNeeded = Math.max(0, REQUIRED - met);
-  const earliest = elapsed.length + stillNeeded; // if every night from here counts
-  const slack = WINDOW - REQUIRED - missed; // misses left before it's out of reach
-
-  let headline;
-  let body;
-  if (met >= REQUIRED) {
-    headline = 'You’ve *cleared* compliance.';
-    body = `${met} of your first ${elapsed.length} nights had 4+ hours. That meets the ${REQUIRED}-of-${WINDOW} bar insurance asks for.`;
-  } else if (slack < 0) {
-    headline = 'Compliance is *out of reach* this window.';
-    body = `Too many nights fell under 4 hours to reach ${REQUIRED} of ${WINDOW}. Worth a call to your equipment provider about what happens next.`;
-  } else {
-    headline = missed
-      ? `You can still clear compliance by *night ${earliest}*.`
-      : `You’re on track to clear compliance by *night ${earliest}*.`;
-    // headline carries the target night and the dot row shows which nights missed
-    body =
-      `Insurance needs 4+ hours on ${REQUIRED} of your first ${WINDOW} nights. ` +
-      `You’re at ${met} of ${elapsed.length}. ${stillNeeded} more gets you there, with ${slack} nights to spare.`;
-  }
-
-  return {
-    eyebrow: 'Compliance outlook',
-    headline,
-    body,
-    met,
-    missed,
-    stillNeeded,
-    earliest,
-    slack,
-    progressPct: Math.round((Math.min(met, REQUIRED) / REQUIRED) * 100), // nights banked toward the 21
-    targetPct: Math.round((Math.min(earliest, WINDOW) / WINDOW) * 100), // marker: earliest possible night
-    scale: ['Night 1', `Night ${earliest} · earliest`, `Night ${WINDOW}`],
-    /* per-night status across the 30-night window, shown as a dot row:
-     * 'met' = ≥4h, 'missed' = under, 'future' = not happened yet */
-    nights: [...elapsed, ...Array(Math.max(0, WINDOW - elapsed.length)).fill('future')],
-  };
-}
-
-/* as of the real last night — Therapy (desktop), You stats */
-export const PROJECTION = projectionAsOf(LAST_NIGHT);
-export const COMPLIANCE = {
-  window: WINDOW,
-  required: REQUIRED,
-  met: PROJECTION.met,
-  missed: PROJECTION.missed,
-  stillNeeded: PROJECTION.stillNeeded,
-  earliest: PROJECTION.earliest,
-  slack: PROJECTION.slack,
-};
+/* Compliance lives in data/compliance.js: the person's own plan (start date
+ * and rule), shown only to an account that said it's in a window. */

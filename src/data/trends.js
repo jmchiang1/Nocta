@@ -231,7 +231,12 @@ function coverageLine(nights, days) {
   return 'Every night this week had a full session.';
 }
 
+/* at most three lines: what stands out, not everything */
+const MAX_INSIGHTS = 3;
 function insights(scope, nights, anchor, days) {
+  return allInsights(scope, nights, anchor, days).slice(0, MAX_INSIGHTS);
+}
+function allInsights(scope, nights, anchor, days) {
   const last = NIGHTS.find((x) => x.date === anchor) || nights.at(-1);
   if (!nights.length || !last) {
     return [{ icon: 'spark', text: `No therapy nights fall in this range. Your first night was ${fmtShort(THERAPY_START)}.` }];

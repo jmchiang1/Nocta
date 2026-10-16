@@ -54,6 +54,14 @@ export function EditableAvatar() {
           const f = e.target.files?.[0];
           e.target.value = '';
           if (!f) return;
+          if (!f.type.startsWith('image/')) {
+            showToast('Choose a photo (JPEG, PNG or HEIC)', 'info');
+            return;
+          }
+          if (f.size > 25 * 1024 * 1024) {
+            showToast('That photo is too large (over 25 MB)', 'info');
+            return;
+          }
           try {
             setPhoto(await shrink(f));
             showToast('Photo updated', 'check');

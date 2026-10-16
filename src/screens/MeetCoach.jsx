@@ -151,10 +151,6 @@ export function MeetCoach({ next }) {
         </div>
       </div>
       <div className="ob-foot mc-foot">
-        <p className="ob-foot-note">
-          {COACH_NAME} won’t change your pressure or name a condition. That’s always your
-          doctor’s call.
-        </p>
         <button className="btn primary" onClick={next}>
           Continue
         </button>

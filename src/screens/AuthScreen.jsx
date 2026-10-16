@@ -56,6 +56,7 @@ function EmailField({ value, onChange, error, autoFocus }) {
         spellCheck={false}
         autoFocus={autoFocus}
         placeholder="name@example.com"
+        maxLength={254}
         value={value}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? 'au-email-err' : undefined}
@@ -83,6 +84,7 @@ function PasswordField({ value, onChange, error, isNew, label = 'Password' }) {
           className={`ob-input${error ? ' invalid' : ''}`}
           type={show ? 'text' : 'password'}
           autoComplete={isNew ? 'new-password' : 'current-password'}
+          maxLength={72}
           value={value}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? 'au-pass-err' : isNew ? 'au-pass-hint' : undefined}

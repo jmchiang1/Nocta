@@ -3,6 +3,7 @@
  * (number on the tile, shape in the chart), with the journal patterns
  * beneath. The reading rail beside it holds what stands out (with the way in
  * to Nox), the best/worst night and the journal. Same getTrends() data. */
+import { validDate } from '../../lib/format.js';
 import { useState } from 'react';
 import { THERAPY_START, LAST_NIGHT } from '../../data/history.js';
 import { getTrends, trendAxes } from '../../data/trends.js';
@@ -113,7 +114,10 @@ export function DesktopTrends() {
                   value={customStart}
                   min={THERAPY_START}
                   max={customEnd}
-                  onChange={(e) => setCustomStart(e.target.value)}
+                  onChange={(e) => {
+                const v = validDate(e.target.value, THERAPY_START, customEnd);
+                if (v) setCustomStart(v);
+              }}
                 />
               </label>
               <label className="dr-field">
@@ -123,7 +127,10 @@ export function DesktopTrends() {
                   value={customEnd}
                   min={customStart}
                   max={LAST_NIGHT}
-                  onChange={(e) => setCustomEnd(e.target.value)}
+                  onChange={(e) => {
+                const v = validDate(e.target.value, customStart, LAST_NIGHT);
+                if (v) setCustomEnd(v);
+              }}
                 />
               </label>
             </div>
@@ -293,7 +300,7 @@ export function DesktopTrends() {
         </aside>
       </div>
 
-      <p className="disclaimer">Trends describe your data. They are not a diagnosis.</p>
+      {/* <p className="disclaimer">Trends describe your data. They are not a diagnosis.</p> */}
     </>
   );
 }

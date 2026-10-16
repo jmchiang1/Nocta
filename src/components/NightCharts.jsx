@@ -3,11 +3,11 @@
  * plots the card's readings as they are (lib/nightSeries.js,
  * lib/nightDetail.js); the charts fit the data, never the other way round.
  * Plain readouts in the metric blue: no scoring colours, no advice. */
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { nightSeries, metricAxes } from '../lib/nightSeries.js';
 import { nightDetail, duration } from '../lib/nightDetail.js';
 import { wavesFor, traceFor } from '../lib/waves.js';
-import { EPISODES, allEpisodes } from '../data/fixtures.js';
+import { FIXTURES, allEpisodes } from '../data/fixtures.js';
 import { LineChart, Bars, SessionsChart, PressureHistogram, BreathTrace } from './Charts.jsx';
 import { TrendLegend } from './TrendLegend.jsx';
 import { Icon } from './Icons.jsx';
@@ -133,7 +133,7 @@ export function nightPanels(fixtureId, { height, open }) {
 }
 
 /* ---- the night's events, each opening to its breathing waveform ---- */
-function EventRow({ ep }) {
+function EventRow({ ep, escalated }) {
   const [open, setOpen] = useState(false);
   const [trace, setTrace] = useState(undefined); // undefined: not loaded; null: none kept
   useEffect(() => {
@@ -148,7 +148,7 @@ function EventRow({ ep }) {
   return (
     <div className="episode">
       <button className="episode-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className={`ep-badge ${ep.type}`}>{ep.type.toUpperCase()}</span>
+        <span className={`ep-badge ${ep.type}${escalated && ep.type === 'CSA' ? ' flag' : ''}`}>{ep.type.toUpperCase()}</span>
         <span className="ep-time">{ep.time}</span>
         <span className="ep-dur">{ep.dur}s</span>
         <Icon name={open ? 'chevronUp' : 'chevronDown'} size={16} />
@@ -179,30 +179,124 @@ function EventRow({ ep }) {
   );
 }
 
+/* the night's events, each with its breathing ("Events by type"): "Show"
+ * picks which types (chips, with counts) and "Sort" the order (a dropdown
+ * pill), side by side in one row so the two never look alike */
+const SORTS = [
+  { id: 'time', label: 'Time' },
+  { id: 'duration', label: 'Longest' },
+  { id: 'type', label: 'Type' },
+];
+const TYPE_ORDER = ['CSA', 'OSA', 'Hypopnea', 'Apnea'];
+const TYPE_NAME = { CSA: 'Central', OSA: 'Obstructive', Hypopnea: 'Hypopnea', Apnea: 'Unclassified' };
+const SHOW = 8; // the first stretch of the list; "Show all" for the rest
+const byTime = (a, b) => a.at.localeCompare(b.at);
+const SORTERS = {
+  time: byTime,
+  type: (a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || byTime(a, b),
+  duration: (a, b) => b.dur - a.dur || byTime(a, b),
+};
+
 export function NightEvents({ fixtureId }) {
+  const [sort, setSort] = useState('time');
+  const [type, setType] = useState('all');
   const [all, setAll] = useState(false);
-  const longest = EPISODES[fixtureId] || [];
-  const every = all ? allEpisodes(fixtureId) : longest;
-  const count = allEpisodes(fixtureId).length;
+  const events = allEpisodes(fixtureId);
+  const types = TYPE_ORDER.filter((t) => events.some((e) => e.type === t));
+  const list = events.filter((e) => type === 'all' || e.type === type).sort(SORTERS[sort]);
+  const shown = all ? list : list.slice(0, SHOW);
+  // central events turn coral only on a night flagged for the doctor, as in
+  // the Events summary chart above
+  const escalated = FIXTURES[fixtureId]?.insight.escalation_flag === 'hard';
+  // switching between All / Central / … keeps the list the same height (room
+  // for the first eight rows and the Show all button), so the page doesn't
+  // jump; one row's height is measured, since it follows the type size
+  const listRef = useRef(null);
+  const [rowH, setRowH] = useState(55);
+  useLayoutEffect(() => {
+    const row = listRef.current?.querySelector('.episode');
+    if (!row) return;
+    const h = row.offsetHeight + parseFloat(getComputedStyle(row).marginBottom || 0);
+    if (h > 0 && Math.abs(h - rowH) > 0.5) setRowH(h);
+  });
+  const reserve = all ? 0 : Math.min(SHOW, events.length);
+  const moreSlot = !all && events.length > SHOW; // any filter could need "Show all"
+
   return (
-    <section className="fn-events" aria-label="Events">
+    <section className="fn-events" aria-label="Events by type">
       <div className="section-head">
-        <h3>{!all && longest.length < count ? 'Longest events' : 'Events'}</h3>
-        <span className="meta tnum">
-          {!all && longest.length < count ? `${longest.length} of ${count}` : `all ${count}`} · tap for the breathing
-        </span>
+        <h3>Events by type</h3>
       </div>
-      {every.length ? (
-        every.map((ep) => <EventRow key={ep.at} ep={ep} />)
+
+      {/* one row: which events (Show chips) on the left, their order (Sort)
+       * on the right; on a phone the chips scroll between the two */}
+      {events.length > 1 && (
+        <div className="ev-bar">
+          {types.length > 1 && (
+            <div className="ev-show" role="radiogroup" aria-label="Show events">
+              <span className="ev-show-k" aria-hidden="true">
+                Show
+              </span>
+              <div className="ev-chips">
+                {['all', ...types].map((t) => {
+                  const n = t === 'all' ? events.length : events.filter((e) => e.type === t).length;
+                  const on = type === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      className={`ev-chip${on ? ' on' : ''}`}
+                      onClick={() => {
+                        setType(t);
+                        setAll(false);
+                      }}
+                    >
+                      {t === 'all' ? 'All' : TYPE_NAME[t]}
+                      <span className="ev-chip-n tnum">{n}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* the pill shows the choice; the native select lies invisibly over
+           * all of it, so a click or tap anywhere opens the picker */}
+          <label className="ev-sort">
+            <span className="ev-sort-k">Sort</span>
+            <span className="ev-sort-v">{SORTS.find((o) => o.id === sort).label}</span>
+            <Icon name="chevronDown" size={14} />
+            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort events by">
+              {SORTS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {shown.length ? (
+        <div className="ev-list" ref={listRef} style={{ minHeight: reserve * rowH }}>
+          {shown.map((ep) => (
+            <EventRow key={ep.at} ep={ep} escalated={escalated} />
+          ))}
+        </div>
       ) : (
         <div className="connect-cta">
           <p>No events recorded this night.</p>
         </div>
       )}
-      {!all && longest.length < count && (
+      {shown.length < list.length ? (
         <button type="button" className="btn ghost fn-all-events" onClick={() => setAll(true)}>
-          Show all {count} events
+          Show all {list.length}
+          {type !== 'all' && ` ${TYPE_NAME[type].toLowerCase()}`} events
         </button>
+      ) : (
+        // the button's room, kept while another filter would show it
+        moreSlot && <div className="btn fn-all-events ev-slot" aria-hidden="true" />
       )}
     </section>
   );

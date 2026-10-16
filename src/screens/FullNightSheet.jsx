@@ -3,6 +3,7 @@
  * (components/NightCharts.jsx, shared with the desktop page) and the night's
  * events, each opening to its breathing waveform. (The morning check-in
  * lives on Tonight, under the night's suggestion.) */
+import { useEffect, useLayoutEffect } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { FIXTURES } from '../data/fixtures.js';
 import { NightTimeline } from '../components/NightTimeline.jsx';
@@ -41,12 +42,20 @@ function Panel({ title, meta, onOpen, children }) {
 }
 
 export function FullNightSheet() {
-  const { fixtureId, closeSheet, pushSheet, deviceConnections, deviceEnabled, deviceReads } = useStore();
+  const { fixtureId, closeSheet, pushSheet, deviceConnections, deviceEnabled, deviceReads, sheet, sheetLeaving } = useStore();
   const fx = FIXTURES[fixtureId];
   // a connected wearable's record of this night (lib/bodySource.js)
   const body = primaryBody(fx, deviceConnections, deviceEnabled, deviceReads);
   // each machine graph with its own page opens it (MetricDetailSheet)
   const panels = nightPanels(fixtureId, { height: CHART_H, open: (metric) => pushSheet('metricDetail', { metric }) });
+  // back on Tonight, the page starts at its top (as on desktop). Done the
+  // moment going back begins, while this page still covers Tonight, so it's
+  // already there as it slides into view (not a snap once it has)
+  const toTop = () => document.querySelector('.app-layer .scroll')?.scrollTo({ top: 0 });
+  useLayoutEffect(() => {
+    if (sheetLeaving && sheet?.kind === 'fullnight') toTop();
+  }, [sheetLeaving, sheet]);
+  useEffect(() => toTop, []); // and on leaving any other way
 
   return (
     <Sheet
@@ -73,10 +82,10 @@ export function FullNightSheet() {
             </div>
           </div>
 
-          {/* events split by type: obstructive vs central matters most on a
-           * doctor-worthy night, so it leads the detail */}
+          {/* the night's events at a glance, by hour and type; the full list,
+           * each with its breathing, is "Events by type" at the bottom */}
           <div className="section-head">
-            <h3>Events by type</h3>
+            <h3>Events summary</h3>
           </div>
           <NightTimeline
             timeline={fx.timeline}

@@ -1,13 +1,14 @@
 /* Nocta — desktop dashboard shell. Persistent left sidebar + a main view that
  * swaps with the active tab. Shares the same store state as the mobile app, so
  * the Mobile/Desktop toggle keeps you on the same night and tab. */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useStore } from '../../lib/store.jsx';
 import { Icon } from '../Icons.jsx';
 import { Mascot } from '../Mascot.jsx';
 import { StatusPill } from '../StatusPill.jsx';
 import { prefersReducedMotion } from '../../lib/motion.jsx';
 import { DesktopTonight } from './DesktopTonight.jsx';
+import { DesktopNoNights } from '../NoNights.jsx';
 import { DesktopTrends } from './DesktopTrends.jsx';
 import { DesktopTherapy } from './DesktopTherapy.jsx';
 import { DesktopYou } from './DesktopYou.jsx';
@@ -181,20 +182,51 @@ function useCollapsed() {
 }
 
 
-export function DesktopApp() {
-  const { tab, setTab, tabNonce, openSheet, sheets, closeAllSheets } = useStore();
-  const [collapsed, toggleCollapsed] = useCollapsed();
-  const View = VIEWS[tab] || DesktopTonight;
-  // the full night is a page here, over the current view (kept mounted, so
-  // coming back finds it as it was, scrolled where it was)
-  const nightOpen = sheets.some((s) => s.kind === 'fullnight');
-  const wasOpen = useRef(false);
-  const scrollBack = useRef(0);
-  if (nightOpen && !wasOpen.current) scrollBack.current = window.scrollY;
-  useEffect(() => {
-    if (!nightOpen && wasOpen.current) window.scrollTo(0, scrollBack.current);
-    wasOpen.current = nightOpen;
+/* the full night slides over the page it was opened from, right to left, and
+ * back out to the right on the way back. While it moves it's a fixed layer
+ * over the view (which stays where it was); once in, it settles into the
+ * page's own scroll. closed → entering → open → leaving → closed */
+const NIGHT_SLIDE_MS = 380;
+function useNightPhase(nightOpen) {
+  const [phase, setPhase] = useState(nightOpen ? 'open' : 'closed');
+  const layerRef = useRef(null);
+  const leaveY = useRef(0);
+  useLayoutEffect(() => {
+    if (nightOpen && (phase === 'closed' || phase === 'leaving')) setPhase('entering');
+    if (!nightOpen && (phase === 'open' || phase === 'entering')) {
+      leaveY.current = window.scrollY; // where they were reading in the night
+      setPhase('leaving');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nightOpen]);
+  useLayoutEffect(() => {
+    if (phase === 'leaving') {
+      // the layer keeps the night where it was; the view underneath is back
+      // at its top
+      if (layerRef.current) layerRef.current.scrollTop = leaveY.current;
+      window.scrollTo(0, 0);
+    }
+    if (phase !== 'entering' && phase !== 'leaving') return undefined;
+    const id = setTimeout(() => {
+      if (phase === 'entering') {
+        setPhase('open');
+        window.scrollTo(0, 0); // the night in the page's own scroll, from its top
+      } else setPhase('closed');
+    }, prefersReducedMotion() ? 0 : NIGHT_SLIDE_MS);
+    return () => clearTimeout(id);
+  }, [phase]);
+  return [phase, layerRef];
+}
+
+export function DesktopApp() {
+  const { tab, setTab, tabNonce, openSheet, sheets, closeAllSheets, hasData } = useStore();
+  const [collapsed, toggleCollapsed] = useCollapsed();
+  // no nights (an account with no card yet): Tonight and Trends say so instead
+  const View = !hasData && (tab === 'tonight' || tab === 'trends') ? DesktopNoNights : VIEWS[tab] || DesktopTonight;
+  // the full night is a page here, over the current view (kept mounted, so
+  // coming back finds it as it was); back from it lands at the top
+  const nightOpen = sheets.some((s) => s.kind === 'fullnight');
+  const [nightPhase, nightLayer] = useNightPhase(nightOpen);
   // collapsed, the labels are hidden — the native tooltip names each icon
   const tip = (label) => (collapsed ? label : undefined);
 
@@ -262,10 +294,14 @@ export function DesktopApp() {
       </aside>
 
       <main className="dash-main">
-        <div hidden={nightOpen}>
-          <View key={tabNonce} />
+        <div hidden={nightPhase === 'open'}>
+          <View key={tabNonce} tab={tab} />
         </div>
-        {nightOpen && <DesktopFullNight />}
+        {nightPhase !== 'closed' && (
+          <div ref={nightLayer} className={`dfn-layer ${nightPhase}`}>
+            <DesktopFullNight />
+          </div>
+        )}
       </main>
 
       <StatusPill />

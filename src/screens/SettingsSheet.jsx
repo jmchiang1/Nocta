@@ -156,6 +156,34 @@ export function SettingsContent({ children }) {
         <h3>Medical disclaimer</h3>
       </div>
       <p className="settings-note">{MEDICAL_NOTE}</p>
+
+      {/* ---- privacy and terms: subpages (LegalSheet) showing the public
+       * pages' text (public/privacy.html, public/terms.html) ---- */}
+      <div className="section-head">
+        <h3>Privacy and terms</h3>
+      </div>
+      <div className="list">
+        <button className="list-row" onClick={() => openSheet('legal', { doc: 'privacy' })}>
+          <div className="lr-icon bare">
+            <Icon name="shield" size={17} />
+          </div>
+          <div className="lr-main">
+            <div className="lr-title">Privacy Policy</div>
+            <div className="lr-sub">What Nocta keeps, and where</div>
+          </div>
+          <Icon name="chevronRight" size={17} />
+        </button>
+        <button className="list-row" onClick={() => openSheet('legal', { doc: 'terms' })}>
+          <div className="lr-icon bare">
+            <Icon name="doc" size={17} />
+          </div>
+          <div className="lr-main">
+            <div className="lr-title">Terms of Service</div>
+            <div className="lr-sub">The rules for using Nocta</div>
+          </div>
+          <Icon name="chevronRight" size={17} />
+        </button>
+      </div>
     </>
   );
 }

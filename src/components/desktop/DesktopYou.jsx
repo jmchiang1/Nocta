@@ -14,8 +14,17 @@ import { AccountContent } from '../../screens/AccountSheet.jsx';
 import { SettingsContent } from '../../screens/SettingsSheet.jsx';
 
 export function DesktopYou() {
-  const { openSheet, deviceConnections, machineId, maskId, resetOnboarding, authUser, authConfigured, wearables } =
-    useStore();
+  const {
+    openSheet,
+    deviceConnections,
+    machineId,
+    maskId,
+    resetOnboarding,
+    authUser,
+    authConfigured,
+    wearables,
+    hasData,
+  } = useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
   const machine = machineName(machineId);
   const mask = maskById(maskId);
@@ -51,7 +60,7 @@ export function DesktopYou() {
             </div>
             <div>
               <dt>Machine</dt>
-              <dd>{machine.short}</dd>
+              <dd>{hasData ? machine.short : '—'}</dd>
             </div>
             <div>
               <dt>Mask</dt>

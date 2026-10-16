@@ -57,7 +57,7 @@ export function ChangePasswordSheet() {
               <label className="ob-field-label" htmlFor={id}>
                 {label}
               </label>
-              <input id={id} className="ob-input" type="password" autoComplete={ac} value={v} onChange={(e) => set(e.target.value)} />
+              <input id={id} className="ob-input" type="password" autoComplete={ac} maxLength={72} value={v} onChange={(e) => set(e.target.value)} />
             </div>
           ))}
           <p className="au-field-hint">At least {MIN_PASSWORD} characters.</p>

@@ -79,7 +79,7 @@ export const SLEEP_CONDITIONS = [
 
 /* insurance / compliance — providers picked from the major companies */
 export const COMPLIANCE_WINDOW = [
-  { id: 'yes', label: 'Yes, in my first 90 days' },
+  { id: 'yes', label: 'Yes, I’m in one now' },
   { id: 'no', label: 'No / already cleared it' },
   { id: 'unsure', label: 'Not sure' },
 ];

@@ -41,6 +41,7 @@ export function MaskPickerSheet() {
             className="text-field"
             type="search"
             placeholder="Search by model name"
+            maxLength={60}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search masks"

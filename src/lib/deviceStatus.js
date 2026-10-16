@@ -1,4 +1,4 @@
-import { getCard } from './dataset.js';
+import { getCard, isDemoData } from './dataset.js';
 
 /* Nocta — the device card's line about where the data comes from. Data only
  * arrives by SD card import today. Shared by Therapy (mobile) and
@@ -9,10 +9,10 @@ const short = (d) =>
 
 export function deviceSource(cardData) {
   if (!cardData) {
-    // nothing imported: the app is showing the bundled sample year
-    const demo = getCard();
-    return demo
-      ? `A sample year, through ${short(demo.range.last)} · import your SD card to see yours`
+    // nothing imported: the bundled sample year (someone looking around), or
+    // no nights at all
+    return isDemoData()
+      ? `A sample year, through ${short(getCard().range.last)} · import your SD card to see yours`
       : 'Import from your SD card to bring in your nights';
   }
   return `From your SD card · latest night ${short(cardData.range.last)}`;

@@ -44,6 +44,10 @@ const HEX = {
   dataLight: '#a3b7df', // --stage-rem
   muted: '#6b7396', // --text-tertiary
   text2: '#9aa3c0', // --text-secondary: axis labels (AA on the card)
+  // breathing-event types (--ev-*): obstructive, hypopnea, central
+  evOsa: '#7b95d8',
+  evHyp: '#6fa8a6',
+  evCsa: '#ab97d6',
 };
 const FAINT = 'rgba(123,149,216,0.28)';
 

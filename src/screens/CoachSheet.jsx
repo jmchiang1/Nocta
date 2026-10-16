@@ -93,6 +93,7 @@ export function CoachSheet() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about a metric or a night…"
+            maxLength={500}
             aria-label="Message Nox"
           />
           <button type="submit" className="send" disabled={!input.trim() || typing} aria-label="Send">

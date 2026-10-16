@@ -1,24 +1,48 @@
-/* Nocta — compliance outlook: nights over 4 h toward the 21-of-30 insurance
- * bar. One bar, one segment per night of the 30-night window (green = 4+ h,
- * coral = under, dim = still to come), so the bar and the per-night status
- * are the same thing and can't disagree. In the first 30 nights a marker
- * stands at the earliest night compliance can be cleared, with its label
- * directly under it. Leads the Therapy tab, as of the real last night; pass
- * `fixtureId` to show it as of a different night (projectionAsOf). */
-import { projectionAsOf } from '../data/therapy.js';
+/* Nocta — compliance outlook, for someone with an account who said they're in
+ * an insurance compliance window (data/compliance.js decides who sees it).
+ * Counted on calendar days from the day their window started, against their
+ * plan's rule (Medicare's unless they set their own). One bar, one segment
+ * per day of the 30-day stretch on show (met / under / still to come /
+ * before the card, unknown); while the bar can still be reached, a marker
+ * stands at the earliest day it can be, labelled underneath. Pass
+ * `fixtureId` to show it as of a different night. */
+import { useStore } from '../lib/store.jsx';
+import { complianceAsOf } from '../data/compliance.js';
 import { dateForFixture } from '../data/history.js';
 import { Rich } from './Rich.jsx';
 
 export function ComplianceCard({ fixtureId }) {
-  const p = projectionAsOf(dateForFixture(fixtureId));
+  const { profile, openSheet } = useStore();
+  const p = complianceAsOf(dateForFixture(fixtureId), profile.answers);
+  const edit = (
+    <button type="button" className="pj-edit" onClick={() => openSheet('compliancePlan')}>
+      {p.needsStart ? 'Set it up' : 'Your plan'}
+    </button>
+  );
+
+  // they're in a window, but Nocta doesn't know when it started yet
+  if (p.needsStart) {
+    return (
+      <section className="projection" aria-label="Compliance">
+        <div className="pj-eyebrow">Compliance</div>
+        <h4>When did your compliance window start?</h4>
+        <p>Nocta counts your nights from that day, against what your plan asks for. It takes a moment.</p>
+        {edit}
+      </section>
+    );
+  }
+
   const n = p.nights.length;
-  // the marker sits in the middle of its night's segment
-  const markerAt = p.earliest != null && p.earliest <= n ? ((p.earliest - 0.5) / n) * 100 : null;
+  // the marker sits in the middle of its day's segment
+  const markerAt = p.marker != null ? ((p.marker - 0.5) / n) * 100 : null;
   const [first, middle, last] = p.scale;
 
   return (
     <section className="projection" aria-label="Compliance outlook">
-      <div className="pj-eyebrow">{p.eyebrow}</div>
+      <div className="pj-top">
+        <div className="pj-eyebrow">{p.eyebrow}</div>
+        {edit}
+      </div>
       <h4>
         <Rich text={p.headline} />
       </h4>
@@ -26,7 +50,7 @@ export function ComplianceCard({ fixtureId }) {
       <div
         className="pj-track"
         role="img"
-        aria-label={`Compliance per night: ${p.met} of ${p.met + p.missed} nights over 4 hours`}
+        aria-label={`Compliance per day: ${p.met} of these ${n} days had ${p.rule.minHours} or more hours`}
         style={{ '--n': n }}
       >
         {p.nights.map((status, i) => (
@@ -34,8 +58,9 @@ export function ComplianceCard({ fixtureId }) {
         ))}
         {markerAt != null && <span className="pj-marker" style={{ left: `${markerAt}%` }} aria-hidden="true" />}
       </div>
+      {/* the marker's label wins over an end label it would run into */}
       <div className="pj-scale tnum">
-        <span>{first}</span>
+        <span style={markerAt != null && markerAt < 30 ? { visibility: 'hidden' } : undefined}>{first}</span>
         {markerAt != null ? (
           <span className="pj-scale-mark" style={{ left: `${markerAt}%` }}>
             {middle}
@@ -43,8 +68,9 @@ export function ComplianceCard({ fixtureId }) {
         ) : (
           <span>{middle}</span>
         )}
-        <span>{last}</span>
+        <span style={markerAt != null && markerAt > 70 ? { visibility: 'hidden' } : undefined}>{last}</span>
       </div>
+      {p.unknownNote && <p className="pj-note">{p.unknownNote}</p>}
     </section>
   );
 }

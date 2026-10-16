@@ -41,6 +41,13 @@
   --data-1: #7b95d8;
   --data-2: #5f7bc4;
   --data-deep: #4a63a8;
+  /* the three breathing-event types, apart at a glance but all muted night
+   * hues (no warning yellow / red): obstructive the metric blue, hypopnea a
+   * soft teal, central a soft violet. Coral (--alert) only marks centrals
+   * on a night flagged for the doctor. Mirrored in Charts.jsx (HEX). */
+  --ev-obstructive: #7b95d8;
+  --ev-hypopnea: #6fa8a6;
+  --ev-central: #ab97d6;
   --data-faint: rgba(123, 149, 216, 0.25);
 
   /* sleep stages — stepped ramp of --data-1 so the hypnogram reads as one

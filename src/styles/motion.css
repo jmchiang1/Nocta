@@ -1882,3 +1882,95 @@
     transform: translateX(340px) scaleX(1);
   }
 }
+
+/* =================================================================
+ * Arrival — signing in (or finishing setup) lands on the app slowly:
+ *   data-arrive 0  everything dark
+ *               1  the night sky fades up (1.6 s)
+ *               2  its stars come out (1.8 s)
+ *               3  the page's pieces rise in, one at a time, top to
+ *                  bottom; the tab bar / sidebar last
+ * Set on the app's root by App.jsx › useArrival, then removed. Never
+ * with reduced motion (JS gate, and the global rule).
+ * ================================================================= */
+/* the sky and its stars play from whenever they appear (the phone's screen
+ * can mount a beat after the arrival starts), so these are animations, not
+ * transitions; the stars keep their slow drift alongside */
+[data-arrive] .sky {
+  animation: arriveSky 1.6s ease-out both;
+}
+[data-arrive] .sky-stars {
+  animation:
+    arriveFade 1.8s ease-out 0.75s both,
+    starDrift 180s ease-in-out infinite alternate;
+}
+[data-arrive] .sky-stars.t2-layer {
+  animation-duration: 1.8s, 200s;
+}
+[data-arrive] .sky-stars.t3-layer {
+  animation-duration: 1.8s, 230s;
+}
+@keyframes arriveSky {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes arriveFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* the page's pieces: the phone screen's sections, the dashboard's sections */
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content > *, .dash-main > div > * > :not(.sky)) {
+  opacity: 0;
+}
+[data-arrive] :is(.app-layer .tabbar, .dash-sidebar) {
+  opacity: 0;
+}
+[data-arrive='3'] :is(.app-layer .screen > .scroll > .scroll-content > *, .dash-main > div > * > :not(.sky)) {
+  animation: arriveRise 0.9s var(--ease-out) both;
+  animation-delay: calc(var(--arrive-i, 0) * 150ms);
+}
+[data-arrive='3'] .app-layer .tabbar {
+  animation: arriveRise 0.9s var(--ease-out) 1.4s both;
+}
+[data-arrive='3'] .dash-sidebar {
+  animation: arriveSide 1s var(--ease-out) 0.2s both;
+}
+/* top to bottom: each piece a beat after the one above it */
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content, .dash-main > div > *) > :nth-child(2) { --arrive-i: 1; }
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content, .dash-main > div > *) > :nth-child(3) { --arrive-i: 2; }
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content, .dash-main > div > *) > :nth-child(4) { --arrive-i: 3; }
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content, .dash-main > div > *) > :nth-child(5) { --arrive-i: 4; }
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content, .dash-main > div > *) > :nth-child(6) { --arrive-i: 5; }
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content, .dash-main > div > *) > :nth-child(7) { --arrive-i: 6; }
+[data-arrive] :is(.app-layer .screen > .scroll > .scroll-content, .dash-main > div > *) > :nth-child(n + 8) { --arrive-i: 7; }
+@keyframes arriveRise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes arriveSide {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

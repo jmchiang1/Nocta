@@ -77,8 +77,10 @@ export function WeekStrip() {
   const home = stripAround(fixtureId, 7).at(-1).date;
   const [end, setEnd] = useState(home);
   const [slide, setSlide] = useState(null); // 'from-left' | 'from-right' after a page turn
+  // a night picked inside the week on show leaves the week where it is (no
+  // jump); only one outside it (the calendar, a swipe past the edge) moves it
   useEffect(() => {
-    setEnd(home);
+    setEnd((e) => (nightsEnding(e, 7).some((d) => d.date === fixtureId) ? e : home));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fixtureId]);
   const WEEK = nightsEnding(end, 7);

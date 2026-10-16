@@ -162,10 +162,6 @@ export function DesktopCompare() {
           <p><Rich text={b.insight?.headline ?? 'No insight for this night.'} /></p>
         </div>
       </div>
-
-      <p className="disclaimer">
-        Side-by-side readings, not a verdict on your therapy.
-      </p>
     </div>
   );
 }
