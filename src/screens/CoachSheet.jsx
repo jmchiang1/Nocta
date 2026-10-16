@@ -106,7 +106,7 @@ export function CoachSheet() {
         {empty && (
           <div className="coach-intro">
             <div className="ci-avatar">
-              <Mascot size={64} />
+              <Mascot size={64} pop />
             </div>
             <h4>Hi, I'm Nox.</h4>
             <p>I read your CPAP data each night. Ask me what changed, or why.</p>

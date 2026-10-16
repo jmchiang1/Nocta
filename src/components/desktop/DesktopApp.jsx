@@ -182,40 +182,18 @@ function useCollapsed() {
 }
 
 
-/* the full night slides over the page it was opened from, right to left, and
- * back out to the right on the way back. While it moves it's a fixed layer
- * over the view (which stays where it was); once in, it settles into the
- * page's own scroll. closed → entering → open → leaving → closed */
-const NIGHT_SLIDE_MS = 380;
-function useNightPhase(nightOpen) {
-  const [phase, setPhase] = useState(nightOpen ? 'open' : 'closed');
-  const layerRef = useRef(null);
-  const leaveY = useRef(0);
+/* the full night replaces the view it was opened from, with no slide (the
+ * user's call: the transition read as a glitch). Each way it starts at the
+ * top, reset before the first paint so nothing jumps. */
+function useNightSwap(nightOpen) {
+  const first = useRef(true);
   useLayoutEffect(() => {
-    if (nightOpen && (phase === 'closed' || phase === 'leaving')) setPhase('entering');
-    if (!nightOpen && (phase === 'open' || phase === 'entering')) {
-      leaveY.current = window.scrollY; // where they were reading in the night
-      setPhase('leaving');
+    if (first.current) {
+      first.current = false;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.scrollTo(0, 0);
   }, [nightOpen]);
-  useLayoutEffect(() => {
-    if (phase === 'leaving') {
-      // the layer keeps the night where it was; the view underneath is back
-      // at its top
-      if (layerRef.current) layerRef.current.scrollTop = leaveY.current;
-      window.scrollTo(0, 0);
-    }
-    if (phase !== 'entering' && phase !== 'leaving') return undefined;
-    const id = setTimeout(() => {
-      if (phase === 'entering') {
-        setPhase('open');
-        window.scrollTo(0, 0); // the night in the page's own scroll, from its top
-      } else setPhase('closed');
-    }, prefersReducedMotion() ? 0 : NIGHT_SLIDE_MS);
-    return () => clearTimeout(id);
-  }, [phase]);
-  return [phase, layerRef];
 }
 
 export function DesktopApp() {
@@ -226,7 +204,7 @@ export function DesktopApp() {
   // the full night is a page here, over the current view (kept mounted, so
   // coming back finds it as it was); back from it lands at the top
   const nightOpen = sheets.some((s) => s.kind === 'fullnight');
-  const [nightPhase, nightLayer] = useNightPhase(nightOpen);
+  useNightSwap(nightOpen);
   // collapsed, the labels are hidden — the native tooltip names each icon
   const tip = (label) => (collapsed ? label : undefined);
 
@@ -294,14 +272,10 @@ export function DesktopApp() {
       </aside>
 
       <main className="dash-main">
-        <div hidden={nightPhase === 'open'}>
+        <div hidden={nightOpen}>
           <View key={tabNonce} tab={tab} />
         </div>
-        {nightPhase !== 'closed' && (
-          <div ref={nightLayer} className={`dfn-layer ${nightPhase}`}>
-            <DesktopFullNight />
-          </div>
-        )}
+        {nightOpen && <DesktopFullNight />}
       </main>
 
       <StatusPill />

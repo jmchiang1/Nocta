@@ -24,6 +24,7 @@ import { MEDICAL_NOTE } from '../data/account.js';
 import { Welcome } from './Welcome.jsx';
 import { ReturningFlow } from './Returning.jsx';
 import { saveOnboardingAnswers } from '../lib/profile.js';
+import { markHandoff } from '../lib/owner.js';
 import { RULE_PRESETS, presetOf, saneRule, ruleFor, startProblem, earliestStart, todayIso } from '../data/compliance.js';
 import { THERAPY_START, LAST_NIGHT } from '../data/history.js';
 import { AuthScreen, NewPassword } from './AuthScreen.jsx';
@@ -1138,6 +1139,12 @@ export function Onboarding() {
   const [disclaimer, setDisclaimer] = useState(false);
   const [welcome, setWelcome] = useState(false);
   const [infoTip, setInfoTip] = useState(null);
+
+  // reaching the account step: what was set up so far (the card imported
+  // mid-setup) goes to the account made here (lib/owner.js)
+  useEffect(() => {
+    if (atAccount) markHandoff();
+  }, [atAccount]);
 
   // a NEW account got made at the end of setup (here, after a Google redirect,
   // or from an email link in another tab): on to the disclaimer. (An existing

@@ -1,5 +1,6 @@
 /* Nocta — Therapy tab. Device status, equipment lifecycle, view-only settings, exports.
  * Compliance leads: it's the one number insurance holds you to. */
+import { NoDataBanner } from '../components/NoNights.jsx';
 import { useStore } from '../lib/store.jsx';
 import { cardDevice, machineName, deviceCells } from '../data/therapy.js';
 import { tracksCompliance } from '../data/compliance.js';
@@ -36,6 +37,8 @@ export function TherapyScreen() {
         </div>
       </header>
 
+      {!hasData && <NoDataBanner />}
+
       {/* no nights yet (an account with no card): no compliance, no machine
        * settings and no summary to show — bringing in the card comes first */}
       {compliance && <ComplianceCard />}
@@ -70,7 +73,8 @@ export function TherapyScreen() {
         </section>
       )}
 
-      <SdImportCard card={cardData} onOpen={() => openSheet('cardImport')} />
+      {/* with no nights the banner at the top already asks for the card */}
+      {hasData && <SdImportCard card={cardData} onOpen={() => openSheet('cardImport')} />}
       {!hasData && <MaskCard />}
 
       <div className="section-head">

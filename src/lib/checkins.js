@@ -7,19 +7,27 @@
  * current night's entry in state. Migrates the old single check-in
  * (nocta.checkin.v1, which was always "this morning"). */
 
-const KEY = 'nocta.checkins.v2';
+import { ownKey, onOwner } from './owner.js';
+
+// per account (lib/owner.js)
+const KEY = () => ownKey('nocta.checkins.v2');
 const OLD_KEY = 'nocta.checkin.v1';
 /* nights whose check-in was added after that morning (from a past night on
  * Tonight). Recalled later, so the insights weigh it less. Kept apart from
  * the tags so every reader of the tags is unchanged. */
-const LATE_KEY = 'nocta.checkins.late.v1';
+const LATE_KEY = () => ownKey('nocta.checkins.late.v1');
 
 let byDate = load();
 let late = new Set(loadLate());
+// another account signed in: its own check-ins (the store re-reads them)
+onOwner(() => {
+  byDate = load();
+  late = new Set(loadLate());
+});
 
 function loadLate() {
   try {
-    const raw = JSON.parse(localStorage.getItem(LATE_KEY));
+    const raw = JSON.parse(localStorage.getItem(LATE_KEY()));
     return Array.isArray(raw) ? raw : [];
   } catch {
     return [];
@@ -27,7 +35,7 @@ function loadLate() {
 }
 function saveLate() {
   try {
-    localStorage.setItem(LATE_KEY, JSON.stringify([...late]));
+    localStorage.setItem(LATE_KEY(), JSON.stringify([...late]));
   } catch {
     /* ignore */
   }
@@ -35,7 +43,7 @@ function saveLate() {
 
 function load() {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY));
+    const raw = JSON.parse(localStorage.getItem(KEY()));
     if (raw && typeof raw === 'object') return raw;
   } catch {
     /* ignore */
@@ -45,7 +53,7 @@ function load() {
 
 function save() {
   try {
-    localStorage.setItem(KEY, JSON.stringify(byDate));
+    localStorage.setItem(KEY(), JSON.stringify(byDate));
   } catch {
     /* ignore */
   }

@@ -2,7 +2,9 @@
  * card can't know this, so a part with no logged date has no age: it says
  * "not logged", never a guess. Kept on this device (localStorage). */
 
-const KEY = 'nocta.equipment.v1';
+import { ownKey, onOwner } from './owner.js';
+
+const KEY = () => ownKey('nocta.equipment.v1'); // per account (lib/owner.js)
 
 /* recommended replacement intervals (FEATURES.md › Equipment) */
 export const PARTS = [
@@ -16,10 +18,15 @@ export const PARTS = [
 
 let logged = load();
 const listeners = new Set();
+// another account signed in: its own dates
+onOwner(() => {
+  logged = load();
+  listeners.forEach((fn) => fn(logged));
+});
 
 function load() {
   try {
-    return JSON.parse(localStorage.getItem(KEY)) || {};
+    return JSON.parse(localStorage.getItem(KEY())) || {};
   } catch {
     return {};
   }
@@ -36,7 +43,7 @@ export function logReplaced(partId, date) {
   if (date) logged[partId] = date;
   else delete logged[partId];
   try {
-    localStorage.setItem(KEY, JSON.stringify(logged));
+    localStorage.setItem(KEY(), JSON.stringify(logged));
   } catch {
     /* ignore */
   }

@@ -161,7 +161,8 @@ export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy
         {/* Nocta's face is the way in to the Coach for this night */}
         {onAsk && (
           <button className="wh-ask" type="button" onClick={onAsk} aria-label={past ? 'Ask Nox about this night' : 'Ask Nox about last night'} title={past ? 'Ask Nox about this night' : 'Ask Nox about last night'}>
-            <Mascot size={38} state="idle" />
+            {/* a little boing each time the night changes */}
+            <Mascot key={fixtureId ?? 'night'} size={38} state="idle" pop />
           </button>
         )}
       </div>

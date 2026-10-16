@@ -25,7 +25,7 @@ export function SdImportCard({ card, onOpen }) {
         </div>
       </div>
       <button className={`btn ${card ? 'ghost' : 'primary'} sd-btn`} onClick={onOpen}>
-        {card ? 'View nights or import a newer card' : 'Import now'}
+        {card ? 'Import a newer card' : 'Import now'}
       </button>
     </section>
   );

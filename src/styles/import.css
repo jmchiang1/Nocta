@@ -425,3 +425,18 @@
   margin-top: 2px;
   font-size: 14px;
 }
+
+/* the import's "All read": the same column as reading, words rising in */
+.ci-celebrate h3,
+.ci-celebrate .settings-note {
+  animation: riseIn 0.45s var(--ease-out) 0.15s backwards;
+}
+/* …then the result rises in, piece by piece, top to bottom */
+.ci-done-enter > *,
+.ci-done-enter > .ci-actions {
+  animation: riseIn 0.5s var(--ease-out) backwards;
+}
+.ci-done-enter > :nth-child(2) { animation-delay: 0.08s; }
+.ci-done-enter > :nth-child(3) { animation-delay: 0.16s; }
+.ci-done-enter > :nth-child(4) { animation-delay: 0.24s; }
+.ci-done-enter > :nth-child(n + 5) { animation-delay: 0.32s; }

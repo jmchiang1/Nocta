@@ -16,6 +16,10 @@
  *             something the *user* did (a logged check-in), never as a
  *             verdict on the night.
  *
+ * `pop`: he arrives with a little boing — rises, squashes, stretches and
+ * settles (on the whole face, so it plays alongside any state above). Used
+ * wherever he turns up on a new screen.
+ *
  * At 24px and below it switches to a simpler optical size — wider eyes, no
  * craters, a bigger bite — so it never turns into a smudge. */
 import { useId } from 'react';
@@ -23,7 +27,7 @@ import { useId } from 'react';
 const EYE_X = [37, 55]; // eye centres in the 100×100 box
 const EYE_Y = 55;
 
-export function Mascot({ size = 24, state = 'still', label, className = '' }) {
+export function Mascot({ size = 24, state = 'still', label, className = '', pop = false }) {
   const id = useId().replace(/:/g, ''); // React ids contain colons, which break url(#…)
   const small = size <= 24;
   const ew = small ? 12.4 : 8.5;
@@ -33,7 +37,7 @@ export function Mascot({ size = 24, state = 'still', label, className = '' }) {
 
   return (
     <svg
-      className={`mascot ${state} ${className}`}
+      className={`mascot ${state}${pop ? ' pop' : ''} ${className}`}
       width={size}
       height={size}
       viewBox="0 0 100 100"

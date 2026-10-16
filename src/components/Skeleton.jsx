@@ -8,9 +8,16 @@ function Bone({ w = '100%', h = 12, r = 6, style }) {
   return <span className="bone" style={{ width: w, height: h, borderRadius: r, ...style }} />;
 }
 
-export function TonightSkeleton() {
+/* `still`: the same shapes with no shimmer — the empty state of an account
+ * with no nights yet (components/NoNights.jsx), where nothing is loading */
+export function TonightSkeleton({ still = false }) {
   return (
-    <div className="skeleton" aria-busy="true" aria-label="Loading last night">
+    <div
+      className={`skeleton${still ? ' still' : ''}`}
+      aria-busy={still ? undefined : 'true'}
+      aria-hidden={still ? 'true' : undefined}
+      aria-label={still ? undefined : 'Loading last night'}
+    >
       {/* hero: headline + moon, then the detail line */}
       <div className="sk-head">
         <div className="sk-head-text">
@@ -59,6 +66,37 @@ export function TonightSkeleton() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Trends' shapes with nothing in them (an account with no nights yet): the
+ * four tiles, the main chart, then the more-trends charts. Still. */
+export function TrendsSkeleton() {
+  return (
+    <div className="skeleton still sk-trends" aria-hidden="true">
+      <div className="sk-tiles">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="sk-tile">
+            <Bone w="46%" h={10} />
+            <Bone w="64%" h={24} r={6} style={{ marginTop: 10 }} />
+          </div>
+        ))}
+      </div>
+      <div className="sk-module">
+        <Bone w="30%" h={14} r={7} />
+        <div className="sk-bars sk-bars-tall">
+          {[0.3, 0.45, 0.35, 0.6, 0.5, 0.7, 0.4, 0.55, 0.65, 0.45, 0.5, 0.35, 0.6, 0.4].map((h, i) => (
+            <span key={i} className="bone" style={{ height: `${h * 120}px` }} />
+          ))}
+        </div>
+      </div>
+      {[0, 1].map((m) => (
+        <div key={m} className="sk-module">
+          <Bone w="40%" h={14} r={7} />
+          <Bone w="100%" h={90} r={10} style={{ marginTop: 18 }} />
+        </div>
+      ))}
     </div>
   );
 }

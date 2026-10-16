@@ -93,6 +93,7 @@ function fromSupabase(u) {
   const kind = providers.includes('google') ? 'google' : providers.includes('apple') ? 'apple' : 'email';
   const m = u.user_metadata ?? {};
   return {
+    id: u.id, // whose data this device shows (lib/owner.js)
     kind,
     name: m.full_name || m.name || null,
     photo: m.avatar_url || m.picture || null, // what Google shares

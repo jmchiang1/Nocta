@@ -3530,3 +3530,87 @@ button.nl-row:focus-visible {
 .ev-slot {
   visibility: hidden;
 }
+
+/* =================================================================
+ * Nox arriving (Mascot `pop`): he rises into place with a little boing —
+ * squash, stretch, settle — and the face's own state (idle glances,
+ * thinking, pleased) carries on inside. Anywhere he turns up on a new
+ * screen: the import, the check-in's "Logged", the Coach, the headline.
+ * ================================================================= */
+.mascot.pop {
+  transform-origin: 50% 90%;
+  animation: noxPop 0.72s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+@keyframes noxPop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.45, 0.35);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.1, 0.94);
+  }
+  68% {
+    transform: translateY(0) scale(0.95, 1.06);
+  }
+  84% {
+    transform: scale(1.03, 0.98);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* NoxThinking, done: the thought dots burst outward like a little cheer, and
+ * a soft ring of light goes out from him */
+.nox-thinking.done .nt-dots > span {
+  animation: ntBurst 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.nox-thinking.done .nt-dots > span:nth-child(1) {
+  --bx: -30px;
+  --by: -6px;
+}
+.nox-thinking.done .nt-dots > span:nth-child(2) {
+  --bx: 6px;
+  --by: -26px;
+  animation-delay: 0.05s;
+}
+.nox-thinking.done .nt-dots > span:nth-child(3) {
+  --bx: 26px;
+  --by: -8px;
+  animation-delay: 0.1s;
+}
+@keyframes ntBurst {
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--bx), var(--by)) scale(1.6);
+  }
+}
+.nox-thinking.done::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--nox) * 0.5);
+  width: var(--nox);
+  height: var(--nox);
+  margin-left: calc(var(--nox) * -0.5);
+  margin-bottom: calc(var(--nox) * -0.5);
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: ntRing 0.9s ease-out 0.1s both;
+  pointer-events: none;
+}
+@keyframes ntRing {
+  from {
+    opacity: 0.9;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}

@@ -5,9 +5,12 @@
  * Re-importing merges by night: a card only holds so much detail, so older
  * nights from an earlier import are kept; nights on the new card replace them. */
 
+import { ownKey } from './owner.js';
+
 const DB = 'nocta';
 const STORE = 'imports';
-const KEY = 'resmed-sd';
+// each account's card (and other records) under its own key (lib/owner.js)
+const KEY = () => ownKey('resmed-sd');
 
 function open() {
   return new Promise((resolve, reject) => {
@@ -31,7 +34,7 @@ async function tx(mode, fn) {
 
 export async function loadImport() {
   try {
-    return (await tx('readonly', (s) => s.get(KEY))) ?? null;
+    return (await tx('readonly', (s) => s.get(KEY()))) ?? null;
   } catch {
     return null; // private mode / storage blocked: behave as "nothing imported"
   }
@@ -55,22 +58,52 @@ export async function saveImport(card) {
     nights,
     range: { first: nights[0].date, last: nights.at(-1).date },
   };
-  await tx('readwrite', (s) => s.put(merged, KEY));
+  await tx('readwrite', (s) => s.put(merged, KEY()));
   return { card: merged, added, updated: card.nights.length - added };
 }
 
+/* move every record of one space into another (where the target has none) */
+export async function moveRecords(from, to) {
+  try {
+    const db = await open();
+    await new Promise((resolve, reject) => {
+      const t = db.transaction(STORE, 'readwrite');
+      const s = t.objectStore(STORE);
+      const req = s.openCursor();
+      req.onsuccess = () => {
+        const c = req.result;
+        if (!c) return;
+        const k = String(c.key);
+        if (k.endsWith(`@${from}`)) {
+          const target = `${k.slice(0, -from.length - 1)}@${to}`;
+          const value = c.value;
+          s.get(target).onsuccess = (e) => {
+            if (e.target.result == null) s.put(value, target);
+          };
+          c.delete();
+        }
+        c.continue();
+      };
+      t.oncomplete = resolve;
+      t.onerror = () => reject(t.error);
+    });
+  } catch {
+    /* storage blocked: nothing to move */
+  }
+}
+
 export async function clearImport() {
-  await tx('readwrite', (s) => s.delete(KEY));
+  await tx('readwrite', (s) => s.delete(KEY()));
 }
 
 /* other keyed records kept beside the card in the same store (lib/wearables.js
  * keeps each wearable's synced nights here as 'wearable:<provider>') */
 export async function getItem(key) {
   try {
-    return (await tx('readonly', (s) => s.get(key))) ?? null;
+    return (await tx('readonly', (s) => s.get(ownKey(key)))) ?? null;
   } catch {
     return null;
   }
 }
-export const putItem = (key, value) => tx('readwrite', (s) => s.put(value, key));
-export const deleteItem = (key) => tx('readwrite', (s) => s.delete(key));
+export const putItem = (key, value) => tx('readwrite', (s) => s.put(value, ownKey(key)));
+export const deleteItem = (key) => tx('readwrite', (s) => s.delete(ownKey(key)));

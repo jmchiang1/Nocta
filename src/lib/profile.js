@@ -11,7 +11,9 @@
  * it. The app store mirrors it in state and calls save() through
  * setProfileAnswers / setReminderPrefs so screens re-render. */
 
-const KEY = 'nocta.profile.v1';
+import { ownKey, onOwner } from './owner.js';
+
+const BASE_KEY = 'nocta.profile.v1'; // per account: ownKey(BASE_KEY)
 
 /* the questions worth asking again, in the order they matter to the
  * insights. `answered(a)` says whether the person has given an answer
@@ -65,10 +67,15 @@ const EMPTY = {
 
 let profile = load();
 const listeners = new Set();
+// another account signed in: its own answers and photo (or none yet)
+onOwner(() => {
+  profile = load();
+  listeners.forEach((fn) => fn(profile));
+});
 
 function load() {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY));
+    const raw = JSON.parse(localStorage.getItem(ownKey(BASE_KEY)));
     if (raw) return { ...EMPTY, ...raw, reminders: { ...EMPTY.reminders, ...raw.reminders } };
   } catch {
     /* ignore */
@@ -78,7 +85,7 @@ function load() {
 
 function save() {
   try {
-    localStorage.setItem(KEY, JSON.stringify(profile));
+    localStorage.setItem(ownKey(BASE_KEY), JSON.stringify(profile));
   } catch {
     /* ignore */
   }

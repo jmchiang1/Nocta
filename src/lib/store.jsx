@@ -7,7 +7,8 @@ import { NIGHTS, LAST_NIGHT } from '../data/history.js';
 import { refreshInsights } from '../data/fixtures.js';
 import { getCheckin, setCheckin as saveCheckinFor, clearCheckin, migrateOldCheckin } from './checkins.js';
 import { getProfile, onProfile } from './profile.js';
-import { setCard, importedCard, hasNights, setSampleAllowed } from './dataset.js';
+import { setCard, importedCard, hasNights, switchOwner } from './dataset.js';
+import { ownerOf } from './owner.js';
 import { DEFAULT_MACHINE_ID } from '../data/therapy.js';
 import {
   DEFAULT_DEVICE_CONNECTIONS,
@@ -25,7 +26,6 @@ import {
   takeWearableReturn,
   listenForWearableReturn,
   loadWearableCache,
-  clearWearableCache,
   fetchWearableStatus,
   startWearableConnect,
   syncWearable,
@@ -465,7 +465,8 @@ export function StoreProvider({ children }) {
       /* ignore */
     }
     setOnboardingNonce((n) => n + 1);
-    clearWearableCache().catch(() => {}); // someone else may sign in here next
+    // the account's synced wearable nights stay in its own space on this device
+    // (lib/owner.js), like its card: the next person to sign in can't see them
     signOutAuth();
   }, [signOutAuth]);
 
@@ -517,22 +518,27 @@ export function StoreProvider({ children }) {
    * the sample in or out (never over an imported card) and the screens
    * re-read. Waits for sign-in to resolve, so a stored session doesn't flash
    * the sample first. */
+  /* every account's data is its own on this device (lib/owner.js): when
+   * sign-in resolves or changes, show that account's card, answers and
+   * check-ins — a new account starts with none; no account sees the sample */
   const { authUser, authStatus } = auth;
-  const sampleOk = !authUser || authUser.kind === 'guest';
+  const owner = ownerOf(authUser);
   const [, setDataVersion] = useState(0);
   useEffect(() => {
     if (authStatus === 'loading') return undefined;
     let live = true;
-    setSampleAllowed(sampleOk).then((changed) => {
+    switchOwner(owner).then(async (changed) => {
       if (!live || !changed) return;
+      await loadWearableCache().catch(() => {});
       setFixtureId(DEFAULT_FIXTURE);
       setCheckin(loadCheckin());
+      setMaskId(getProfile().answers.maskModel ?? null);
       setDataVersion((v) => v + 1);
     });
     return () => {
       live = false;
     };
-  }, [sampleOk, authStatus, setFixtureId]);
+  }, [owner, authStatus, setFixtureId]);
   // any nights to show: false for an account with no card (or a removed one)
   const hasData = hasNights();
 

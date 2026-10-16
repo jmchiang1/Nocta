@@ -2,6 +2,7 @@
  * insurance holds you to); under it the machine, its mask, the SD import and
  * the doctor export sit beside the equipment schedule, which is always open
  * here (there's the room). */
+import { NoDataBanner } from '../NoNights.jsx';
 import { useStore } from '../../lib/store.jsx';
 import { cardDevice, machineName, deviceCells } from '../../data/therapy.js';
 import { tracksCompliance } from '../../data/compliance.js';
@@ -35,6 +36,8 @@ export function DesktopTherapy() {
           <h1 className="dash-h1">Therapy</h1>
         </div>
       </header>
+
+      {!hasData && <NoDataBanner />}
 
       {/* no nights yet (an account with no card): no compliance, machine
        * settings or summary to show — bringing in the card comes first */}
@@ -102,10 +105,7 @@ export function DesktopTherapy() {
             </>
           ) : (
             <>
-              <div className="section-head">
-                <h3>Your data</h3>
-              </div>
-              <SdImportCard card={cardData} onOpen={() => openSheet('cardImport')} />
+              {/* with no nights the banner at the top already asks for the card */}
               <MaskCard />
             </>
           )}

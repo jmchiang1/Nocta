@@ -93,7 +93,7 @@ export function CheckinSheet() {
         <div className="ck-done">
           {/* Nox is pleased about the check-in itself, never about the night */}
           <div className="ck-nox">
-            <Mascot size={104} state="pleased" />
+            <Mascot size={104} state="pleased" pop />
           </div>
           <h2 className="ck-done-title">{late ? 'Added. Thank you.' : 'Logged. Thank you.'}</h2>
           <p className="ck-done-copy">

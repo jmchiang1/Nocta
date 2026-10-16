@@ -13,9 +13,11 @@
  * and register a rebuild with onDataset(); setCard() swaps the card and
  * re-runs them in registration order (history first — the others read it).
  * The store bumps its state alongside, so the screens re-render. */
-import { loadImport } from './importStore.js';
+import { loadImport, moveRecords } from './importStore.js';
+import { GUEST, getOwner, setOwner, ownKey, reloadOwner, takeHandoff, moveLocal } from './owner.js';
 
-const OWN_DATA_KEY = 'nocta.ownData.v1';
+/* per account, like everything else (lib/owner.js): whose card this is */
+const OWN_DATA_KEY = () => ownKey('nocta.ownData.v1');
 /* no nights: what an account with no card (or a removed one) sees */
 const EMPTY = { nights: [], device: null, settings: null, range: null };
 
@@ -32,32 +34,21 @@ const loadDemo = async () => {
 
 function hadOwnData() {
   try {
-    return localStorage.getItem(OWN_DATA_KEY) === '1';
+    return localStorage.getItem(OWN_DATA_KEY()) === '1';
   } catch {
     return false;
   }
 }
 function markOwnData() {
   try {
-    localStorage.setItem(OWN_DATA_KEY, '1');
+    localStorage.setItem(OWN_DATA_KEY(), '1');
   } catch {
     /* ignore */
   }
 }
 
-/* before auth has loaded: a stored account session (Supabase's, or the
- * mock's) means an account, so no sample; a guest or nobody may look. The
- * store confirms it with setSampleAllowed() once sign-in has resolved. */
-function signedInAtStart() {
-  try {
-    if (localStorage.getItem('nocta.guest.v1') === 'true') return false;
-    if (localStorage.getItem('nocta.mockauth.v1')) return true;
-    return Object.keys(localStorage).some((k) => /^sb-.+-auth-token$/.test(k));
-  } catch {
-    return false;
-  }
-}
-let sampleAllowed = !signedInAtStart();
+/* the sample is only for someone without an account (lib/owner.js) */
+let sampleAllowed = getOwner() === GUEST;
 
 const fallback = async () => (sampleAllowed && !hadOwnData() ? loadDemo() : EMPTY);
 
@@ -68,8 +59,19 @@ function apply(next, isImport) {
   rebuilds.forEach((fn) => fn(card));
 }
 
-/* before the first render: the device's import, else the sample or nothing */
+/* setup → a new account: the card imported mid-setup (guest space) becomes
+ * the account's. Then everything re-reads the account's space. */
+async function adoptSetup(to) {
+  await moveRecords(GUEST, to);
+  moveLocal(GUEST, to);
+  reloadOwner();
+}
+
+/* before the first render: this account's import, else the sample (no
+ * account only) or nothing */
 export async function initDataset() {
+  // back from a sign-in redirect at the end of setup
+  if (getOwner() !== GUEST && takeHandoff()) await adoptSetup(getOwner());
   const saved = await loadImport();
   if (saved) markOwnData();
   apply(saved ?? (await fallback()), Boolean(saved));
@@ -81,8 +83,26 @@ export async function setCard(next) {
   apply(next ?? (await fallback()), Boolean(next));
 }
 
-/* who's signed in decides whether the sample may show (store.jsx, whenever
- * sign-in changes). Resolves true when the card on screen changed. */
+/* sign-in changed (store.jsx): show that account's own data — or, with no
+ * account, the guest's (the sample if they have none). Resolves true when
+ * the space changed. */
+export async function switchOwner(next) {
+  const from = getOwner();
+  if (next === from) return false;
+  if (from === GUEST && next !== GUEST && takeHandoff()) {
+    await moveRecords(GUEST, next);
+    moveLocal(GUEST, next);
+  }
+  setOwner(next); // profile, check-ins, equipment re-read (onOwner)
+  sampleAllowed = next === GUEST;
+  const saved = await loadImport();
+  if (saved) markOwnData();
+  apply(saved ?? (await fallback()), Boolean(saved));
+  return true;
+}
+
+/* who's signed in decides whether the sample may show. Resolves true when
+ * the card on screen changed. (switchOwner covers it now; kept for callers.) */
 export async function setSampleAllowed(allowed) {
   if (allowed === sampleAllowed) return false;
   sampleAllowed = allowed;

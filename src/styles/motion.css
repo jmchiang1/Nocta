@@ -311,7 +311,8 @@
 .phone .scroll-content > :nth-child(n + 11) { animation-delay: calc(var(--stagger) * 10); }
 
 /* =================================================================
- * Skeletons — while last night syncs
+ * Skeletons — while last night syncs (shimmering), or the empty shapes
+ * of a screen with no nights yet (.still: no motion, a little dimmer)
  * ================================================================= */
 .bone {
   display: block;
@@ -1973,4 +1974,32 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* the empty state: the same shapes, at rest */
+.skeleton.still {
+  opacity: 0.7;
+}
+.skeleton.still :is(.bone, .sk-horizon path, .sk-star) {
+  animation: none;
+}
+.skeleton.still .bone {
+  background: rgba(255, 255, 255, 0.05);
+}
+/* Trends' empty shapes */
+.sk-trends {
+  padding-top: 4px;
+}
+.sk-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.sk-tile {
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--surface-1) 56%, transparent);
+}
+.sk-bars-tall {
+  height: 120px;
 }

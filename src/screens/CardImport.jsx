@@ -9,7 +9,8 @@
  * Parsing runs here, in the browser (lib/resmed); the result is kept on this
  * device (lib/importStore). Numbers are shown plainly — no good/bad colouring
  * of clinical metrics (CLAUDE.md safety rails). */
-import { useState, useRef } from 'react';
+import { prefersReducedMotion } from '../lib/motion.jsx';
+import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Sheet } from '../components/Sheet.jsx';
@@ -100,7 +101,7 @@ function CardSummary({ card, result }) {
         {dayLabel(card.range.first, { month: 'short', day: 'numeric', year: 'numeric' })} to{' '}
         {dayLabel(card.range.last, { month: 'short', day: 'numeric', year: 'numeric' })}
         {result && (result.added ? `. ${result.added} new ${result.added === 1 ? 'night' : 'nights'} added` : '. Nothing new since your last import')}
-        . Saved on this phone only.
+        . Saved on this device only.
       </p>
 
       {/* a partial read is said plainly, with the files behind a tap */}
@@ -314,6 +315,11 @@ function Picker({ onEntries }) {
 }
 
 /* the flow itself, without a frame — `onFinish(card)` when they're done */
+/* reading a card takes at least this long on screen, so Nox's thinking
+ * plays through and a small card doesn't flash past */
+const MIN_READ_MS = 3000;
+const CELEBRATE_MS = 1300; // Nox's happy hop before the result
+
 export function CardImport({ onFinish, onCancel }) {
   const { cardData, saveCardImport, removeCardImport } = useStore();
   const [phase, setPhase] = useState(cardData ? 'done' : 'pick');
@@ -321,14 +327,34 @@ export function CardImport({ onFinish, onCancel }) {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [justRead, setJustRead] = useState(false); // the result arrives (vs. reopening it)
+  // the bar shows the slower of the real reading and the minimum time, so it
+  // fills steadily rather than jumping to the end and waiting
+  const [startedAt, setStartedAt] = useState(0);
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    if (phase !== 'reading') return undefined;
+    const id = setInterval(() => setNow(performance.now()), 60);
+    return () => clearInterval(id);
+  }, [phase]);
 
   async function run(entries) {
     setError(null);
     setPhase('reading');
     setProgress(null);
+    const t0 = performance.now();
+    setStartedAt(t0);
+    setNow(t0);
     try {
       const card = await parseCard(entries, { onProgress: setProgress });
-      setResult(await saveCardImport(card));
+      const saved = await saveCardImport(card);
+      const left = MIN_READ_MS - (performance.now() - t0);
+      if (left > 0) await new Promise((r) => setTimeout(r, left));
+      setResult(saved);
+      // a beat for Nox to be pleased about it, then the result rises in
+      setPhase('celebrate');
+      await new Promise((r) => setTimeout(r, prefersReducedMotion() ? 0 : CELEBRATE_MS));
+      setJustRead(true);
       setPhase('done');
     } catch (err) {
       console.warn('[import]', err);
@@ -338,25 +364,37 @@ export function CardImport({ onFinish, onCancel }) {
   }
 
   if (phase === 'reading') {
+    const timeShare = Math.min(1, (now - startedAt) / MIN_READ_MS);
+    const share = progress ? Math.min(progress.done / progress.total, timeShare) : 0;
+    const night = progress ? Math.max(1, Math.round(share * progress.total)) : 0;
     return (
       <div className="ci-reading" aria-live="polite">
         <NoxThinking className="si-working" />
         <h3>Reading your card…</h3>
-        <p className="settings-note tnum">
-          {progress ? `Night ${progress.done} of ${progress.total}` : 'Finding your nights'}
-        </p>
+        <p className="settings-note tnum">{progress ? `Night ${night} of ${progress.total}` : 'Finding your nights'}</p>
         {progress && (
-          <div className="ci-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
-            <span style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+          <div className="ci-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={night}>
+            <span style={{ width: `${share * 100}%` }} />
           </div>
         )}
       </div>
     );
   }
 
+  if (phase === 'celebrate') {
+    const n = result?.card?.nights?.length ?? cardData?.nights?.length;
+    return (
+      <div className="ci-reading ci-celebrate" aria-live="polite">
+        <NoxThinking className="si-working" done />
+        <h3>All read</h3>
+        <p className="settings-note tnum">{n ? `${n} nights` : 'Your nights are in'}</p>
+      </div>
+    );
+  }
+
   if (phase === 'done' && cardData) {
     return (
-      <>
+      <div className={justRead ? 'ci-done-enter' : undefined}>
         <CardSummary card={cardData} result={result} />
         <div className="ci-actions">
           {onFinish && (
@@ -380,7 +418,7 @@ export function CardImport({ onFinish, onCancel }) {
           ) : (
             <div className="confirm-row">
               <p className="confirm-text">
-                Remove all {cardData.nights.length} imported nights from this phone?
+                Remove all {cardData.nights.length} imported nights from this device?
               </p>
               <div className="confirm-actions">
                 <button className="btn ghost" onClick={() => setConfirmRemove(false)}>
@@ -401,7 +439,7 @@ export function CardImport({ onFinish, onCancel }) {
             </div>
           )}
         </div>
-      </>
+      </div>
     );
   }
 

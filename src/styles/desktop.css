@@ -755,9 +755,20 @@
   margin: 0;
 }
 
-/* no nights yet (components/NoNights.jsx): the one card, at a readable width */
-.dash-no-nights {
-  max-width: 560px;
+/* no nights yet (components/NoNights.jsx): the message in one row — icon,
+ * words, then the button at its own width — over the screen's empty shapes */
+.desktop-stage .no-data {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 18px 22px;
+}
+.desktop-stage .no-data-btn {
+  grid-column: auto;
+  width: auto;
+  min-width: 200px;
+  padding: 0 24px;
+}
+.desktop-stage .sk-tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .dash-col > .section-head + .sd-card {
   margin-top: 0;
@@ -770,29 +781,33 @@
   flex: none;
 }
 
-/* the SD-card import's button at its own width, under the card's text
- * (the phone's is full width) */
-.dash .sd-card .sd-btn {
+/* the SD-card card on desktop: one row — icon and words on the left, the
+ * button at its own width on the right (the phone's is full width below).
+ * In a column too narrow for both, the button wraps under, from the card's
+ * left edge. */
+.dash .sd-card {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+}
+.dash .sd-card .sd-head {
+  flex: 1 1 280px;
+  min-width: 0;
+  margin: 0;
+}
+.dash .sd-card .sd-btn {
+  flex: 0 0 auto;
   width: fit-content;
-  min-width: 160px;
-  padding-inline: 28px;
-  margin-left: 58px; /* the icon (44) + its gap (14): lined up with the title */
-  align-self: flex-start;
+  min-width: 140px;
+  padding-inline: 24px;
+  margin: 0;
 }
 
-/* the SD-card import, under the machine; if it's ever stretched, its button
- * stays at the bottom */
+/* the SD-card import, under the machine */
 .dash-col > .sd-card {
   margin: 18px 0 0;
-  display: flex;
-  flex-direction: column;
-}
-.dash-col > .sd-card .sd-btn {
-  margin-top: auto;
-}
-.dash-col > .sd-card .sd-head {
-  margin-bottom: 16px;
 }
 
 /* the equipment schedule, always open on desktop: when it's stretched to
@@ -999,11 +1014,12 @@ html:has(.desktop-modal-wrap) {
   margin-left: auto;
 }
 
-/* a desktop dialog's buttons sit on one line, right-aligned, at their own
- * width: the main action (primary or destructive) on the right, the other
- * on its left — whatever order the shared markup puts them in. On the phone
- * the same groups stay stacked, full width. A note inside the group (e.g.
- * the guest's sign-up block) takes its own line above them. */
+/* a desktop dialog's buttons sit on one line at their own width: the main
+ * action (primary or destructive) at the right edge, the other at the left
+ * edge — whatever order the shared markup puts them in. A third, quieter
+ * one (a text button, e.g. "Remove imported data") gets its own line below
+ * the two. On the phone the same groups stay stacked, full width. A note
+ * inside the group (the guest's sign-up block) takes its own line above. */
 .desktop-modal-wrap :has(> .btn ~ .btn) {
   display: flex;
   flex-direction: row;
@@ -1022,6 +1038,21 @@ html:has(.desktop-modal-wrap) {
 }
 .desktop-modal-wrap :has(> .btn ~ .btn) > .btn:is(.primary, .destructive) {
   order: 2;
+}
+.desktop-modal-wrap :has(> .btn ~ .btn) > .btn:not(.primary, .destructive) {
+  margin-right: auto;
+}
+/* a text button lines up with the dialog's edge (no inset) */
+.desktop-modal-wrap :has(> .btn ~ .btn) > .btn.subtle {
+  min-width: 0;
+  padding-inline: 0;
+}
+/* three: the text button on its own line below the pair, at the left edge */
+.desktop-modal-wrap :has(> .btn ~ .btn ~ .btn) > .btn.subtle {
+  order: 3;
+  flex-basis: 100%;
+  justify-content: flex-start;
+  min-height: 40px;
 }
 .desktop-modal-wrap :has(> .btn ~ .btn) > :not(.btn) {
   flex-basis: 100%;
@@ -1814,77 +1845,6 @@ html:has(.desktop-modal-wrap) {
 }
 
 /* ----- the full night as a page of the dashboard (not a dialog) ----- */
-/* opening it slides it in over the page it came from, right to left, and
- * back out to the right on the way back (DesktopApp useNightPhase). While it
- * moves it's a fixed layer over the main column, with the column's own
- * padding and the page's background, so the swap to the page's scroll at
- * either end doesn't move a pixel; the view underneath drifts a little left
- * and dims, as on the phone. */
-.dfn-layer.entering,
-.dfn-layer.leaving {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: var(--side-w);
-  right: 0;
-  z-index: 20;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding: inherit;
-  background: linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 40%, var(--bg-grad-bottom) 100%) fixed;
-  box-shadow: -30px 0 60px -24px rgba(0, 0, 0, 0.7);
-}
-.dfn-layer.entering {
-  animation: dfn-slide-in 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-.dfn-layer.leaving {
-  animation: dfn-slide-out 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
-  pointer-events: none;
-}
-/* the drift stays inside the main column, never over the sidebar */
-.dash-main:has(> .dfn-layer.entering, > .dfn-layer.leaving) {
-  overflow-x: clip;
-}
-.dash-main:has(> .dfn-layer.entering) > div:first-child {
-  animation: dfn-under-in 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-.dash-main:has(> .dfn-layer.leaving) > div:first-child {
-  animation: dfn-under-in 0.38s cubic-bezier(0.32, 0.72, 0, 1) reverse both;
-}
-@keyframes dfn-slide-in {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: none;
-  }
-}
-@keyframes dfn-slide-out {
-  from {
-    transform: none;
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-@keyframes dfn-under-in {
-  from {
-    transform: none;
-    opacity: 1;
-  }
-  to {
-    transform: translateX(-6%);
-    opacity: 0.5;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dfn-layer.entering,
-  .dfn-layer.leaving,
-  .dash-main:has(> .dfn-layer) > div:first-child {
-    animation: none;
-  }
-}
-
 /* the same width and padding as Tonight and Trends: the dashboard's main
  * column already pads the page, so nothing extra here */
 .dfn-page {
@@ -2033,4 +1993,15 @@ html:has(.desktop-modal-wrap) {
 }
 .desktop-stage :is(.desktop-modal-wrap .sheet-close, .dfn-close) {
   border-radius: var(--r-sm);
+}
+
+/* the import screen's "Remove imported data": centred under the pair (as
+ * specific as the dialog's own row rules above, so it wins) */
+.desktop-modal-wrap .ci-actions:has(> .btn ~ .btn ~ .btn) > .btn.subtle {
+  justify-content: center;
+}
+/* …and its "Remove all … nights?" confirmation takes that same place, below
+ * the pair (not the top, where the dialog's row puts other notes) */
+.desktop-modal-wrap .ci-actions:has(> .btn ~ .btn) > .confirm-row {
+  order: 3;
 }
