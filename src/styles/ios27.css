@@ -1,0 +1,190 @@
+/* Nocta — iOS & iPadOS 27 (Apple's Figma UI kit) applied to the phone layout.
+ * Geometry comes straight from the kit (sheet, grabber, toolbar, Liquid Glass
+ * buttons, tab bar, overlay; read 2026-10-15). Two deliberate departures:
+ *   - colour: the kit's tint is iOS blue (#0091ff); Nocta's tint is its peach
+ *     (--accent), and surfaces stay Nocta's night navy, not iOS grey
+ *   - type: the kit is SF Pro; Nocta keeps DM Sans / Inter (CLAUDE.md), at the
+ *     kit's sizes and weights
+ * Scoped to .phone so the desktop dashboard is untouched. Loaded last. */
+
+.phone {
+  /* kit values */
+  --ios-sheet-top-r: 38px;
+  --ios-sheet-bottom-r: 58px; /* floating (medium) sheets follow the screen's corners */
+  --ios-sheet-inset: 6px;
+  --ios-overlay: rgba(0, 0, 0, 0.48);
+  --ios-glass: rgba(153, 153, 153, 0.17); /* "Glass" control fill */
+  --ios-glass-edge: rgba(166, 166, 166, 0.28); /* the 0.5px hairline edge */
+}
+
+/* ---- overlay behind a sheet: plain 48% black, no blur ---- */
+.phone .sheet-scrim {
+  background: var(--ios-overlay);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ---- sheets: the floating (medium) detent ----
+ * inset 6 px from the sides and bottom, 38 px top corners, 58 px bottom
+ * corners (concentric with the screen), elevated fill, soft lift */
+.phone .sheet:not(.full):not(.page) {
+  left: var(--ios-sheet-inset);
+  right: var(--ios-sheet-inset);
+  bottom: var(--ios-sheet-inset);
+  max-height: calc(92% - var(--ios-sheet-inset));
+  padding-top: 0;
+  border-radius: var(--ios-sheet-top-r) var(--ios-sheet-top-r) var(--ios-sheet-bottom-r) var(--ios-sheet-bottom-r);
+  /* the fill stays each sheet's own (the check-in keeps its sky) */
+  border: 0;
+  box-shadow:
+    0 8px 48px rgba(0, 0, 0, 0.45),
+    0 0 0 0.5px var(--ios-glass-edge);
+  overflow: hidden;
+}
+/* the all-nights sheet keeps its 1rem top (its month is the heading) */
+.phone .sheet.cal-sheet:not(.full):not(.page) {
+  padding-top: 1rem;
+}
+/* the large detent (full-height modals): 38 px top corners, square bottom */
+.phone .sheet.full:not(.page) {
+  border-radius: var(--ios-sheet-top-r) var(--ios-sheet-top-r) 0 0;
+}
+
+/* ---- grabber: 60 × 4, 6 px from the top ---- */
+.phone .sheet-grip {
+  width: 60px;
+  height: 4px;
+  border-radius: 100px;
+  margin: 6px auto 0;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ---- sheet header (the kit's "Toolbar - Top"): 54 px, close on the left,
+ * title centred, an optional action on the right ---- */
+.phone .sheet:not(.page) .sheet-head {
+  min-height: 54px;
+  padding: 8px 16px 10px; /* clear of the grabber, even with a two-line title */
+  align-items: center;
+  gap: 8px;
+}
+.phone .sheet:not(.page) .sheet-head > .sheet-close {
+  order: -1; /* close leads, as in iOS 27 */
+}
+.phone .sheet:not(.page) .sheet-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+/* keep the title truly centred when there's nothing on the right */
+.phone .sheet:not(.page) .sheet-head:has(> .sheet-close)::after {
+  content: '';
+  width: 44px;
+  flex-shrink: 0;
+}
+.phone .sheet:not(.page) .sheet-title h3 {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.phone .sheet:not(.page) .sheet-title .eyebrow {
+  margin-bottom: 2px;
+}
+
+/* ---- circular glass controls (close, back): 44 px, Liquid Glass ---- */
+.phone .sheet-close.glass,
+.phone .sheet-back.glass,
+.phone .ob-back {
+  width: 44px;
+  height: 44px;
+  background: var(--ios-glass);
+  border: 0;
+  box-shadow:
+    0 0 0 0.5px var(--ios-glass-edge),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  backdrop-filter: blur(6px) saturate(140%);
+  color: #f5f5f5;
+}
+
+/* ---- buttons: Liquid Glass capsules ----
+ * large 50 px (the kit's Large), medium 34, small 28; label 17 medium.
+ * 50 px is the kit's size; an invisible 3 px band keeps the tap area at
+ * Nocta's 56 px minimum for primary actions (CLAUDE.md). */
+.phone .btn {
+  position: relative;
+  min-height: 50px;
+  padding: 0 20px;
+  border-radius: 1000px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.phone .btn::after {
+  content: '';
+  position: absolute;
+  inset: -3px 0;
+}
+/* prominent: the tint (Nocta peach) */
+.phone .btn.primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.04);
+}
+/* glass (secondary) */
+.phone .btn.ghost {
+  background: var(--ios-glass);
+  border: 0;
+  box-shadow:
+    0 0 0 0.5px var(--ios-glass-edge),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  backdrop-filter: blur(6px) saturate(140%);
+  color: #f5f5f5;
+}
+/* borderless */
+.phone .btn.subtle {
+  min-height: 48px;
+  font-size: 17px;
+  font-weight: 500;
+}
+.phone .btn.subtle::after {
+  content: none;
+}
+/* destructive keeps its coral, on the capsule */
+.phone .btn.destructive {
+  border-radius: 1000px;
+}
+
+/* ---- tab bar: the kit's floating glass capsule ----
+ * 62 px tall, 21 px in from the sides and the bottom, fully rounded; the
+ * selected tab sits on a lighter 54 px pill */
+.phone .tabbar {
+  left: 21px;
+  right: 21px;
+  bottom: 21px;
+  height: 62px;
+  border-radius: 1000px;
+  border: 0;
+  background: color-mix(in srgb, var(--bg-base) 62%, transparent);
+  box-shadow:
+    0 0 0 0.5px var(--ios-glass-edge),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 15px rgba(0, 0, 0, 0.04),
+    0 20px 40px -20px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+.phone .tab-indicator {
+  top: 4px;
+  bottom: 4px;
+  border-radius: 100px;
+}
+
+/* the all-nights sheet has no title: its close button simply leads, on the left */
+.phone .sheet.cal-sheet .sheet-head {
+  justify-content: flex-start;
+}
+.phone .sheet.cal-sheet .sheet-head::after {
+  content: none;
+}

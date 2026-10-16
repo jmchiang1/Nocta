@@ -23,7 +23,9 @@ import {
   nightsBetween,
   toDate,
   dateForFixture,
+  metCompliance,
 } from './history.js';
+import { nightTrendValues, settingsChanges } from '../lib/nightDetail.js';
 
 export const RANGES = ['7d', '30d', '90d'];
 const RANGE_DAYS = { '7d': 7, '30d': 30, '90d': 90 };
@@ -86,12 +88,28 @@ function stomachSignal(anchor) {
   };
 }
 
-/* 7 evenly spaced axis slots: first, middle, last date */
-function axis(nights) {
-  if (!nights.length) return ['', '', '', '', '', '', ''];
-  const mid = nights[Math.floor((nights.length - 1) / 2)];
-  return [fmtShort(nights[0].date), '', '', fmtShort(mid.date), '', '', fmtShort(nights.at(-1).date)];
-}
+/* the axes of each Trends chart (Charts.jsx `axes`): the night's date under
+ * its bar or point (thinned to fit), the metric's unit up the side, and the
+ * full date in the tooltip */
+const TREND_AXIS = {
+  ahi: { yTitle: 'Events an hour', unit: '/hr' },
+  leak: { yTitle: 'L/min', unit: 'L/min' },
+  hours: { yTitle: 'Hours', unit: 'h' },
+  pressure: { yTitle: 'cmH₂O', unit: 'cmH₂O' },
+  atMax: { yTitle: 'Minutes', unit: 'min', decimals: 0 },
+  maskOff: { yTitle: 'Minutes off', unit: 'min', decimals: 0 },
+  largeLeak: { yTitle: 'Minutes', unit: 'min', decimals: 0 },
+  flow: { yTitle: 'Flow limitation (0–1)', decimals: 2 },
+};
+/* `extra`: e.g. { markers } (settings changes) or a tooltip { footer } */
+export const trendAxes = (metric, dates, extra = {}) => ({
+  labels: dates.map(fmtShort),
+  titles: dates.map(fmtDayShort),
+  xTitle: 'Night',
+  decimals: 1,
+  ...TREND_AXIS[metric],
+  ...extra,
+});
 
 function tiles(win, prior, nightsInWindow) {
   const tile = (key, label, value, unit, cur, prev, extra = {}) => {
@@ -100,7 +118,7 @@ function tiles(win, prior, nightsInWindow) {
     if (prev == null) return { key, label, value, unit, dir: 'flat', note: 'no earlier nights', ...extra };
     // leak reads in whole L/min, so its change does too
     const delta = key === 'leak' ? Math.round(cur - prev) : round1(cur - prev);
-    if (Math.abs(delta) < (key === 'leak' ? 1 : 0.3)) return { key, label, value, unit, dir: 'flat', note: 'about the same as before', ...extra };
+    if (Math.abs(delta) < (key === 'leak' ? 1 : 0.3)) return { key, label, value, unit, dir: 'flat', note: 'steady', ...extra };
     return { key, label, value, unit, delta: Math.abs(delta), dir: delta > 0 ? 'up' : 'down' };
   };
   return [
@@ -125,13 +143,18 @@ function tiles(win, prior, nightsInWindow) {
 function bestWorst(nights) {
   const scored = nights.filter((x) => x.ahi);
   if (scored.length < 2) return null;
+  // the best night has to be a full one (4+ h): a near-zero AHI over a short
+  // stretch on the mask isn't a better night, just less of one
+  const full = scored.filter(metCompliance);
+  const bestPool = full.length ? full : scored;
+  const best = [...bestPool].sort((a, b) => ahiTotal(a) - ahiTotal(b))[0];
   const by = [...scored].sort((a, b) => ahiTotal(a) - ahiTotal(b));
   const card = (x) => ({
     date: fmtDayShort(x.date),
     ahi: ahiTotal(x).toFixed(1),
     note: nightNote(x),
   });
-  return { best: card(by[0]), worst: card(by.at(-1)) };
+  return { best: card(best), worst: card(by.at(-1)) };
 }
 
 /* ---- insight sentences: templates over computed values ---- */
@@ -259,13 +282,55 @@ function insights(scope, nights, anchor, days) {
   return lines;
 }
 
+/* the power-user trends (lib/nightDetail.js › nightTrendValues): one value
+ * per night, straight from that night's card data; a night the card doesn't
+ * have it for is a gap. With a short headline for each chart's corner. */
+function moreSeries(nights) {
+  const v = nights.map((x) => nightTrendValues(x.date));
+  const pick = (k) => v.map((x) => (x && x[k] != null ? x[k] : null));
+  const have = (arr) => arr.filter((x) => x != null);
+  const atMax = pick('atMaxMin');
+  const maskOff = pick('maskOffMin');
+  const breaks = pick('breaks');
+  const largeLeak = pick('largeLeakMin');
+  const flow = pick('flowP95');
+  const avg = (arr) => (have(arr).length ? have(arr).reduce((a, b) => a + b, 0) / have(arr).length : null);
+  const median = (arr) => {
+    const h = have(arr).sort((a, b) => a - b);
+    return h.length ? h[Math.floor((h.length - 1) / 2)] : null;
+  };
+  const nightsWith = (arr, test) => have(arr).filter(test).length;
+  return {
+    atMaxSeries: atMax,
+    maskOffSeries: maskOff,
+    breaksSeries: breaks,
+    largeLeakSeries: largeLeak,
+    flowSeries: flow,
+    more: {
+      atMax: have(atMax).length
+        ? `${nightsWith(atMax, (m) => m >= 1)} of ${have(atMax).length} nights reached it`
+        : null,
+      maskOff: have(breaks).length ? `${round1(avg(breaks))} breaks a night on average` : null,
+      largeLeak: have(largeLeak).length
+        ? `${nightsWith(largeLeak, (m) => m >= 1)} of ${have(largeLeak).length} nights above 24`
+        : null,
+      flow: have(flow).length ? `median night ${median(flow).toFixed(2)}` : null,
+    },
+  };
+}
+
 function series(nights) {
+  const dates = nights.map((x) => x.date);
   return {
     // unscored / no-session nights are gaps, not zeros
     ahiSeries: nights.map((x) => x.ahi || { csa: null, osa: null, hyp: null }),
     hoursSeries: nights.map((x) => (x.hours > 0 ? x.hours : null)),
     leakSeries: nights.map((x) => x.leak),
     pressureSeries: nights.map((x) => x.pressure),
+    dates,
+    // prescription changes in the window, marked on every chart
+    markers: settingsChanges(dates),
+    ...moreSeries(nights),
   };
 }
 
@@ -276,7 +341,6 @@ function summarize({ scope, nights, anchor, days, rangeLabel }) {
   const signal = stomachSignal(anchor);
   return {
     rangeLabel,
-    xLabels: axis(nights),
     window: `${nights.length} nights`,
     ahiAvg: win.ahi == null ? '—' : win.ahi.toFixed(1),
     tiles: tiles(win, prior, nights.length),

@@ -4,7 +4,9 @@
 // exactly that user, using the service role key Supabase provides to
 // Edge Functions (never shipped to the app).
 //
-// Deploy:  supabase functions deploy delete-account --project-ref <ref>
+// Deploy:  supabase functions deploy delete-account --project-ref <ref> --no-verify-jwt --use-api
+// (no gateway JWT check: the project's new signing keys need the function to
+// verify the session itself, which it does below with auth.getUser)
 import { createClient } from 'npm:@supabase/supabase-js@2.117.0';
 
 const cors = {

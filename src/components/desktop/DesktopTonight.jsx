@@ -10,7 +10,7 @@ import { FIXTURES, stripAround, nightsEnding, DEFAULT_FIXTURE } from '../../data
 import { LAST_NIGHT, THERAPY_START, addDays } from '../../data/history.js';
 import { MEDICAL_NOTE } from '../../data/account.js';
 import { Icon } from '../Icons.jsx';
-import { NightSky, SKY_FOR_STATE } from '../NightSky.jsx';
+import { TonightSky, SKY_FOR_STATE } from '../NightSky.jsx';
 import { WhyHorizon } from '../WhyHorizon.jsx';
 import { CheckinPrompt, LateCheckin } from '../CheckinPrompt.jsx';
 import { ProfileReminder } from '../ProfileReminder.jsx';
@@ -147,7 +147,7 @@ export function DesktopTonight() {
 
   return (
     <div className="dash-tonight">
-      <NightSky condition={SKY_FOR_STATE[fx.insight.card_state] ?? 'clear'} className="dash-sky" />
+      <TonightSky condition={SKY_FOR_STATE[fx.insight.card_state] ?? 'clear'} className="dash-sky" />
 
       {/* the day on the left (click it for every night), the dates the strip
        * shows on the right; the strip itself spans the row beneath */}
@@ -204,7 +204,7 @@ export function DesktopTonight() {
               {fixtureId === LAST_NIGHT && (
                 <CheckinPrompt
                   checkin={checkin}
-                  mascot={false}
+                  wide
                   onStart={(initial) => openSheet('checkin', { initial })}
                 />
               )}

@@ -46,7 +46,8 @@ export function TonightProposedScreen() {
   const escalated = fx.insight.escalation_flag === 'hard';
 
   return (
-    <ScreenFrame title={`${fx.dayName}, ${date}`} className="tonight-proposed">
+    <ScreenFrame
+      stickyTitle title={`${fx.dayName}, ${date}`} className="tonight-proposed">
       <header className="page-head">
         <div>
           <div className="eyebrow">
@@ -103,7 +104,7 @@ export function TonightProposedScreen() {
             ahi={fx.ahi.value}
             escalated={escalated}
             fixtureId={fixtureId}
-            sleepStages={fx.bodyResponse?.stages}
+            sleepStages={bodyCards.find((c) => c.stages)?.stages}
             onOpen={() => openSheet('fullnight')}
           />
 

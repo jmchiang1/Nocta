@@ -34,6 +34,7 @@ export function TonightScreen() {
 
   return (
     <ScreenFrame
+      stickyTitle
       title={`${fx.dayName}, ${fx.dateLabel.split(' · ')[0]}`}
       className="tonight-open"
       sky={SKY_FOR_STATE[fx.insight.card_state] ?? 'clear'}

@@ -52,7 +52,6 @@ export function MaskCard({ inline = false }) {
     <>
       <div className="section-head">
         <h3>Your mask</h3>
-        <span className="meta">{m.mask ? 'tap to change' : 'tap to add'}</span>
       </div>
       <div className="list">
         <button className="list-row" onClick={m.open}>

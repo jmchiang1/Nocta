@@ -1,14 +1,13 @@
 /* Nocta — Settings subpage. Full-screen sheet from the You tab.
  * Profile photo, sign-in & security, reminders, export and delete, and the
  * medical disclaimer. */
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { PRIVACY_NOTE, MEDICAL_NOTE } from '../data/account.js';
-import { ProfileAvatar } from '../components/ProfileAvatar.jsx';
 import { exportMyData } from '../lib/accountData.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
-import { setReminders, missingQuestions, setPhoto, setCheckinReminder } from '../lib/profile.js';
+import { setReminders, missingQuestions, setCheckinReminder } from '../lib/profile.js';
 
 /* accessible on/off switch — same one used in YouScreen */
 function Switch({ on, onChange, label }) {
@@ -26,81 +25,19 @@ function Switch({ on, onChange, label }) {
   );
 }
 
-/* a photo, scaled down to 256 px (a small JPEG kept on this device) */
-function shrink(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const side = Math.min(img.width, img.height);
-      const c = document.createElement('canvas');
-      c.width = c.height = 256;
-      // centre-crop to a square, like the round avatar shows it
-      c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 256, 256);
-      URL.revokeObjectURL(img.src);
-      resolve(c.toDataURL('image/jpeg', 0.85));
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-}
-
 /* the page's sections, shared with the desktop You page (rendered inline
  * there rather than one click away). Every control here does what it says:
- * nothing is a display-only switch. */
-export function SettingsContent() {
+ * nothing is a display-only switch. `children` lands after Your data, just
+ * above the disclaimer — the desktop page puts Sign in there. */
+export function SettingsContent({ children }) {
   // sub-pages stack on Settings, so Back returns here (desktop: on an empty stack)
   const { profile, authUser, pushSheet: openSheet, showToast } = useStore();
   const missing = missingQuestions(profile).length;
-  const fileRef = useRef(null);
   const [exporting, setExporting] = useState(false);
   const guest = !authUser || authUser.kind === 'guest';
-  const photo = profile.photo ?? authUser?.photo ?? null;
 
   return (
     <>
-      {/* ---- profile photo ---- */}
-      <div className="section-head">
-        <h3>Profile</h3>
-      </div>
-      <div className="list">
-        <div className="list-row st-photo">
-          <div className="st-avatar">
-            <ProfileAvatar user={authUser} />
-          </div>
-          <div className="lr-main">
-            <div className="lr-title">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
-            <div className="st-photo-actions">
-              <button type="button" className="ob-link" onClick={() => fileRef.current?.click()}>
-                {photo ? 'Change photo' : 'Add a photo'}
-              </button>
-              {profile.photo && (
-                <button type="button" className="ob-link subtle" onClick={() => setPhoto(null)}>
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            tabIndex={-1}
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              e.target.value = '';
-              if (!f) return;
-              try {
-                setPhoto(await shrink(f));
-                showToast('Photo updated', 'check');
-              } catch {
-                showToast('That image couldn’t be read', 'info');
-              }
-            }}
-          />
-        </div>
-      </div>
-
       {/* ---- sign-in & security ---- */}
       {!guest && (
         <>
@@ -212,6 +149,8 @@ export function SettingsContent() {
           <Icon name="chevronRight" size={17} />
         </button>
       </div>
+
+      {children}
 
       <div className="section-head">
         <h3>Medical disclaimer</h3>

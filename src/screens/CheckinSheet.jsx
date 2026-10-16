@@ -80,8 +80,8 @@ export function CheckinSheet() {
     const logged = allCheckinTags(picks).filter((id) => !id.startsWith('nothing_'));
     return (
       <Sheet
-        eyebrow={morning}
         title="Morning check-in"
+        hideTitle
         className="ck-sheet"
         onClose={closeSheet}
         footer={(close) => (

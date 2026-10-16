@@ -556,12 +556,25 @@
   grid-column: 1 / -1;
 }
 
-/* the pair shares one height; the check-in's shorter content sits centred
- * rather than leaving an empty band at the bottom */
-.dash-tonight-pair > .ck-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+/* the desktop check-in: every answer full width, as tall as last night's
+ * card beside it (Nox fills the corner) */
+.dash-tonight-pair > .ck-card.wide {
+  padding: 20px 22px 22px;
+}
+.ck-card.wide .ck-card-head {
+  align-items: center;
+  gap: 14px;
+}
+.ck-card.wide .ck-card-q {
+  font-size: 24px;
+}
+.ck-card.wide .ck-card-quick {
+  margin-top: 16px;
+}
+/* desktop: a bigger Nox; the answers run over him like on the phone */
+.ck-card.wide .ck-card-nox {
+  right: -40px;
+  bottom: -60px;
 }
 
 /* once checked in, the card folds to one line — it becomes a slim bar
@@ -658,7 +671,7 @@
 }
 
 .dash .trend-tile:hover:not(.on) {
-  border-color: var(--hairline-strong);
+  background: var(--surface-2);
 }
 
 .dash-trend-chart {
@@ -666,21 +679,17 @@
   padding: 20px 20px 16px;
 }
 
-.dash-legend {
-  margin: 0 0 12px;
-  padding: 0;
-  border: none;
-}
 
 .dash-rail {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: 0 28px;
-  align-items: start;
+  align-items: stretch;
   min-width: 0;
 }
 
 .dash-rail-group {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -721,7 +730,7 @@
 .dash-grid {
   display: grid;
   gap: 0 28px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .dash-grid-therapy {
@@ -746,9 +755,39 @@
   margin: 0;
 }
 
-/* the SD-card import follows the equipment list in the right column */
+/* the SD-card import, under the machine; if it's ever stretched, its button
+ * stays at the bottom */
 .dash-col > .sd-card {
   margin: 18px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+.dash-col > .sd-card .sd-btn {
+  margin-top: auto;
+}
+.dash-col > .sd-card .sd-head {
+  margin-bottom: 16px;
+}
+
+/* the equipment schedule, always open on desktop: when it's stretched to
+ * meet the machine column, the parts share the extra height evenly */
+.dash-col > .equip {
+  display: flex;
+  flex-direction: column;
+}
+.dash-col > .equip .equip-row {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* side-by-side columns end together (Therapy, You, the Trends rail): the
+ * columns stretch to the taller one, and the card that closes each column
+ * grows to fill what's left, so no column stops short */
+.dash :is(.dash-col, .dash-rail-group) > :last-child {
+  flex: 1 0 auto;
+  margin-bottom: 0;
 }
 
 /* buttons on the dashboard take its square-ish corners, not pills */
@@ -757,8 +796,13 @@
 }
 
 /* ===== You ===== */
-/* the profile across the top, then Account + devices beside Settings, all
- * inline (on mobile these are separate pages) */
+/* laid out like most desktop settings: one readable column, left-aligned
+ * under the page title — the profile, then each section in turn (on mobile
+ * Account and Settings are separate pages) */
+.dash-settings {
+  max-width: 100%;
+}
+
 .dash-profile {
   background: var(--surface-1);
   display: flex;
@@ -793,30 +837,29 @@
   color: var(--text-primary);
 }
 
-.dash-you {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 40px;
-  align-items: start;
-}
-
-.dash-you-title {
-  margin: 34px 0 2px;
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-}
-
-.dash-you .settings-note {
+.dash-settings .settings-note {
   margin: 0 0 12px;
+}
+
+/* the guest's way to an account: the note, then both buttons on one line at
+ * their own width, as settings pages do (not a full-width mobile CTA) */
+.dash-settings .acct-save {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.dash-settings .acct-save .settings-note {
+  flex-basis: 100%;
+}
+.dash-settings .acct-save .btn {
+  width: auto;
+  padding-inline: 24px;
 }
 
 /* ===== panel (surface card — used for raw charts) ===== */
 .panel {
   background: linear-gradient(180deg, var(--surface-1) 0%, color-mix(in srgb, var(--surface-1) 70%, var(--bg-base)) 100%);
-  border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
   padding: 20px 20px 16px;
   height: 100%;
@@ -851,7 +894,12 @@
   border-radius: var(--r-sm);
 }
 
+/* the dashboard behind a dialog doesn't scroll (wheel, trackpad, keys) */
+html:has(.desktop-modal-wrap) {
+  overflow: hidden;
+}
 .desktop-modal-wrap {
+  overscroll-behavior: contain;
   position: fixed;
   inset: 0;
   z-index: 700;
@@ -907,6 +955,24 @@
   padding-top: 20px;
 }
 
+/* every desktop dialog, pushed pages included (a chart's own page, Account,
+ * Settings…): title on the left, the close X in the top-right corner (the
+ * phone's back button is a phone thing; components/Sheet.jsx) */
+.desktop-modal-wrap > .sheet .sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.desktop-modal-wrap > .sheet .sheet-head .sheet-title {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.desktop-modal-wrap > .sheet .sheet-head > .sheet-close {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 /* the coach dialog: no "Nox / Ask anything" title — Nox himself (flown in
  * from the sidebar) opens it; the close button keeps its corner */
 .desktop-modal-wrap > .coach-sheet .sheet-title {
@@ -917,9 +983,8 @@
   margin-left: auto;
 }
 
-/* the round close / back buttons (their glass style is phone-scoped) */
-.desktop-modal-wrap .sheet-close,
-.desktop-modal-wrap .sheet-back {
+/* the round close button (its glass style is phone-scoped) */
+.desktop-modal-wrap .sheet-close {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -931,8 +996,7 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.desktop-modal-wrap .sheet-close:hover,
-.desktop-modal-wrap .sheet-back:hover {
+.desktop-modal-wrap .sheet-close:hover {
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.1);
 }
@@ -966,19 +1030,29 @@
   padding: 28px 30px 26px;
 }
 
+/* the title centred over the dialog (as on the phone), close on the right */
 .dfn-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
   gap: 16px;
   margin-bottom: 18px;
 }
 
+.dfn-heading {
+  grid-column: 2;
+  text-align: center;
+}
+
+.dfn-close {
+  grid-column: 3;
+}
+
 .dfn-eyebrow {
+  margin-top: 4px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-tertiary);
-  margin-bottom: 4px;
 }
 
 .dfn-title {
@@ -1026,11 +1100,11 @@
   text-align: left;
   font: inherit;
   color: inherit;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .dfn-metric:hover {
-  border-color: var(--hairline-strong);
+  background: var(--surface-2);
   transform: translateY(-1px);
 }
 
@@ -1247,7 +1321,6 @@
   padding: 16px 18px;
   border-radius: var(--r-md);
   background: var(--surface-1);
-  border: 1px solid var(--hairline);
 }
 
 /* the verdict cards flank the same center gutter as the rows above */
@@ -1307,9 +1380,6 @@
   margin-top: auto;
 }
 
-.cal-dialog .cal-detail-note {
-  margin-bottom: 16px;
-}
 
 .cal .disclaimer {
   margin-top: 20px;
@@ -1338,6 +1408,15 @@
 .desktop-onboarding .btn,
 .desktop-onboarding .ob-intro-peek span {
   border-radius: var(--r-sm);
+}
+/* no frosted glass on desktop: the peek is a flat, quiet button */
+.desktop-onboarding .ob-intro-peek span {
+  background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.desktop-onboarding .ob-intro-peek:hover span {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* the glass back / close buttons are phone-scoped; a desktop look instead */
@@ -1428,9 +1507,16 @@
   width: min(440px, 100% - 64px);
 }
 
-/* the step centres in the space between the nav and the actions; with no
- * action row (sign in), it centres in the whole space below the nav */
-.desktop-onboarding :is(.ob-screen, .si-screen) > .ob-body {
+/* a setup step starts at the top, under the nav, as on the phone; its
+ * actions stay at the bottom. The sign-in pages (no action row) stay
+ * centred in the space below the nav. */
+.desktop-onboarding .ob-screen > .ob-body {
+  flex: 0 1 auto;
+  margin-top: 0;
+  margin-bottom: auto;
+}
+
+.desktop-onboarding .si-screen > .ob-body {
   flex: 0 1 auto;
   margin-block: auto;
 }
@@ -1444,6 +1530,7 @@
 }
 
 .desktop-onboarding .ob-copy {
+  max-width: none; /* the column already sets the width */
   font-size: 18px;
 }
 
@@ -1541,7 +1628,6 @@
 
 @media (max-width: 960px) {
   .dash-grid-therapy,
-  .dash-you,
   .cal-dialog .cal-body {
     grid-template-columns: 1fr;
   }
@@ -1596,4 +1682,115 @@
   .cmp2-val {
     font-size: 24px;
   }
+}
+
+/* ---- Ask Nox: his flight into the coach dialog (DesktopApp.jsx › flyNox) ----
+ * eyes squeezed shut through the loop, and a trail of fading peach specks */
+.nox-flyer.wheee .mc-open {
+  opacity: 0;
+}
+.nox-flyer.wheee .mc-shut {
+  opacity: 1;
+}
+.nox-sparkle {
+  position: fixed;
+  z-index: 799;
+  pointer-events: none;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 70%, transparent);
+  animation: noxSparkle 800ms ease-out forwards;
+}
+.nox-sparkle.star {
+  border-radius: 0;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  background: var(--text-primary);
+  transform-origin: center;
+}
+@keyframes noxSparkle {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.2) translateY(10px);
+  }
+}
+
+/* ----- the full night as a page of the dashboard (not a dialog) ----- */
+.dfn-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 40px 60px;
+}
+.dfn-page .dfn-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.dfn-page .dfn-heading {
+  text-align: left;
+}
+.dfn-page .dfn-title {
+  font-size: 34px;
+}
+.dfn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 0 12px 0 6px;
+  border-radius: var(--r-sm);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hairline);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.dfn-back:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+/* a chart without its own metric page: the same panel, not a button */
+.dfn-panel {
+  display: block;
+  min-width: 0;
+}
+.dfn-charts > .wide {
+  grid-column: 1 / -1;
+}
+.dfn-page .dfn-charts {
+  gap: 18px;
+}
+/* the events: a full-width list under the charts; the trace gets room */
+.dfn-page .fn-events {
+  margin-top: 28px;
+}
+.dfn-page .fn-all-events {
+  width: auto;
+  padding: 0 20px;
+  min-height: 44px;
+}
+
+/* Trends › More trends: two charts to a row under the main one */
+.dash-more-trends {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.dash-more-trends .trend-chart {
+  margin: 0;
+  min-width: 0;
+}
+
+/* a chart's own page (MetricDetailSheet) gets a wide dialog on desktop:
+ * room for the night's graph at a readable size */
+.desktop-modal-wrap > .sheet.md-sheet {
+  width: min(1040px, 94vw);
+  max-width: 1040px;
 }

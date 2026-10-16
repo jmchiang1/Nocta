@@ -36,10 +36,6 @@ export function MaskPickerSheet() {
     <Sheet eyebrow="Equipment" title="Change mask" onClose={closeSheet} full>
       {(close) => (
         <>
-          <p className="settings-note" style={{ margin: '0 0 14px' }}>
-            Find the exact mask you use. Switching this updates the parts Nocta tracks
-            for replacement.
-          </p>
 
           <input
             className="text-field"

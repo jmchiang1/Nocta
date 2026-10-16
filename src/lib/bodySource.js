@@ -1,80 +1,71 @@
-/* Nocta — body-overnight source routing. The fixture carries one canonical
- * `bodyResponse` (Apple-Watch shape). At render time we project it through
- * each connected device's capability list + the user's per-read toggles to
- * produce a per-device view. Devices that report fewer reads (Oura has no
- * blood oxygen, Whoop only has HR) show shorter cards — that's the point. */
+/* Nocta — "your body overnight", per connected wearable. Each live wearable
+ * (lib/wearables.js) keeps its synced nights by date, the same id as the CPAP
+ * night, so a night's card is that wearable's record for the same evening.
+ * The user's per-read toggles decide which parts show. A device that measures
+ * less (Whoop has no overnight heart-rate samples, Withings no SpO₂) shows a
+ * shorter card. Only what the device reported appears: no scores, no labels,
+ * nothing filled in. */
 import { deviceByKey } from '../data/account.js';
+import { LIVE_WEARABLES, wearableNight, wearableNightsBefore } from './wearables.js';
 
-/* Devices that contribute to the "your body overnight" cards. Apple Health is
- * deliberately excluded — it aggregates steps/workouts/weight, not overnight
- * physiology. Order here = display order on the home screen. */
-const BODY_DEVICES = ['watch', 'oura', 'fitbit', 'garmin', 'samsung', 'whoop'];
+/* how many earlier nights make "your usual" heart-rate range, and how few is too few */
+const USUAL_NIGHTS = 14;
+const USUAL_MIN = 5;
 
-/* Each BodyResponse field is gated by exactly one device-read label. */
-const FIELD_READ = {
-  hr: 'Heart rate',
-  hrv: 'Heart-rate variability',
-  respRate: 'Respiratory rate',
-  spo2: 'Blood oxygen',
-  stages: 'Sleep stages',
-};
-
-/* No per-device adjustments: a device's card shows exactly what it reported
- * (an earlier version nudged values per device to look different — invented). */
+/* the band behind the heart-rate chart: the spread of this wearable's average
+ * overnight heart rate across your recent nights */
+function usualHr(deviceKey, date) {
+  const avgs = wearableNightsBefore(deviceKey, date, USUAL_NIGHTS)
+    .map((n) => n.hr?.avg)
+    .filter((v) => v != null);
+  return avgs.length >= USUAL_MIN ? [Math.min(...avgs), Math.max(...avgs)] : null;
+}
 
 function bodyResponseFor(fx, deviceKey, deviceReads) {
-  if (!fx.bodyResponse) return null;
+  const n = wearableNight(deviceKey, fx.id);
   const dev = deviceByKey(deviceKey);
-  if (!dev) return null;
+  if (!n || !dev) return null;
   const caps = new Set(dev.reads);
   const reads = deviceReads || {};
   const has = (label) => caps.has(label) && reads[label] !== false;
 
-  /* skip the device entirely if none of its enabled reads map to a card section */
-  const anyField = Object.values(FIELD_READ).some(has);
-  if (!anyField) return null;
-
-  const tune = { hrShift: 0, hrvShift: 0 }; // shown as reported
-  const base = fx.bodyResponse;
-
-  const hr = has('Heart rate')
-    ? { ...base.hr, series: base.hr.series.map((v) => v + tune.hrShift) }
-    : null;
-  const hrv = has('Heart-rate variability')
-    ? {
-        ...base.hrv,
-        // a missing reading stays "—" (adding the per-device shift made "—0")
-        value: typeof base.hrv.value === 'number' ? base.hrv.value + tune.hrvShift : base.hrv.value,
-      }
-    : null;
-  const respRate = has('Respiratory rate') ? base.respRate : null;
-  const spo2 = has('Blood oxygen') ? base.spo2 : null;
-  const stages = has('Sleep stages') ? base.stages : null;
+  const hr = has('Heart rate') && n.hr ? { ...n.hr, typical: n.hr.series ? usualHr(deviceKey, fx.id) : null } : null;
+  const hrv = has('Heart-rate variability') && n.hrv != null ? { value: n.hrv, unit: 'ms' } : null;
+  const respRate = has('Respiratory rate') && n.respRate != null ? { value: n.respRate, unit: 'br/min' } : null;
+  const spo2 = has('Blood oxygen') && n.spo2 != null ? { avg: n.spo2, low: null, unit: '%' } : null;
+  const stages = has('Sleep stages') && n.stages ? { ...n.stages, phases: n.phases } : null;
+  if (!hr && !hrv && !respRate && !spo2 && !stages) return null;
 
   return {
     deviceKey,
-    source: dev.title,
-    note: base.note,
+    // a sandbox night (OURA_SANDBOX) is canned data, and the card says so
+    source: n.test ? `${dev.title} · test data` : dev.title,
+    note: null,
     hr,
     hrv,
     respRate,
-    sleep: base.sleep,
     spo2,
     stages,
-    awakenings: stages ? base.awakenings : null,
-    latencyMin: stages ? base.latencyMin : null,
+    // asleep (the wearable's count) next to mask-on (the machine's)
+    sleep: stages && n.asleepHours != null ? { asleepHours: n.asleepHours, maskOnHours: fx.session.durationHours } : null,
+    awakenings: stages ? n.awakenings : null,
+    latencyMin: stages ? n.latencyMin : null,
   };
 }
 
-/* Build the list of body-overnight cards to render for the active fixture.
- * A device contributes only if it's both connected (OAuth granted) AND
- * enabled (the user hasn't paused it via the master toggle) AND has at
- * least one read that maps to a card section. Empty array → render no
+/* The body cards for a night: one per wearable that's connected, not paused,
+ * and has that night with at least one allowed read. Empty array → no
  * "Your body overnight" section at all. */
 export function activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads) {
-  return BODY_DEVICES.filter(
-    (k) => deviceConnections?.[k] && deviceEnabled?.[k] !== false
-  )
+  if (!fx) return [];
+  return LIVE_WEARABLES.filter((k) => deviceConnections?.[k] && deviceEnabled?.[k] !== false)
     .map((k) => bodyResponseFor(fx, k, deviceReads?.[k]))
     .filter(Boolean);
+}
+
+/* the first card with sleep stages, for the full-night view and the doctor
+ * summary, which show one source */
+export function primaryBody(fx, deviceConnections, deviceEnabled, deviceReads) {
+  const cards = activeBodyResponses(fx, deviceConnections, deviceEnabled, deviceReads);
+  return cards.find((c) => c.stages) ?? cards[0] ?? null;
 }

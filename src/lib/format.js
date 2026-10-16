@@ -47,23 +47,6 @@ export function genBreathing(seed, n) {
   return out;
 }
 
-/* apnea-event mini waveform: full → quiet gap (the event) → full, amplitudes 0..1 */
-export function genEventWave(seed, n = 44) {
-  const rnd = mulberry32(typeof seed === 'string' ? hashStr(seed) : seed);
-  const gapStart = Math.round(n * 0.32);
-  const gapEnd = Math.round(n * 0.68);
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    if (i >= gapStart && i < gapEnd) {
-      out.push(0.04 + rnd() * 0.05);
-    } else {
-      const env = 0.5 + 0.5 * Math.abs(Math.sin(i * 0.6));
-      out.push(Math.min(1, (0.45 + rnd() * 0.55) * env));
-    }
-  }
-  return { amps: out, gapStart, gapEnd };
-}
-
 /* overnight heart-rate trace (bpm) for mock Apple Watch data. HR dips through
  * mid-sleep and drifts up toward morning; `arousals` ({ at, width, mag } on a
  * 0..1 timeline) are the apnea-driven bumps that let the trace line up with

@@ -8,7 +8,6 @@
 .chart-card {
   border-radius: var(--r-lg);
   background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
-  border: 1px solid var(--hairline);
   padding: 18px 18px 14px;
   margin-bottom: 14px;
   box-shadow: var(--shadow-card);
@@ -37,14 +36,6 @@
   color: var(--text-tertiary);
   font-family: var(--font-body);
   margin-left: 3px;
-}
-.chart-axis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 7px;
-  font-size: 10px;
-  color: var(--text-tertiary);
-  font-weight: 600;
 }
 
 /* the demo fixture switcher now lives in DevPanel, outside the phone frame
@@ -127,7 +118,6 @@
 }
 .trend-tile {
   background: var(--surface-1);
-  border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   padding: 14px 14px 12px;
   min-width: 0;
@@ -185,9 +175,10 @@
 }
 .trend-tile .tt-row {
   display: flex;
+  flex-wrap: wrap; /* a long note drops under the number instead of clipping */
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px 6px;
   margin-top: 4px;
 }
 .trend-tile .tt-value {
@@ -198,8 +189,8 @@
   white-space: nowrap;
 }
 .trend-tile .delta-pill {
-  flex-shrink: 1;
-  min-width: 0;
+  flex-shrink: 0;
+  max-width: 100%;
   padding: 3px 8px;
   font-size: 11px;
   white-space: nowrap;
@@ -216,7 +207,6 @@
 /* ============ INSIGHT LIST (Trends) ============ */
 .insight-list {
   border-radius: var(--r-lg);
-  border: 1px solid rgba(240, 164, 122, 0.16);
   background:
     radial-gradient(120% 80% at 0% 0%, rgba(240, 164, 122, 0.08), transparent 55%),
     var(--surface-1);
@@ -262,7 +252,6 @@
 .compare .cmp-card {
   border-radius: var(--r-md);
   padding: 16px 14px;
-  border: 1px solid var(--hairline);
 }
 .compare .cmp-card.best {
   background: linear-gradient(180deg, rgba(125, 201, 154, 0.1), var(--surface-1));
@@ -302,32 +291,14 @@
 /* ============ THERAPY ============ */
 .device-card {
   border-radius: var(--r-lg);
-  border: 1px solid var(--hairline);
   background: linear-gradient(135deg, rgba(125, 201, 154, 0.08), var(--surface-1) 55%);
   padding: 18px;
   /* mobile: natural height. Desktop fills its column — see desktop.css */
   height: fit-content;
   margin-bottom: 0px !important;
 }
-.device-card .dc-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.device-card .dc-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--good);
-}
-.device-card .dc-status {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--good);
-  letter-spacing: 0.04em;
-}
 .device-card h3 {
-  margin: 12px 0 2px;
+  margin: 0 0 2px;
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 19px;
@@ -361,7 +332,6 @@
 /* equipment lifecycle */
 .equip {
   border-radius: var(--r-lg);
-  border: 1px solid var(--hairline);
   background: var(--surface-1);
   padding: 6px 18px;
   margin-bottom: 16px;
@@ -397,7 +367,6 @@
 /* generic list rows (settings, journal, projection) */
 .list {
   border-radius: var(--r-lg);
-  border: 1px solid var(--hairline);
   background: var(--surface-1);
   padding: 0 18px;
   margin-bottom: 16px;
@@ -479,6 +448,7 @@
 /* empty-state row — no device connected yet */
 .list-row.empty {
   cursor: default;
+  text-align: left; /* an empty row in a list reads like the rows around it */
 }
 .list-row.empty .lr-title {
   color: var(--text-secondary);
@@ -537,7 +507,6 @@
 /* compliance projection */
 .projection {
   border-radius: var(--r-lg);
-  border: 1px solid rgba(240, 164, 122, 0.16);
   background:
     radial-gradient(120% 80% at 100% 0%, rgba(240, 164, 122, 0.08), transparent 55%),
     var(--surface-1);
@@ -572,37 +541,65 @@
 .pj-scale {
   display: flex;
   justify-content: space-between;
-  margin-top: 7px;
+  margin-top: 10px;
   font-size: 10.5px;
   color: var(--text-tertiary);
   font-weight: 600;
 }
 
-/* ============ COMPLIANCE NIGHTLY DOTS ============
- * 30-night status under the compliance progress bar — purely informational.
- * Compliance is a regulatory bar; we add visibility, never playability. */
-.compliance-dots {
+/* ============ COMPLIANCE TRACK (components/ComplianceCard.jsx) ============
+ * one segment per night of the 30-night window — the bar and the per-night
+ * status in one. Green = 4+ h, coral = under, dim = not happened yet. */
+.pj-track {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(30, 1fr);
+  grid-template-columns: repeat(var(--n, 30), minmax(0, 1fr));
   gap: 3px;
-  align-items: center;
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px 0;
+  height: 10px;
 }
-.compliance-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  margin: 0 auto;
-  background: rgba(255, 255, 255, 0.10); /* future */
+.pj-seg {
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08); /* future */
+  animation: segIn 0.3s var(--ease-out) backwards;
+  animation-delay: calc(250ms + var(--i, 0) * 12ms);
 }
-.compliance-dot.met {
+.pj-seg:first-child {
+  border-radius: 5px 2px 2px 5px;
+}
+.pj-seg:nth-last-child(1 of .pj-seg) {
+  border-radius: 2px 5px 5px 2px;
+}
+.pj-seg.met {
   background: var(--good);
 }
-.compliance-dot.missed {
+.pj-seg.missed {
   background: var(--alert);
   opacity: 0.85;
+}
+@keyframes segIn {
+  from {
+    opacity: 0;
+    transform: scaleY(0.3);
+  }
+}
+/* the earliest night compliance can be cleared */
+.pj-marker {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 0;
+  border-left: 1.5px dashed rgba(255, 255, 255, 0.6);
+  transform: translateX(-0.75px);
+}
+.pj-scale {
+  position: relative;
+}
+/* its label, centred under the marker */
+.pj-scale-mark {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 /* ============ PROFILE (You) ============ */
@@ -857,6 +854,48 @@
 .ck-card-more {
   color: var(--accent-soft);
 }
+/* Nox, big, in the bottom-right corner behind the question's answers. The
+ * card crops him; the content sits above him, and the answer pills get a
+ * denser fill so their labels keep their contrast over his peach. */
+.tn-module.ck-card.has-nox {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ck-card.has-nox > :not(.ck-card-nox) {
+  position: relative;
+  z-index: 1;
+}
+.ck-card.has-nox .ck-card-head {
+  padding-right: 64px; /* the question stays clear of his head */
+}
+.ck-card-nox {
+  position: absolute;
+  z-index: 0;
+  right: -58px; /* far enough in that his eyes clear the last answer pill */
+  bottom: -40px;
+  pointer-events: none;
+}
+.ck-card-nox .mc-body {
+  animation: noxTilt 11s ease-in-out 1.2s infinite;
+}
+.ck-card.has-nox .ob-pill {
+  background: color-mix(in srgb, var(--bg-base) 84%, transparent);
+}
+/* frosted on the phone only (the iOS glass look); flat on desktop */
+.phone .ck-card.has-nox .ob-pill {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+/* every so often a curious head tilt, one way then the other, with long
+ * rests between (the eyes glance on their own 14s loop, so the two drift) */
+@keyframes noxTilt {
+  0%, 30% { transform: rotate(0deg); }
+  36%, 50% { transform: rotate(-9deg); }
+  56%, 74% { transform: rotate(0deg); }
+  80%, 88% { transform: rotate(7deg); }
+  94%, 100% { transform: rotate(0deg); }
+}
 .tn-module.ck-card.done {
   padding: 6px 10px 6px 14px;
 }
@@ -895,7 +934,6 @@
   padding: 14px 6px;
   border-radius: var(--r-lg);
   background: color-mix(in srgb, var(--surface-1) 70%, transparent);
-  border: 1px solid var(--hairline);
 }
 .fn-summary-card > div {
   display: flex;
@@ -999,7 +1037,6 @@
   padding: 18px;
   border-radius: var(--r-lg);
   background: color-mix(in srgb, var(--surface-1) 70%, transparent);
-  border: 1px solid var(--hairline);
 }
 .md-about h3 {
   margin: 0 0 8px;
@@ -1031,7 +1068,6 @@
 }
 .fn-stat {
   background: var(--surface-1);
-  border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   padding: 13px 12px;
 }
@@ -1065,7 +1101,6 @@
 /* morning check-in summary inside the full-night sheet */
 .fn-checkin {
   border-radius: var(--r-md);
-  border: 1px solid var(--hairline);
   background: var(--surface-1);
   padding: 14px;
   margin-bottom: 14px;
@@ -1082,7 +1117,6 @@
 /* episodes list */
 .episode {
   border-radius: var(--r-md);
-  border: 1px solid var(--hairline);
   background: var(--surface-1);
   margin-bottom: 9px;
   overflow: hidden;
@@ -1566,4 +1600,26 @@
 }
 .phone .suggest-row.after-opener .suggest {
   animation-delay: calc(2.2s + var(--i, 0) * 90ms);
+}
+
+/* the sleep journal before any check-in (screens/JournalSheet.jsx) */
+.journal-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+.journal-empty-title {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.journal-empty p:not(.journal-empty-title) {
+  margin: 0;
+  max-width: 340px;
+  font-size: 14px;
+  line-height: 1.5;
 }

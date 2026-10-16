@@ -11,8 +11,15 @@
  *   density — star count multiplier (the splash sky is fuller than Tonight's;
  *             the faintest tier grows most, so it reads as depth, not glitter)
  *   twinkle — share of stars that twinkle (0–1)
- *   comets  — an occasional comet streaks across: random timing (6.5–13 s
- *             apart), angle and length, one at a time
+ *   comets  — an occasional shooting star streaks across: random timing,
+ *             angle and length, one at a time. `cometGap` sets the wait
+ *             between them ([min, max] ms); Tonight's are rarer than the
+ *             splash's.
+ *
+ * Like Apple Weather's night sky, it's never quite still: the clouds sail
+ * slowly to the right and wrap around, the star field drifts (near stars a
+ * little faster than far ones), some stars twinkle, and now and then a
+ * bright one glimmers with a small cross of light.
  * Reduced motion: nothing twinkles, drifts or flies (global rule + JS gate). */
 import { useEffect, useMemo, useState } from 'react';
 import { mulberry32, hashStr } from '../lib/format.js';
@@ -51,13 +58,20 @@ function makeStars(seed, twinkle, density = 1) {
         tw: rnd() < twinkle,
         t: 2.4 + rnd() * 4.4, // twinkle period
         d: -rnd() * 6, // already mid-twinkle on arrival
+        // a few of the brighter stars glimmer now and then instead
+        gl: rnd() < [0.6, 0.22, 0][ti],
+        g: 9 + rnd() * 13, // glimmer period, s
+        gd: -rnd() * 22,
       });
     }
   });
   return out;
 }
 
-function useComets(enabled, firstMs) {
+const COMET_GAP = [6500, 13000];
+
+function useComets(enabled, firstMs, gap = COMET_GAP) {
+  const [gapMin, gapMax] = gap;
   const [comet, setComet] = useState(null);
   useEffect(() => {
     if (!enabled || prefersReducedMotion()) return undefined;
@@ -76,12 +90,12 @@ function useComets(enabled, firstMs) {
           dur: 1.1 + r() * 0.7,
           len: 90 + r() * 80,
         });
-        launch(6500 + Math.random() * 6500);
+        launch(gapMin + Math.random() * (gapMax - gapMin));
       }, wait);
     };
     launch(firstMs);
     return () => clearTimeout(timer);
-  }, [enabled, firstMs]);
+  }, [enabled, firstMs, gapMin, gapMax]);
   return [comet, () => setComet(null)];
 }
 
@@ -92,10 +106,11 @@ export function NightSky({
   density = 1,
   comets = false,
   firstCometMs = 2200,
+  cometGap,
   className = '',
 }) {
   const stars = useMemo(() => makeStars(seed, twinkle, density), [seed, twinkle, density]);
-  const [comet, clearComet] = useComets(comets, firstCometMs);
+  const [comet, clearComet] = useComets(comets, firstCometMs, cometGap);
 
   return (
     <div className={`sky sky-${condition}${className ? ` ${className}` : ''}`} aria-hidden="true">
@@ -103,23 +118,30 @@ export function NightSky({
       <span className="sky-glow b" />
       <span className="sky-glow c" />
 
-      <div className="sky-stars">
-        {stars.map((s) => (
-          <i
-            key={s.key}
-            className={`${s.cls}${s.tw ? ' tw' : ''}`}
-            style={{
-              left: `${s.left}%`,
-              top: `${s.top}%`,
-              width: `${s.size}px`,
-              height: `${s.size}px`,
-              '--a': s.a,
-              '--t': `${s.t}s`,
-              '--d': `${s.d}s`,
-            }}
-          />
-        ))}
-      </div>
+      {/* one layer per tier, so near stars can drift a touch faster than far ones */}
+      {TIERS.map((t) => (
+        <div key={t.cls} className={`sky-stars ${t.cls}-layer`}>
+          {stars
+            .filter((s) => s.cls === t.cls)
+            .map((s) => (
+              <i
+                key={s.key}
+                className={`${s.cls}${s.gl ? ' gl' : s.tw ? ' tw' : ''}`}
+                style={{
+                  left: `${s.left}%`,
+                  top: `${s.top}%`,
+                  width: `${s.size}px`,
+                  height: `${s.size}px`,
+                  '--a': s.a,
+                  '--t': `${s.t}s`,
+                  '--d': `${s.d}s`,
+                  '--g': `${s.g}s`,
+                  '--gd': `${s.gd}s`,
+                }}
+              />
+            ))}
+        </div>
+      ))}
 
       <div className="sky-clouds">
         <i className="c1" />
@@ -146,5 +168,21 @@ export function NightSky({
         </span>
       )}
     </div>
+  );
+}
+
+/* Tonight's sky (phone + desktop): an occasional shooting star, rarer than
+ * the splash's, and none when the night is overcast (it'd be behind cloud) */
+const TONIGHT_GAP = [14000, 32000];
+export function TonightSky({ condition = 'clear', ...rest }) {
+  const [firstMs] = useState(() => 5000 + Math.round(Math.random() * 5000)); // once per visit
+  return (
+    <NightSky
+      condition={condition}
+      comets={condition !== 'overcast'}
+      firstCometMs={firstMs}
+      cometGap={TONIGHT_GAP}
+      {...rest}
+    />
   );
 }

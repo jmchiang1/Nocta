@@ -98,7 +98,7 @@ function rollingAsOf(nights) {
     slack: null,
     progressPct: Math.round((met / WINDOW) * 100),
     targetPct: Math.round((REQUIRED / WINDOW) * 100),
-    scale: [fmtShort(last[0].date), `${REQUIRED} of ${WINDOW}`, fmtShort(last.at(-1).date)],
+    scale: [fmtShort(last[0].date), "", fmtShort(last.at(-1).date)], // the bar needs no middle mark here
     nights: status,
   };
 }

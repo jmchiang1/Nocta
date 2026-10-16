@@ -4,7 +4,7 @@ import { useStore } from '../lib/store.jsx';
 import { cardDevice, machineName, deviceCells } from '../data/therapy.js';
 import { EquipmentList } from '../components/EquipmentList.jsx';
 import { openDoctorReport } from '../lib/doctorReport.js';
-import { deviceStatus } from '../lib/deviceStatus.js';
+import { deviceSource } from '../lib/deviceStatus.js';
 import { SdImportCard } from '../components/SdImportCard.jsx';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -12,12 +12,12 @@ import { MaskCard } from '../components/MaskCard.jsx';
 import { ComplianceCard } from '../components/ComplianceCard.jsx';
 
 export function TherapyScreen() {
-  const { machineId, openSheet, showToast, syncNonce, cardData } = useStore();
+  const { machineId, openSheet, showToast, cardData } = useStore();
   // the card names the machine and its settings; nothing is filled in
   const device = cardDevice();
   const machine = machineName(machineId);
   const cells = deviceCells();
-  const status = deviceStatus(cardData, syncNonce > 0);
+  const source = deviceSource(cardData);
 
   /* the real export: a printable summary of the last 30 nights, opened in a
    * new tab with the print dialog (save as PDF from there) */
@@ -30,21 +30,16 @@ export function TherapyScreen() {
       <header className="page-head">
         <div>
           <h1>Therapy</h1>
-          <div className="sub">Your machine, mask, and the paperwork</div>
         </div>
       </header>
 
       <ComplianceCard />
 
       <section className="device-card">
-        <div className="dc-top">
-          <span className={`dc-dot${status.live ? ' live' : ' idle'}`} aria-hidden="true" />
-          <span className={`dc-status${status.live ? '' : ' idle'}`}>{status.status}</span>
-        </div>
         <h3>
           {machine.brand} {machine.name}
         </h3>
-        <div className="dc-sub">{status.source}</div>
+        <div className="dc-sub">{source}</div>
         {cells.length > 0 ? (
           <div className="dc-grid">
             {cells.map((c) => (
@@ -73,7 +68,6 @@ export function TherapyScreen() {
 
       <div className="section-head">
         <h3>Equipment</h3>
-        <span className="meta">log when you replace</span>
       </div>
       <EquipmentList />
 
@@ -92,9 +86,6 @@ export function TherapyScreen() {
         </button>
       </div>
 
-      <p className="disclaimer">
-        The export contains your data only, with no Nocta insights. It is not a medical record.
-      </p>
     </ScreenFrame>
   );
 }

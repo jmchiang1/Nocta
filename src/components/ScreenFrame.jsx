@@ -9,7 +9,7 @@
 import { useRef, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from './StatusBar.jsx';
-import { NightSky } from './NightSky.jsx';
+import { TonightSky } from './NightSky.jsx';
 
 const COMPACT_AT = 64; // px scrolled before the compact title appears
 /* tab bar compact/full: compacting needs a deliberate, sustained scroll down
@@ -22,8 +22,11 @@ const BAR_SHOW_NEAR = 40; // always full size this close to the top/bottom
 /* `sky`: Tonight's night-sky backdrop (components/NightSky.jsx), pinned to
  * the top of the screen behind the content. Pass a weather condition
  * ('clear' | 'bright' | 'hazy' | 'overcast' | 'faint') — it reflects the
- * night as weather, never as a red/green grade — or `true` for 'clear'. */
-export function ScreenFrame({ title, children, className = '', sky = false }) {
+ * night as weather, never as a red/green grade — or `true` for 'clear'.
+ * `stickyTitle`: keep a compact title pinned once the page title scrolls away
+ * (Tonight only — its day and date). Other tabs just scroll, with a short fade
+ * under the status bar so content never runs into the clock. */
+export function ScreenFrame({ title, children, className = '', sky = false, stickyTitle = false }) {
   const { setTabBarHidden } = useStore();
   const scrollRef = useRef(null);
   const [compact, setCompact] = useState(false);
@@ -53,12 +56,16 @@ export function ScreenFrame({ title, children, className = '', sky = false }) {
   }
 
   return (
-    <div className={`screen framed${compact ? ' scrolled' : ''}${className ? ` ${className}` : ''}`}>
-      {sky && <NightSky condition={sky === true ? 'clear' : sky} />}
+    <div
+      className={`screen framed${compact ? ' scrolled' : ''}${stickyTitle ? ' sticky-title' : ' no-sticky'}${className ? ` ${className}` : ''}`}
+    >
+      {sky && <TonightSky condition={sky === true ? 'clear' : sky} />}
       <StatusBar />
-      <div className="compact-bar" aria-hidden={!compact}>
-        <span className="cb-title">{title}</span>
-      </div>
+      {stickyTitle && (
+        <div className="compact-bar" aria-hidden={!compact}>
+          <span className="cb-title">{title}</span>
+        </div>
+      )}
 
       <div ref={scrollRef} className="scroll" onScroll={onScroll}>
         <div className="scroll-content">{children}</div>

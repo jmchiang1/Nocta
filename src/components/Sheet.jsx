@@ -23,6 +23,7 @@ const DISMISS_VELOCITY = 0.55; // px/ms
 export function Sheet({
   eyebrow,
   title,
+  hideTitle = false, // the title still names the dialog for screen readers, but isn't shown
   onClose,
   children,
   footer,
@@ -32,7 +33,7 @@ export function Sheet({
   variant = 'sheet',
   className = '',
 }) {
-  const { setSheetLeaving } = useStore();
+  const { setSheetLeaving, viewMode } = useStore();
   const [closing, setClosing] = useState(false);
   const [entered, setEntered] = useState(false);
   const sheetRef = useRef(null);
@@ -41,6 +42,9 @@ export function Sheet({
 
   const isPage = variant === 'page';
   const isFull = full || isPage;
+  // a pushed page goes *back* on the phone; on desktop every sheet is a
+  // dialog, so it closes with an X in the top-right corner instead
+  const backNav = isPage && viewMode !== 'desktop';
 
   const closingRef = useRef(false);
   const close = useCallback(() => {
@@ -155,8 +159,8 @@ export function Sheet({
           {!isFull && <div className="sheet-grip" />}
           {/* pushed pages navigate *back* (chevron, leading edge, iOS-style);
            * modals dismiss with an X on the trailing edge */}
-          <div className={`sheet-head${isPage ? ' with-back' : ''}`}>
-            {isPage && (
+          <div className={`sheet-head${backNav ? ' with-back' : ''}`}>
+            {backNav && (
               <button className="sheet-back glass" onClick={close} aria-label="Back">
                 <Icon name="chevronLeft" size={19} />
               </button>
@@ -164,12 +168,16 @@ export function Sheet({
             {/* pages: centred nav title with the eyebrow as a quiet subtitle
              * underneath; modals keep the left-aligned eyebrow-over-title */}
             <div className="sheet-title">
-              {eyebrow && !isPage && <div className="eyebrow">{eyebrow}</div>}
-              <h3>{title}</h3>
-              {eyebrow && isPage && <div className="sheet-subtitle">{eyebrow}</div>}
+              {!hideTitle && (
+                <>
+                  {eyebrow && !isPage && <div className="eyebrow">{eyebrow}</div>}
+                  <h3>{title}</h3>
+                  {eyebrow && isPage && <div className="sheet-subtitle">{eyebrow}</div>}
+                </>
+              )}
             </div>
             {headRight ||
-              (!isPage && (
+              (!backNav && (
                 <button className="sheet-close glass" onClick={close} aria-label="Close">
                   <Icon name="x" size={17} />
                 </button>

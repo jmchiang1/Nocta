@@ -9,6 +9,7 @@ export function entriesFromFileList(fileList) {
     path: f.webkitRelativePath || f.name,
     size: f.size,
     read: () => f.arrayBuffer(),
+    readRange: (a, b) => f.slice(a, b).arrayBuffer(), // only the bytes asked for
   }));
 }
 
@@ -40,7 +41,13 @@ export async function entriesFromDrop(dataTransfer) {
   async function walk(entry, prefix) {
     const path = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isFile) {
-      out.push({ path, entry, read: async () => (await fileOf(entry)).arrayBuffer() });
+      const file = await fileOf(entry);
+      out.push({
+        path,
+        size: file.size,
+        read: () => file.arrayBuffer(),
+        readRange: (a, b) => file.slice(a, b).arrayBuffer(),
+      });
     } else if (entry.isDirectory) {
       for (const child of await children(entry)) await walk(child, path);
     }
@@ -53,3 +60,36 @@ export async function entriesFromDrop(dataTransfer) {
  * Safari doesn't support it — the native app will use the Files picker. */
 export const canPickFolder = () =>
   typeof document !== 'undefined' && 'webkitdirectory' in document.createElement('input');
+
+/* ---- building a card up from several picks ----
+ * A card can arrive in pieces: the card folder itself, or its DATALOG and
+ * SETTINGS folders and loose files (STR.edf, Identification.*) picked or
+ * dropped separately. Each file gets a key anchored at the card's own layout
+ * ("DATALOG/20261013/…", "STR.edf"), so the same file picked twice — or the
+ * whole card after a part of it — isn't counted twice. */
+const ANCHOR = /(?:^|\/)((?:DATALOG|SETTINGS)\/.+|STR\.edf|Identification\.(?:json|tgt|crc))$/i;
+
+const cardKey = (path) => {
+  const p = path.replace(/\\/g, '/');
+  return ANCHOR.exec(p)?.[1] ?? p;
+};
+
+/* add `more` to `entries`, newest pick wins for the same file */
+export function mergeEntries(entries, more) {
+  const byKey = new Map(entries.map((e) => [cardKey(e.path), e]));
+  more.forEach((e) => byKey.set(cardKey(e.path), { ...e, path: cardKey(e.path) }));
+  return [...byKey.values()];
+}
+
+/* what the picks so far hold, in the card's own terms */
+export function cardContents(entries) {
+  const keys = entries.map((e) => cardKey(e.path));
+  const nights = new Set(keys.map((k) => /^DATALOG\/(\d{8})\//i.exec(k)?.[1]).filter(Boolean));
+  return {
+    summary: keys.some((k) => /^STR\.edf$/i.test(k)), // STR.edf — the daily summaries
+    nights: nights.size, // DATALOG night folders
+    settings: keys.some((k) => /^SETTINGS\//i.test(k)),
+    identity: keys.some((k) => /^Identification\.(json|tgt)$/i.test(k)),
+    other: keys.filter((k) => !ANCHOR.test(k)).length, // files that aren't part of a card
+  };
+}

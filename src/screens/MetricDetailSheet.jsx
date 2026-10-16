@@ -4,26 +4,35 @@
 import { useStore } from '../lib/store.jsx';
 import { FIXTURES } from '../data/fixtures.js';
 import { NIGHT_METRICS, metricStat } from '../data/nightMetrics.js';
-import { nightSeries } from '../lib/nightSeries.js';
+import { nightSeries, metricAxes } from '../lib/nightSeries.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Mascot } from '../components/Mascot.jsx';
 import { LineChart, Bars } from '../components/Charts.jsx';
-import { TimeAxis } from '../components/TimeAxis.jsx';
 import { pressureRange } from '../data/therapy.js';
+import { nightPanels } from '../components/NightCharts.jsx';
 
-const CHART_H = 240;
+const CHART_H = 280; // room for the axes
 
-function MetricChart({ metric, series }) {
+/* the original four draw here; the rest are the full night's own panels,
+ * drawn large (components/NightCharts.jsx) */
+const OWN = new Set(['resp', 'pressure', 'leak', 'snore']);
+
+function MetricChart({ metric, series, fixtureId }) {
+  if (!OWN.has(metric)) {
+    const panel = nightPanels(fixtureId, { height: CHART_H, open: () => {} }).find((p) => p.key === metric);
+    return panel ? panel.body : <div className="fn-nodata md-nodata">Not recorded this night</div>;
+  }
   const s = series[metric];
+  const axes = metricAxes(metric, series);
   if (!s) return <div className="fn-nodata md-nodata">Not recorded this night</div>;
-  if (metric === 'resp') return <LineChart values={s} color="data" height={CHART_H} />;
+  if (metric === 'resp') return <LineChart values={s} color="data" height={CHART_H} axes={axes} />;
   if (metric === 'pressure')
-    return <LineChart values={series.pressure} color="data" height={CHART_H} band={pressureRange() ?? undefined} />;
+    return <LineChart values={series.pressure} color="data" height={CHART_H} band={pressureRange() ?? undefined} axes={axes} />;
   if (metric === 'leak' && !series.leak)
     return <div className="fn-nodata md-nodata">No leak recorded this night</div>;
-  if (metric === 'leak') return <LineChart values={series.leak} color="data" height={CHART_H} threshold={24} />;
-  return <Bars values={series.snore} color="data" height={CHART_H} />;
+  if (metric === 'leak') return <LineChart values={series.leak} color="data" height={CHART_H} threshold={24} axes={axes} />;
+  return <Bars values={series.snore} color="data" height={CHART_H} axes={axes} />;
 }
 
 export function MetricDetailSheet() {
@@ -41,6 +50,7 @@ export function MetricDetailSheet() {
       eyebrow={`${fx.dayName} · ${fx.session.start} – ${fx.session.end}`}
       title={m.title}
       onClose={closeSheet}
+      className="md-sheet"
     >
       {() => (
         <div className="md">
@@ -54,8 +64,7 @@ export function MetricDetailSheet() {
           </div>
 
           <div className="chart-card md-chart" role="img" aria-label={`${m.title} through the night. ${stat.sub}.`}>
-            <MetricChart metric={key} series={series} />
-            <TimeAxis session={fx.session} />
+            <MetricChart metric={key} series={series} fixtureId={fixtureId} />
           </div>
           {key === 'pressure' && pressureRange() && (
             <p className="md-note">

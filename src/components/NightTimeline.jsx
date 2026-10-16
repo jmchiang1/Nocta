@@ -122,10 +122,34 @@ export function binEvents(events, total, buckets = BUCKETS) {
   return bins;
 }
 
+/* the hourly chart's axes on the full-night page: every clock hour labelled
+ * (every other when narrow), events up the side, and a tooltip that reads the
+ * hour like the scrubber does — events by type, sleep stage, mask off */
+function hourAxes(bins, stageAt) {
+  const n = bins.length;
+  const hour = (b) => `${b.hour % 12 || 12} ${b.hour < 12 ? 'AM' : 'PM'}`;
+  return {
+    labels: bins.map(hour),
+    titles: bins.map((b, i) => `${hour(b)}–${hour(bins[i + 1] ?? { hour: (b.hour + 1) % 24 })}`),
+    tick: (i, width) => (n * 44 > width - 60 && i % 2 ? null : hour(bins[i])),
+    xTitle: 'Time',
+    yTitle: 'Events',
+    integer: true,
+    decimals: 0,
+    layerLabel: (ctx) => (ctx.dataset.label === 'Leak' ? 'Leak above 24 L/min' : `${ctx.dataset.label}: ${ctx.raw}`),
+    footer: (i) => {
+      const stage = stageAt((i + 0.5) / n);
+      return [bins[i].worn === 0 && 'Mask off', stage && STAGE_NAME[stage]].filter(Boolean);
+    },
+  };
+}
+
 /* fixtureId: build the bars from the night's shared event data (per-type
  * totals from history, placed around its episodes) so they match the horizon
- * and the episode list. sleepStages: the watch's stages, for the readout. */
-export function NightTimeline({ timeline, session, ahi, escalated = false, onOpen, fixtureId, sleepStages }) {
+ * and the episode list. sleepStages: the watch's stages, for the readout.
+ * detailed: the full-night page's version, with real axes and a tooltip in
+ * place of the scrubber and the hour row. */
+export function NightTimeline({ timeline, session, ahi, escalated = false, onOpen, fixtureId, sleepStages, detailed = false }) {
   // a real night: one bar per clock hour, labelled underneath. The older
   // fixture shape (no night id) keeps its proportional buckets.
   const hourly = Boolean(fixtureId);
@@ -161,11 +185,17 @@ export function NightTimeline({ timeline, session, ahi, escalated = false, onOpe
         <span className="time-pill tnum">{session.end}</span>
       </div>
 
-      <div className="scrub-wrap">
-        <StackedBars series={bins} height={104} layers={layers} centered={hourly} />
-        <Scrubber bins={bins} stageAt={stageAt} session={session} hourly={hourly} />
-      </div>
-      {hourly ? (
+      {detailed && hourly ? (
+        <div role="img" aria-label="Overnight events by type, per clock hour. Hover a bar to read that hour.">
+          <StackedBars series={bins} height={200} layers={layers} axes={hourAxes(bins, stageAt)} />
+        </div>
+      ) : (
+        <div className="scrub-wrap">
+          <StackedBars series={bins} height={104} layers={layers} centered={hourly} />
+          <Scrubber bins={bins} stageAt={stageAt} session={session} hourly={hourly} />
+        </div>
+      )}
+      {detailed && hourly ? null : hourly ? (
         // every hour, under its own bar; hours with the mask off are dimmed
         <div className="hour-row tnum" style={{ '--n': bins.length }} aria-hidden="true">
           {bins.map((b, i) => (

@@ -1,7 +1,7 @@
 /* Nocta — Trends tab. Range selector, trend charts, journal patterns, best/worst night. */
 import { useState } from 'react';
 import { THERAPY_START, LAST_NIGHT } from '../data/history.js';
-import { getTrends } from '../data/trends.js';
+import { getTrends, trendAxes } from '../data/trends.js';
 import { pressureRange } from '../data/therapy.js';
 import { journalHistory } from '../data/journal.js';
 import { useStore } from '../lib/store.jsx';
@@ -11,7 +11,9 @@ import { Icon } from '../components/Icons.jsx';
 import { Mascot } from '../components/Mascot.jsx';
 import { Rich } from '../components/Rich.jsx';
 import { PatternCard } from '../components/PatternCard.jsx';
+import { TrendLegend } from '../components/TrendLegend.jsx';
 import { LineChart, StackedBars, Bars } from '../components/Charts.jsx';
+import { moreTrendCharts } from '../components/MoreTrends.jsx';
 
 const RANGE_LABEL = { '7d': '7 days', '30d': '30 days', '90d': '90 days', custom: 'Custom' };
 const RANGE_TABS = ['7d', '30d', '90d', 'custom'];
@@ -28,6 +30,8 @@ function tileTone(key, dir) {
 function fmtDate(iso) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+const CHART_H = 200; // every Trends chart the same height, with room for its axes
 
 export function TrendsScreen() {
   const { fixtureId, openSheet, checkin } = useStore();
@@ -51,35 +55,31 @@ export function TrendsScreen() {
 
   const rangeIndex = RANGE_TABS.indexOf(range);
 
+  // every chart carries its own key (components/TrendLegend.jsx), so all four
+  // are the same height
+  // real axes on every Trends chart: dates across, the metric's unit up
+  // settings changes are marked on every chart
+  const ax = (k) => trendAxes(k, t.dates, { markers: t.markers });
   const CHARTS = {
     ahi: {
       title: 'AHI (events an hour)',
       meta: `avg ${t.ahiAvg}/h`,
-      body: (
-        <>
-          <div className="legend" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none', marginBottom: 10 }}>
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--alert)' }} /> Central</span>
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-deep)' }} /> Obstructive</span>
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-1)' }} /> Hypopnea</span>
-          </div>
-          <StackedBars series={t.ahiSeries} />
-        </>
-      ),
+      body: <StackedBars series={t.ahiSeries} height={CHART_H} axes={ax('ahi')} />,
     },
     leak: {
       title: 'Leak rate',
-      meta: 'L/min · 24 threshold',
-      body: <LineChart values={t.leakSeries} color="data" threshold={24} />,
+      meta: 'L/min',
+      body: <LineChart values={t.leakSeries} color="data" threshold={24} height={CHART_H} axes={ax('leak')} />,
     },
     hours: {
       title: 'Usage',
-      meta: 'hours · 4 h compliance bar',
-      body: <Bars values={t.hoursSeries} color="data" target={4} />,
+      meta: 'hours a night',
+      body: <Bars values={t.hoursSeries} color="data" target={4} height={CHART_H} axes={ax('hours')} />,
     },
     pressure: {
       title: 'Pressure',
-      meta: rx ? `cmH₂O · shaded: prescribed ${rx[0]}–${rx[1]}` : 'cmH₂O',
-      body: <LineChart values={t.pressureSeries} color="data" band={rx ?? undefined} />,
+      meta: 'cmH₂O',
+      body: <LineChart values={t.pressureSeries} color="data" band={rx ?? undefined} height={CHART_H} axes={ax('pressure')} />,
     },
   };
   const chart = CHARTS[metric];
@@ -176,12 +176,8 @@ export function TrendsScreen() {
           <h3>{chart.title}</h3>
           <span className="meta">{chart.meta}</span>
         </div>
+        <TrendLegend metric={metric} rx={rx} />
         {chart.body}
-        <div className="chart-axis">
-          {t.xLabels.map((l, i) => (
-            <span key={i}>{l}</span>
-          ))}
-        </div>
       </section>
 
       <section className="insight-list" aria-label="Trend insights">
@@ -215,6 +211,20 @@ export function TrendsScreen() {
         </button>
       </section>
 
+      {/* the power-user trends, always shown, one under another */}
+      <div className="section-head">
+        <h3>More trends</h3>
+      </div>
+      {moreTrendCharts(t, CHART_H).map((c) => (
+        <section className="chart-card trend-chart more-trend" key={`${c.key}-${range}`} aria-label={c.title}>
+          <div className="tc-head">
+            <h3>{c.title}</h3>
+            {c.meta && <span className="meta">{c.meta}</span>}
+          </div>
+          {c.body}
+        </section>
+      ))}
+
       {t.bestWorst && (
         <>
           <div className="section-head">
@@ -245,7 +255,6 @@ export function TrendsScreen() {
         <>
           <div className="section-head">
             <h3>Patterns</h3>
-            <span className="meta">from your journal</span>
           </div>
           {t.patterns.map((p, i) => (
             <PatternCard key={i} pattern={p} window={t.window} />

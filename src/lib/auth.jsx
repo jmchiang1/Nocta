@@ -15,6 +15,7 @@
  *         deletion?, sleephqExpired? }   // mock-only account states */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, authConfigured, enabledProviders } from './supabase.js';
+import { openSignInPopup, listenForPopup } from './authPopup.js';
 /* mock mode only (no Supabase configured): the account a pretend Google
  * sign-in returns, standing in for what Google would share */
 const MOCK_GOOGLE = { name: 'Jonathan Chiang', email: 'jonathan@example.com', photo: null };
@@ -177,6 +178,29 @@ export function useAuth(scenario) {
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
+  /* Google's sign-in runs in a popup (lib/authPopup.js); this hears how it
+   * went. A sign-in also lands through onAuthStateChange (Supabase syncs the
+   * new session across windows); asking again here covers browsers that
+   * don't pass it on. */
+  const popupRef = useRef(null);
+  useEffect(() => {
+    if (!authConfigured) return undefined;
+    return listenForPopup(async (msg) => {
+      popupRef.current = null;
+      if (msg?.type === 'signed-in') {
+        const { data } = await supabase.auth.getSession();
+        setAccount(fromSupabase(data.session?.user));
+        setPending(null);
+      } else if (msg?.type === 'cancelled') {
+        setPending(null);
+      } else {
+        console.warn('[auth] popup sign-in failed:', msg);
+        setPending(null);
+        setError(AUTH_COPY.generic);
+      }
+    });
+  }, []);
+
   const offline = () =>
     authConfigured ? typeof navigator !== 'undefined' && navigator.onLine === false : scenario === 'offline';
 
@@ -190,31 +214,48 @@ export function useAuth(scenario) {
       }
       setPending(provider);
       if (authConfigured) {
+        // the popup has to open now, inside the click, or browsers block it;
+        // it gets Google's address once we have it. null: blocked, so fall
+        // back to leaving the page.
+        const popup = openSignInPopup();
+        popupRef.current = popup;
+        const giveUp = (msg) => {
+          popup?.close();
+          popupRef.current = null;
+          setPending(null);
+          setError(msg);
+        };
         // a provider that's switched off in Supabase would strand them on a
         // raw JSON error page — check first and stay on the splash instead
         try {
           const on = await enabledProviders();
           if (!on[provider]) {
             console.warn(`[auth] ${provider} isn't enabled in Supabase (docs/AUTH_SETUP.md)`);
-            setPending(null);
-            setError(AUTH_COPY.unavailable);
+            giveUp(AUTH_COPY.unavailable);
             return;
           }
         } catch (e) {
           console.warn('[auth]', e);
-          setPending(null);
-          setError(AUTH_COPY.offline);
+          giveUp(AUTH_COPY.offline);
           return;
         }
-        // leaves the page; we come back to this URL with ?code=… (or ?error=…)
-        const { error: err } = await supabase.auth.signInWithOAuth({
+        // Google comes back to this URL with ?code=… (or ?error=…): in the
+        // popup when there is one, otherwise by leaving and returning to the page
+        const { data, error: err } = await supabase.auth.signInWithOAuth({
           provider,
-          options: { redirectTo: window.location.origin + window.location.pathname },
+          options: {
+            redirectTo: window.location.origin + window.location.pathname,
+            skipBrowserRedirect: Boolean(popup),
+          },
         });
         if (err) {
           console.warn('[auth]', err);
-          setPending(null);
-          setError(AUTH_COPY.generic);
+          giveUp(AUTH_COPY.generic);
+          return;
+        }
+        if (popup) {
+          popup.location.replace(data.url);
+          popup.focus();
         }
         return;
       }
@@ -228,10 +269,12 @@ export function useAuth(scenario) {
     [scenario]
   );
 
-  /* backing out of Google's sheet (mock — the real one is the browser's back
-   * button, which reloads the splash) */
+  /* backing out of Google's sign-in: Cancel on the page closes the popup
+   * (mock: stops the pretend sheet) */
   const cancelSignIn = useCallback(() => {
     clearTimeout(timer.current);
+    popupRef.current?.close();
+    popupRef.current = null;
     setPending(null);
   }, []);
 

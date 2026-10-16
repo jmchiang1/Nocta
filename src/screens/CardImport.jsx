@@ -13,8 +13,9 @@ import { useState, useRef } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Sheet } from '../components/Sheet.jsx';
+import { NoxThinking } from '../components/NoxThinking.jsx';
 import { parseCard, CardError } from '../lib/resmed/card.js';
-import { entriesFromFileList, entriesFromDrop, canPickFolder } from '../lib/cardFiles.js';
+import { entriesFromFileList, entriesFromDrop, canPickFolder, mergeEntries, cardContents } from '../lib/cardFiles.js';
 
 /* the card couldn't be read: say what probably happened and what to try.
  * Calm, specific, never "Error". */
@@ -50,120 +51,10 @@ const ERRORS = {
   },
 };
 
-
-const EVENT_LABEL = {
-  osa: ['obstructive apnea', 'obstructive apneas'],
-  csa: ['central apnea', 'central apneas'],
-  hyp: ['hypopnea', 'hypopneas'],
-  apnea: ['unclassified apnea', 'unclassified apneas'],
-  arousal: ['arousal', 'arousals'],
-};
-
-/* naive 'YYYY-MM-DDTHH:MM:SS' → "1:15 AM" (wall clock, no time zones) */
-const clock = (t) => {
-  const [h, m] = t.slice(11, 16).split(':').map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
-};
 const dayLabel = (d, opts = { weekday: 'short', month: 'short', day: 'numeric' }) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { ...opts, timeZone: 'UTC' });
-const hrs = (h) => `${Math.floor(h)}h ${String(Math.round((h % 1) * 60)).padStart(2, '0')}m`;
-const fmt = (v, unit = '') => (v == null ? '—' : `${v}${unit}`);
-
-function eventSummary(events) {
-  if (!events) return null;
-  const parts = Object.entries(EVENT_LABEL)
-    .filter(([k]) => events[k] > 0)
-    .map(([k, [one, many]]) => `${events[k]} ${events[k] === 1 ? one : many}`);
-  return parts.length ? parts.join(' · ') : 'No events recorded';
-}
-
-function NightRow({ night, open, onToggle }) {
-  const detailed = night.source === 'datalog';
-  return (
-    <div className={`ci-night${open ? ' open' : ''}`}>
-      <button className="list-row ci-night-head" aria-expanded={open} onClick={onToggle}>
-        <div className="lr-main">
-          <div className="lr-title">{dayLabel(night.date)}</div>
-          <div className="lr-sub">
-            {hrs(night.hours)}
-            {night.sessions.length > 1 && ` · ${night.sessions.length} sessions`}
-            {night.leak.p95 != null && ` · leak ${night.leak.p95} L/min`}
-          </div>
-        </div>
-        <div className="ci-ahi">
-          <span className="ci-ahi-k">AHI</span>
-          <span className="ci-ahi-v tnum">{fmt(night.ahi.total)}</span>
-        </div>
-        <Icon name="chevronDown" size={16} className="ci-chev" />
-      </button>
-
-      {open && (
-        <div className="ci-night-body">
-          {detailed ? (
-            <p className="ci-events-line">{eventSummary(night.events)}</p>
-          ) : (
-            <p className="ci-events-line">
-              Summary only. The card no longer has this night’s event detail.
-            </p>
-          )}
-          <dl className="ci-stats">
-            <div>
-              <dt>Pressure</dt>
-              <dd className="tnum">
-                {fmt(night.pressure.p50)} median · {fmt(night.pressure.p95)} at 95%
-              </dd>
-            </div>
-            <div>
-              <dt>Leak</dt>
-              <dd className="tnum">
-                {fmt(night.leak.p50)} median · {fmt(night.leak.p95)} at 95% (L/min)
-              </dd>
-            </div>
-            {night.respRate?.p50 != null && (
-              <div>
-                <dt>Breathing rate</dt>
-                <dd className="tnum">{night.respRate.p50} per minute</dd>
-              </div>
-            )}
-            {night.spo2 && (
-              <div>
-                <dt>Oxygen</dt>
-                <dd className="tnum">
-                  {night.spo2.avg != null ? `${night.spo2.avg}% average` : `${night.spo2.median}% median`}
-                  {night.spo2.min != null && ` · lowest ${night.spo2.min}%`}
-                </dd>
-              </div>
-            )}
-            <div>
-              <dt>Mask on</dt>
-              <dd className="tnum">
-                {night.sessions.map((s) => `${clock(s.start)}–${clock(s.end)}`).join(', ') || '—'}
-              </dd>
-            </div>
-          </dl>
-          {detailed && night.eventList.length > 0 && (
-            <ul className="ci-eventlist" aria-label="Events">
-              {night.eventList.map((e, i) => (
-                <li key={i}>
-                  <span className="tnum">{clock(e.at)}</span>
-                  <span>{EVENT_LABEL[e.type][0]}</span>
-                  <span className="tnum">{e.durSec ? `${e.durSec}s` : ''}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const PAGE = 14;
 
 function CardSummary({ card, result }) {
-  const [openDate, setOpenDate] = useState(card.nights.at(-1)?.date ?? null);
-  const [shown, setShown] = useState(PAGE);
-  const nights = [...card.nights].reverse();
   const detailed = card.nights.filter((n) => n.source === 'datalog').length;
   const s = card.settings;
   const range =
@@ -212,7 +103,7 @@ function CardSummary({ card, result }) {
         . Saved on this phone only.
       </p>
 
-      {/* up top, so a partial read is seen before the nights are trusted */}
+      {/* a partial read is said plainly, with the files behind a tap */}
       {card.warnings?.length > 0 && (
         <details className="ci-warnings">
           <summary>
@@ -227,27 +118,6 @@ function CardSummary({ card, result }) {
           </ul>
         </details>
       )}
-
-      <div className="section-head">
-        <h3>Nights</h3>
-        <span className="meta">newest first</span>
-      </div>
-      <div className="list ci-nights">
-        {nights.slice(0, shown).map((n) => (
-          <NightRow
-            key={n.date}
-            night={n}
-            open={openDate === n.date}
-            onToggle={() => setOpenDate(openDate === n.date ? null : n.date)}
-          />
-        ))}
-      </div>
-      {shown < nights.length && (
-        <button className="btn ghost ci-more" onClick={() => setShown(shown + PAGE * 4)}>
-          Show older nights ({nights.length - shown} more)
-        </button>
-      )}
-
 
     </>
   );
@@ -281,21 +151,66 @@ function ErrorState({ code, onRetry, onCancel }) {
   );
 }
 
+/* what's been picked so far, in plain words; ticks for what's in */
+const PARTS = [
+  { key: 'nights', label: 'Your nights', file: 'DATALOG folder', need: true },
+  { key: 'summary', label: 'Daily summaries', file: 'STR.edf', need: true },
+  { key: 'settings', label: 'Machine settings', file: 'SETTINGS folder' },
+  { key: 'identity', label: 'Machine model', file: 'Identification file' },
+];
+
+/* Pick the whole card in one go (the folder button, or a drag of everything
+ * on it), or build it up in pieces: each pick — a folder, or loose files like
+ * STR.edf — adds to the checklist, and Read card goes when there's enough.
+ * A pick that already holds a whole card is read straight away. */
 function Picker({ onEntries }) {
-  const inputRef = useRef(null);
+  const folderRef = useRef(null);
+  const filesRef = useRef(null);
   const [over, setOver] = useState(false);
+  const [staged, setStaged] = useState([]);
   const folderOk = canPickFolder();
+  const has = cardContents(staged);
+  const enough = has.nights > 0 || has.summary;
+
+  const add = (more) => {
+    if (!more.length) return;
+    const next = mergeEntries(staged, more);
+    const c = cardContents(next);
+    // a whole card (nights and summaries) in hand: no need to ask for more
+    if (c.nights > 0 && c.summary) onEntries(next);
+    else setStaged(next);
+  };
 
   return (
     <>
       <ol className="ci-steps">
         <li>Turn your machine off and take out the SD card. It’s on the side, under a flap.</li>
         <li>Put the card in your computer, or in a card reader.</li>
-        <li>Choose the card below. Then put it back in the machine before bed.</li>
+        <li>
+          Choose the card itself (it’s often called NO NAME). Or open it, select everything on it,
+          and drag it all here. Then put the card back in the machine before bed.
+        </li>
       </ol>
 
+      {/* the drop area is the button: click (or Enter / Space) opens Finder on
+       * the card; dropping works too */}
       <div
-        className={`ci-drop${over ? ' over' : ''}`}
+        className={`ci-drop${over ? ' over' : ''}${folderOk ? ' pickable' : ''}`}
+        role={folderOk ? 'button' : undefined}
+        tabIndex={folderOk ? 0 : undefined}
+        aria-label={folderOk ? 'Drag your files into this box, or press to choose a single folder' : undefined}
+        onClick={(e) => {
+          // the hidden inputs live inside this box: their own click bubbles up
+          // here, and must not open the folder dialog a second time
+          if (e.target instanceof HTMLInputElement) return;
+          if (folderOk) folderRef.current?.click();
+        }}
+        onKeyDown={(e) => {
+          if (folderOk && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            folderRef.current?.click();
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setOver(true);
@@ -304,40 +219,96 @@ function Picker({ onEntries }) {
         onDrop={async (e) => {
           e.preventDefault();
           setOver(false);
-          onEntries(await entriesFromDrop(e.dataTransfer));
+          add(await entriesFromDrop(e.dataTransfer));
         }}
       >
-        <Icon name="download" size={22} />
-        <span>Drop the card’s folder here</span>
-        {folderOk && <span className="ci-drop-or">or</span>}
+        <Icon name="download" size={24} />
+        <span className="ci-drop-title">
+          {staged.length ? 'Drag more files into this box' : 'Drag your files into this box'}
+        </span>
+        {folderOk && <span className="ci-drop-or">or click the box to choose a single folder</span>}
         {folderOk ? (
-          <button className="btn primary ci-choose" onClick={() => inputRef.current?.click()}>
-            Choose the SD card
+          // loose files (STR.edf, Identification…) need a files dialog: a quiet link
+          <button
+            type="button"
+            className="ob-link ci-files-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              filesRef.current?.click();
+            }}
+          >
+            Choose individual files instead
           </button>
         ) : (
           <span className="ci-drop-or">
             This browser can’t open folders. Use Chrome, Safari or Firefox on a computer.
           </span>
         )}
+        {/* folders: the card, or DATALOG / SETTINGS (tip: inside the card with
+         * nothing selected, the dialog's Upload button takes the whole card) */}
         <input
-          ref={inputRef}
+          ref={folderRef}
           type="file"
           className="sr-only"
-          // folder picker: the whole card in one go
           webkitdirectory=""
           directory=""
           multiple
           tabIndex={-1}
           onChange={(e) => {
-            const list = e.target.files;
-            if (list?.length) onEntries(entriesFromFileList(list));
+            if (e.target.files?.length) add(entriesFromFileList(e.target.files));
+            e.target.value = '';
+          }}
+        />
+        {/* loose files: STR.edf, Identification.json, … (several at once) */}
+        <input
+          ref={filesRef}
+          type="file"
+          className="sr-only"
+          multiple
+          tabIndex={-1}
+          onChange={(e) => {
+            if (e.target.files?.length) add(entriesFromFileList(e.target.files));
             e.target.value = '';
           }}
         />
       </div>
-      <p className="settings-note ci-privacy">
-        <Icon name="lock" size={14} /> Your card is read on this device. Nothing is uploaded.
-      </p>
+
+      {staged.length > 0 && (
+        <section className="ci-staged" aria-label="What you’ve picked so far" aria-live="polite">
+          <ul className="ci-checklist">
+            {PARTS.map((p) => {
+              const ok = p.key === 'nights' ? has.nights > 0 : has[p.key];
+              return (
+                <li key={p.key} className={ok ? 'ok' : ''}>
+                  <span className="ci-check" aria-hidden="true">
+                    {ok ? <Icon name="check" size={14} /> : null}
+                  </span>
+                  <span className="ci-check-label">
+                    {p.label}
+                    {p.key === 'nights' && has.nights > 0 && <span className="tnum"> · {has.nights}</span>}
+                  </span>
+                  <span className="ci-check-file">{ok ? 'added' : `${p.file}${p.need ? '' : ' · optional'}`}</span>
+                </li>
+              );
+            })}
+          </ul>
+          {has.other > 0 && (
+            <p className="settings-note ci-other">
+              {has.other} {has.other === 1 ? 'file isn’t' : 'files aren’t'} part of a CPAP card and will be
+              left out.
+            </p>
+          )}
+          <div className="ci-staged-actions">
+            <button className="btn ghost" disabled={!enough} onClick={() => onEntries(staged)}>
+              {has.nights > 0 && has.summary ? 'Read card' : 'Read what I have'}
+            </button>
+            <button className="btn subtle" onClick={() => setStaged([])}>
+              Start over
+            </button>
+          </div>
+        </section>
+      )}
+
     </>
   );
 }
@@ -369,10 +340,7 @@ export function CardImport({ onFinish, onCancel }) {
   if (phase === 'reading') {
     return (
       <div className="ci-reading" aria-live="polite">
-        <div className="si-working" aria-hidden="true">
-          <span className="si-working-ring" />
-          <img src="/Nocta-constellation-sm.svg" alt="" />
-        </div>
+        <NoxThinking className="si-working" />
         <h3>Reading your card…</h3>
         <p className="settings-note tnum">
           {progress ? `Night ${progress.done} of ${progress.total}` : 'Finding your nights'}
@@ -449,7 +417,7 @@ export function CardImport({ onFinish, onCancel }) {
 export function ImportSheet() {
   const { closeSheet } = useStore();
   return (
-    <Sheet eyebrow="Your machine" title="Import from SD card" onClose={closeSheet} full>
+    <Sheet title="Import from SD card" onClose={closeSheet} full>
       {(close) => <CardImport onFinish={close} onCancel={close} />}
     </Sheet>
   );

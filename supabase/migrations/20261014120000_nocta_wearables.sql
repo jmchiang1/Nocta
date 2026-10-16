@@ -1,4 +1,4 @@
--- Nocta — wearable connections (Oura, Whoop, Withings).
+-- Nocta — wearable connections (Oura, Fitbit via Google Health, Whoop, Withings).
 --
 -- The provider tokens live here and only here: the nocta-wearables edge
 -- function reads and writes them with the service role. RLS is on with no
@@ -10,7 +10,7 @@
 
 create table if not exists public.nocta_wearable_links (
   user_id          uuid        not null references auth.users (id) on delete cascade,
-  provider         text        not null check (provider in ('oura', 'whoop', 'withings')),
+  provider         text        not null check (provider in ('oura', 'fitbit', 'whoop', 'withings')),
   access_token     text        not null,
   refresh_token    text,
   expires_at       timestamptz,
@@ -26,7 +26,7 @@ create table if not exists public.nocta_wearable_links (
 create table if not exists public.nocta_wearable_states (
   state      text        primary key,
   user_id    uuid        not null references auth.users (id) on delete cascade,
-  provider   text        not null check (provider in ('oura', 'whoop', 'withings')),
+  provider   text        not null check (provider in ('oura', 'fitbit', 'whoop', 'withings')),
   return_to  text        not null,
   created_at timestamptz not null default now()
 );

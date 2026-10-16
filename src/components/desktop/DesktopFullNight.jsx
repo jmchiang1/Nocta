@@ -1,87 +1,74 @@
-/* Nocta — desktop full-night dialog. The same content as the mobile
- * FullNightSheet (summary, events by type, sleep stages, the machine graphs,
- * episodes) laid out wide: the event timeline full width, the four machine
- * graphs as a 2×2 grid (each opens its metric page, as on mobile), then
- * sleep stages beside the episode list. The morning check-in lives on Tonight. */
-import { useState } from 'react';
+/* Nocta — the full night on desktop: its own page in the dashboard (not a
+ * dialog), so there's room for every chart. The same content as the phone's
+ * FullNightSheet: the night in three numbers, events by type full width,
+ * sleep stages with a wearable, then every machine chart in a two-column
+ * grid (components/NightCharts.jsx — the same charts, same order) and the
+ * night's events, each opening to its breathing waveform. Charts with their
+ * own metric page open it on top. */
+import { useEffect } from 'react';
 import { useStore } from '../../lib/store.jsx';
-import { FIXTURES, EPISODES } from '../../data/fixtures.js';
-import { nightSeries } from '../../lib/nightSeries.js';
-import { TimeAxis } from '../TimeAxis.jsx';
+import { FIXTURES } from '../../data/fixtures.js';
 import { NightTimeline } from '../NightTimeline.jsx';
+import { primaryBody } from '../../lib/bodySource.js';
 import { Icon } from '../Icons.jsx';
 import { SleepStages } from '../SleepStages.jsx';
-import { LineChart, Bars } from '../Charts.jsx';
+import { nightPanels, NightEvents } from '../NightCharts.jsx';
 
-/* central apneas are the escalation signal per the safety rails, so they get
- * coral; everything else is the metric blue */
+const CHART_H = 200; // room for the axes
 
-const CHART_H = 120;
-
-function Episode({ ep }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="episode">
-      <button className="episode-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className={`ep-badge ${ep.type}`}>{ep.type.toUpperCase()}</span>
-        <span className="ep-time">{ep.time}</span>
-        <span className="ep-dur">{ep.dur}s</span>
-        <Icon name={open ? 'chevronUp' : 'chevronDown'} size={16} />
-      </button>
-      <div className={`episode-collapse${open ? ' open' : ''}`}>
-        <div className="episode-body">
-          <div className="episode-body-inner">
-            <div className="ep-detail"><span className="ed-k">Pressure that minute</span><span className="ed-v">{ep.pressure}</span></div>
-            <div className="ep-detail"><span className="ed-k">Next 3 minutes</span><span className="ed-v">{ep.response}</span></div>
-            {/* the machine can't tell how you slept; a wearable could */}
-            {ep.position && (
-              <div className="ep-detail"><span className="ed-k">Sleeping position</span><span className="ed-v">{ep.position}</span></div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* a machine graph that opens its own metric page (MetricDetailSheet) */
-function ChartPanel({ title, meta, session, onOpen, children }) {
-  return (
-    <button className="panel dfn-metric" type="button" onClick={onOpen}>
-      <span className="panel-head">
-        <h3>{title}</h3>
+/* a chart panel: a button through to its metric page when it has one */
+function ChartPanel({ title, meta, onOpen, wide, children }) {
+  const head = (
+    <span className="panel-head">
+      <h3>{title}</h3>
+      {(meta || onOpen) && (
         <span className="panel-meta">
           {meta}
-          <Icon name="chevronRight" size={14} />
+          {onOpen && <Icon name="chevronRight" size={14} />}
         </span>
-      </span>
+      )}
+    </span>
+  );
+  return onOpen ? (
+    <button className={`panel dfn-metric${wide ? ' wide' : ''}`} type="button" onClick={onOpen}>
+      {head}
       {children}
-      <TimeAxis session={session} />
     </button>
+  ) : (
+    <section className={`panel dfn-panel${wide ? ' wide' : ''}`}>
+      {head}
+      {children}
+    </section>
   );
 }
 
 export function DesktopFullNight() {
-  const { fixtureId, closeSheet, pushSheet } = useStore();
+  const { fixtureId, closeSheet, pushSheet, deviceConnections, deviceEnabled, deviceReads } = useStore();
   const fx = FIXTURES[fixtureId];
-  const episodes = EPISODES[fixtureId] || [];
-
-  // the same series the mobile full-night page and metric pages draw
-  const { resp, pressure, leak, snore } = nightSeries(fixtureId);
-  const stages = fx.bodyResponse?.stages;
+  // a connected wearable's record of this night (lib/bodySource.js)
+  const body = primaryBody(fx, deviceConnections, deviceEnabled, deviceReads);
+  const stages = body?.stages;
   const s = fx.session;
-  const open = (metric) => pushSheet('metricDetail', { metric });
+  const panels = nightPanels(fixtureId, { height: CHART_H, open: (metric) => pushSheet('metricDetail', { metric }) });
+
+  // a page: start at its top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [fixtureId]);
 
   return (
-    <div className="dfn">
+    <div className="dfn dfn-page">
       <header className="dfn-head">
-        <div>
-          <div className="dfn-eyebrow">{fx.dayName} · {s.start} – {s.end}</div>
-          <h2 className="dfn-title">The full night</h2>
-        </div>
-        <button className="dfn-close" onClick={closeSheet} aria-label="Close">
-          <Icon name="x" size={18} />
+        <button className="dfn-back" type="button" onClick={closeSheet}>
+          <Icon name="chevronLeft" size={18} />
+          Tonight
         </button>
+        <div className="dfn-heading">
+          <h1 className="dfn-title">The full night</h1>
+          <div className="dfn-eyebrow tnum">
+            {fx.dayName} · {s.start} – {s.end}
+          </div>
+        </div>
       </header>
 
       {/* the night in three numbers, one quiet card */}
@@ -111,76 +98,35 @@ export function DesktopFullNight() {
         ahi={fx.ahi.value}
         escalated={fx.insight.escalation_flag === 'hard'}
         fixtureId={fixtureId}
-        sleepStages={fx.bodyResponse?.stages}
+        detailed
+        sleepStages={stages}
       />
+
+      {/* only with a connected wearable: the machine can't see sleep stages */}
+      {stages && (
+        <>
+          <div className="section-head">
+            <h3>Sleep stages</h3>
+            <span className="meta">{body.source}</span>
+          </div>
+          <div className="chart-card">
+            <SleepStages stages={stages} session={s} detailed />
+          </div>
+        </>
+      )}
 
       <div className="section-head">
         <h3>What your machine recorded</h3>
-        <span className="meta">click a graph for detail</span>
       </div>
       <div className="dfn-charts">
-        <ChartPanel title="Breathing rate" meta="breaths a minute" session={s} onOpen={() => open('resp')}>
-          {resp ? (
-            <LineChart values={resp} color="data" height={CHART_H} />
-          ) : (
-            <span className="fn-nodata">No breathing rate recorded this night</span>
-          )}
-        </ChartPanel>
-        <ChartPanel title="Pressure" meta="cmH₂O" session={s} onOpen={() => open('pressure')}>
-          {pressure ? (
-            <LineChart values={pressure} color="data" height={CHART_H} />
-          ) : (
-            <span className="fn-nodata">No pressure recorded this night</span>
-          )}
-        </ChartPanel>
-        <ChartPanel title="Leak rate" meta="L/min · 24 threshold" session={s} onOpen={() => open('leak')}>
-          {leak ? (
-            <LineChart values={leak} color="data" threshold={24} height={CHART_H} />
-          ) : (
-            <span className="fn-nodata">No leak recorded this night</span>
-          )}
-        </ChartPanel>
-        <ChartPanel title="Snore index" meta="from the machine" session={s} onOpen={() => open('snore')}>
-          {snore ? <Bars values={snore} color="data" height={CHART_H} /> : <span className="fn-nodata">No snore data this night</span>}
-        </ChartPanel>
+        {panels.map((p) => (
+          <ChartPanel key={p.key} title={p.title} meta={p.meta} onOpen={p.onOpen} wide={p.wide}>
+            {p.body}
+          </ChartPanel>
+        ))}
       </div>
 
-      {/* sleep stages only with a connected wearable; without one the
-       * episode list takes the row */}
-      <div className={`dfn-lower${stages ? '' : ' solo'}`}>
-        {stages && (
-          <div className="dfn-col">
-            <div className="section-head">
-              <h3>Sleep stages</h3>
-              <span className="meta">{fx.bodyResponse.source}</span>
-            </div>
-            <div className="chart-card">
-              <SleepStages stages={stages} session={s} />
-            </div>
-          </div>
-        )}
-
-        <div className="dfn-col">
-          <div className="section-head">
-            {/* a hand-picked sample, so say plainly how it relates to the total */}
-            <h3>{episodes.length < fx.timeline.eventCount ? 'Longest events' : 'Events'}</h3>
-            <span className="meta tnum">
-              {episodes.length < fx.timeline.eventCount
-                ? `${episodes.length} of ${fx.timeline.eventCount}`
-                : `all ${episodes.length}`}
-            </span>
-          </div>
-          {episodes.length > 0 ? (
-            episodes.map((ep, i) => <Episode key={i} ep={ep} />)
-          ) : (
-            <div className="connect-cta">
-              <p>No flagged episodes for this night.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <p className="disclaimer">Charts show what your machine recorded, minute by minute.</p>
+      <NightEvents fixtureId={fixtureId} />
     </div>
   );
 }

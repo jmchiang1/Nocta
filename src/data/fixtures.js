@@ -156,12 +156,14 @@ function pressureAround(raw, at) {
   return null;
 }
 
-function episodes(date) {
+/* the night's events for the full-night list: the longest MAX_EPISODES, or
+ * every one (`all`), in time order */
+function episodes(date, all = false) {
   const raw = cardNight(date);
   const events = (raw?.eventList ?? []).filter((e) => BREATHING.has(e.type));
   return [...events]
     .sort((a, b) => b.durSec - a.durSec)
-    .slice(0, MAX_EPISODES)
+    .slice(0, all ? undefined : MAX_EPISODES)
     .sort((a, b) => a.at.localeCompare(b.at))
     .map((e) => {
       const p = pressureAround(raw, e.at);
@@ -176,10 +178,19 @@ function episodes(date) {
             ? `Rose to ${round1(p.after).toFixed(1)} cmH₂O`
             : `Stayed near ${round1(p.at).toFixed(1)} cmH₂O`,
         position: null,
+        at: e.at, // the event's own timestamp, to find its breathing waveform
+        date,
       };
     });
 }
 const episodeCache = new Map();
+const allCache = new Map();
+/* every event of a night (the "Show all" list) */
+export function allEpisodes(fixtureId) {
+  if (typeof fixtureId !== 'string' || !used.has(fixtureId)) return [];
+  if (!allCache.has(fixtureId)) allCache.set(fixtureId, episodes(fixtureId, true));
+  return allCache.get(fixtureId);
+}
 export const EPISODES = new Proxy(
   {},
   {
@@ -234,6 +245,7 @@ export function refreshInsights() {
 onDataset(() => {
   cache.clear();
   episodeCache.clear();
+  allCache.clear();
   used.clear();
   NIGHTS.forEach((x) => x.hours > 0 && used.add(x.date));
 

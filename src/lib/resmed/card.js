@@ -25,6 +25,7 @@
  *
  * Times are the machine's wall clock, kept as naive 'YYYY-MM-DDTHH:MM:SS'. */
 import { readEdf, readEdfHeader, EdfError } from './edf.js';
+import { eventWindows, readWaves } from './waves.js';
 
 export class CardError extends Error {
   constructor(code, message) {
@@ -62,6 +63,17 @@ function percentile(values, p) {
   const v = values.filter(Number.isFinite).sort((a, b) => a - b);
   if (!v.length) return null;
   return v[Math.min(v.length - 1, Math.floor(p * v.length))];
+}
+
+/* 2 s samples per 0.1 cmH₂O step: { from: lowest step, counts } (compact,
+ * and exact enough to count time at a pressure) */
+function pressureHist(values) {
+  const steps = values.filter((v) => Number.isFinite(v) && v > 0).map((v) => Math.round(v * 10));
+  if (!steps.length) return null;
+  const from = Math.min(...steps);
+  const counts = new Array(Math.max(...steps) - from + 1).fill(0);
+  for (const k of steps) counts[k - from]++;
+  return { from, step: 0.1, sampleSec: 2, counts };
 }
 
 /* mean of each `step`-sample block, NaN-aware (null when a block is all gaps) */
@@ -135,7 +147,7 @@ const STR_SIGNALS = [
   'Leak.50', 'Leak.95', 'Leak.Max',
   'MaskPress.50', 'MaskPress.95', 'MaskPress.Max',
   'RespRate.50', 'SpO2.50',
-  'S.A.MinPress', 'S.A.MaxPress', 'S.C.Press',
+  'S.A.MinPress', 'S.A.MaxPress', 'S.C.Press', 'S.EPR.EPREnable', 'S.EPR.Level',
 ];
 const STR_MODES = { 0: 'CPAP', 1: 'AutoSet', 2: 'APAP', 11: 'HerAuto' };
 
@@ -150,6 +162,19 @@ function readStr(buf) {
   };
   const days = new Map();
   let lastSettings = null;
+  // the prescription that day: each row carries the settings in force, so a
+  // change shows up on the night it happened
+  const rowSettings = (r) => {
+    const n = (k) => (Number.isFinite(at(k, r)) ? round(at(k, r)) : null);
+    const eprLevel = n('S.EPR.Level');
+    return {
+      mode: STR_MODES[at('Mode', r)] ?? null,
+      minPressure: n('S.A.MinPress'),
+      maxPressure: n('S.A.MaxPress'),
+      setPressure: n('S.C.Press'),
+      eprLevel: eprLevel == null ? null : at('S.EPR.EPREnable', r) > 0 ? eprLevel : 0,
+    };
+  };
   for (let r = 0; r < e.nrec; r++) {
     const minutes = at('Duration', r);
     // the day this row covers: Date (days since 1970) if present, else header + r
@@ -157,14 +182,8 @@ function readStr(buf) {
       ? at('Date', r) * 864e5
       : Math.floor(e.start / 864e5) * 864e5 + r * 864e5;
     const date = naive(dayMs).slice(0, 10);
-    if (Number.isFinite(at('S.A.MinPress', r))) {
-      lastSettings = {
-        mode: STR_MODES[at('Mode', r)] ?? null,
-        minPressure: round(at('S.A.MinPress', r)),
-        maxPressure: round(at('S.A.MaxPress', r)),
-        setPressure: round(at('S.C.Press', r)),
-      };
-    }
+    const daySettings = Number.isFinite(at('S.A.MinPress', r)) ? rowSettings(r) : null;
+    if (daySettings) lastSettings = daySettings;
     if (!(minutes > 0)) continue;
     const noon = dayMs + 12 * 3600e3;
     const sessions = [];
@@ -192,6 +211,7 @@ function readStr(buf) {
       pressure: { p50: round(at('MaskPress.50', r)), p95: round(at('MaskPress.95', r)), max: round(at('MaskPress.Max', r)) },
       respRate: { p50: round(at('RespRate.50', r)) },
       spo2: Number.isFinite(at('SpO2.50', r)) && at('SpO2.50', r) > 0 ? { median: round(at('SpO2.50', r)) } : null,
+      settings: daySettings,
       eventList: [],
     });
   }
@@ -205,6 +225,8 @@ async function readNight(date, files) {
   const eventList = [];
   const leakAll = [];
   const pressAll = [];
+  const targetAll = []; // the pressure the machine set for each breath in (Press.2s)
+  const exhaleAll = []; // and for breathing out, after exhale relief (EprPress.2s)
   const rrAll = [];
   const spo2All = [];
   const pulseAll = [];
@@ -214,7 +236,7 @@ async function readNight(date, files) {
   for (const f of files.PLD) {
     try {
       const e = readEdf(await f.read(), {
-        signals: ['MaskPress.2s', 'Leak.2s', 'RespRate.2s', 'Snore.2s', 'FlowLim.2s', 'TidVol.2s', 'MinVent.2s'],
+        signals: ['MaskPress.2s', 'Press.2s', 'EprPress.2s', 'Leak.2s', 'RespRate.2s', 'Snore.2s', 'FlowLim.2s', 'TidVol.2s', 'MinVent.2s'],
       });
       const sec = e.nrec * e.recordSec;
       if (!sec) continue;
@@ -222,6 +244,8 @@ async function readNight(date, files) {
       const per = Math.round(SERIES_STEP_SEC * (e.signals['Leak.2s']?.rate ?? 0.5));
       leakAll.push(...sig('Leak.2s'));
       pressAll.push(...sig('MaskPress.2s'));
+      targetAll.push(...sig('Press.2s'));
+      exhaleAll.push(...sig('EprPress.2s'));
       rrAll.push(...sig('RespRate.2s'));
       sessions.push({
         start: naive(e.start),
@@ -235,7 +259,11 @@ async function readNight(date, files) {
           respRate: downsample(sig('RespRate.2s'), per),
           snore: downsample(sig('Snore.2s'), per, 1, 2),
           flowLimit: downsample(sig('FlowLim.2s'), per, 1, 2),
-          tidalVolume: downsample(sig('TidVol.2s'), per, 1, 2),
+          tidalVolume: downsample(sig('TidVol.2s'), per, 1000, 0), // L → mL
+          minuteVent: downsample(sig('MinVent.2s'), per),
+          // the pressure the machine set, breathing in and out
+          inhale: downsample(sig('Press.2s'), per),
+          exhale: downsample(sig('EprPress.2s'), per),
         },
       });
     } catch (err) {
@@ -293,6 +321,16 @@ async function readNight(date, files) {
   eventList.length = 0;
   eventList.push(...kept);
   eventList.sort((a, b) => a.at.localeCompare(b.at));
+
+  // the breathing waveform around each event (BRP), read in small slices
+  let waves = [];
+  if (files.BRP?.length && eventList.length) {
+    try {
+      waves = await readWaves(files.BRP, eventWindows(eventList), naive);
+    } catch (err) {
+      warnings.push(`${isoDate(date)} waveform: ${err.message}`);
+    }
+  }
   const hours = sessions.reduce((a, s) => a + s.minutes, 0) / 60;
   const events = { osa: 0, csa: 0, hyp: 0, apnea: 0, arousal: 0 };
   for (const ev of eventList) events[ev.type]++;
@@ -327,6 +365,13 @@ async function readNight(date, files) {
         p50: round(percentile(pressAll, 0.5)),
         p95: round(percentile(pressAll, 0.95)),
         max: round(percentile(pressAll, 1)),
+        // what the machine set, breathing in and out (medians)
+        inhaleP50: round(percentile(targetAll, 0.5)),
+        exhaleP50: round(percentile(exhaleAll, 0.5)),
+        // the set pressure's spread over the night, in 2 s samples per
+        // 0.1 cmH₂O, so time at the prescribed maximum can be read against
+        // that night's range (lib/nightDetail.js)
+        targetHist: pressureHist(targetAll),
       },
       respRate: { p50: round(percentile(rrAll, 0.5)) },
       spo2: spo2.length
@@ -339,6 +384,7 @@ async function readNight(date, files) {
         : null,
       periodicBreathingMin: round(periodicSec / 60, 0),
       eventList,
+      waves,
     },
   };
 }
@@ -354,7 +400,7 @@ export async function parseCard(entries, { onProgress } = {}) {
   const warnings = [];
   const norm = entries.map((e) => ({ ...e, path: e.path.replace(/\\/g, '/') }));
 
-  const nightFiles = new Map(); // 'YYYYMMDD' → { EVE:[], CSL:[], PLD:[], SA2:[] }
+  const nightFiles = new Map(); // 'YYYYMMDD' → { EVE:[], CSL:[], PLD:[], SA2:[], BRP:[] }
   let str = null;
   let idJson = null;
   let idTgt = null;
@@ -365,8 +411,7 @@ export async function parseCard(entries, { onProgress } = {}) {
     const m = e.path.match(NIGHT_FILE);
     if (m) {
       const kind = m[3].toUpperCase();
-      if (kind === 'BRP') continue;
-      if (!nightFiles.has(m[1])) nightFiles.set(m[1], { EVE: [], CSL: [], PLD: [], SA2: [] });
+      if (!nightFiles.has(m[1])) nightFiles.set(m[1], { EVE: [], CSL: [], PLD: [], SA2: [], BRP: [] });
       nightFiles.get(m[1])[kind].push({ ...e, name: e.path.split('/').pop() });
     } else if (STR_FILE.test(e.path)) {
       // several copies (a backup folder)? use the one nearest the root
@@ -422,6 +467,8 @@ export async function parseCard(entries, { onProgress } = {}) {
     // let the UI breathe between nights
     if (i % 4 === 3) await new Promise((r) => setTimeout(r, 0));
   }
+  // the prescription each night ran on, from that day's STR row
+  for (const [date, night] of nights) night.settings = summary.get(date)?.settings ?? null;
   // nights the card only has summaries for
   for (const [date, row] of summary) if (!nights.has(date)) nights.set(date, row);
 

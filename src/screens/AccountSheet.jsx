@@ -1,8 +1,6 @@
-/* Nocta — Account subpage. Full-screen sheet from the You tab.
- * Profile, plan, therapy status, and sign-in. Plan + therapy are display-only
- * in v1; sign-in is real when Supabase is configured (lib/auth.jsx). */
+/* Nocta — Account subpage. Full-screen sheet from the You tab: how you're
+ * signed in. Sign-in is real when Supabase is configured (lib/auth.jsx). */
 import { useStore } from '../lib/store.jsx';
-import { USER } from '../data/account.js';
 import { PROVIDERS, isRelayEmail } from '../data/auth.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -70,8 +68,7 @@ function SignInSection({ onSignOut }) {
       {guest && (
         <div className="acct-save">
           <p className="settings-note">
-            Make an account to bring in your own CPAP data and keep your check-ins. You’ll set
-            up Nocta for you first.
+            Make an account to bring in your own CPAP data and keep your check-ins.
           </p>
           <button className="btn primary" onClick={() => switchToAccount('signup')}>
             Create an account
@@ -86,48 +83,10 @@ function SignInSection({ onSignOut }) {
 }
 
 /* the page's sections, shared with the desktop You page (rendered inline
- * there rather than one click away). `children` lands just above Sign in —
- * the desktop page puts connected devices there. */
-export function AccountContent({ onSignOut, children }) {
-  const { profile } = useStore();
-  const setUpOn = profile.completedAt
-    ? new Date(profile.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : null;
-  return (
-    <>
-      {/* no plan or billing exists yet, so none is shown. Therapy facts come
-       * from the card; "set up Nocta" from when onboarding actually finished */}
-      <div className="section-head">
-        <h3>Therapy</h3>
-      </div>
-      <div className="list">
-        <div className="list-row">
-          <div className="lr-icon bare">
-            <Icon name="therapy" size={17} />
-          </div>
-          <div className="lr-main">
-            <div className="lr-title tnum">{USER.daysOnTherapy} nights on the machine</div>
-            <div className="lr-sub">{USER.therapyStart ? `Since ${USER.therapyStart}, from your SD card` : 'From your SD card'}</div>
-          </div>
-        </div>
-        {setUpOn && (
-          <div className="list-row">
-            <div className="lr-icon bare">
-              <Icon name="clock" size={17} />
-            </div>
-            <div className="lr-main">
-              <div className="lr-title">Set up Nocta</div>
-              <div className="lr-sub">{setUpOn}</div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {children}
-
-      <SignInSection onSignOut={onSignOut} />
-    </>
-  );
+ * there, after Your data). Therapy facts (nights on the machine, since when)
+ * live on the profile card, so they aren't repeated here. */
+export function AccountContent({ onSignOut }) {
+  return <SignInSection onSignOut={onSignOut} />;
 }
 
 export function AccountSheet() {

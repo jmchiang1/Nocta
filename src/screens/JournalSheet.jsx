@@ -24,10 +24,17 @@ export function JournalSheet() {
 
   return (
     <Sheet title="Sleep journal" onClose={closeSheet} variant="page">
-      <p className="settings-note" style={{ margin: '0 0 16px' }}>
-        Every morning’s check-in alongside that night’s AHI. The most recent month is open
-        by default. Tap any past month to expand it.
-      </p>
+      {groups.length === 0 ? (
+        // nothing logged yet: say what will appear here and how
+        <div className="journal-empty">
+          <Icon name="doc" size={22} />
+          <p className="journal-empty-title">No check-ins yet</p>
+          <p>
+            Each morning, the check-in on Tonight asks how you slept and what was going on. Your
+            answers collect here, next to that night’s AHI.
+          </p>
+        </div>
+      ) : null}
 
       {groups.map((g, i) => (
         <details key={g.month} className="journal-month" open={i === 0}>
@@ -42,7 +49,7 @@ export function JournalSheet() {
                 <div className="lr-main">
                   <div className="lr-title">{j.date}</div>
                   <div className="lr-sub">
-                    {j.tags.map((t) => TAG_LABELS[t] || t).join(' · ')}
+                    {j.tags.length ? j.tags.map((t) => TAG_LABELS[t] || t).join(' · ') : 'Nothing unusual'}
                   </div>
                 </div>
                 <div className="lr-right tnum">AHI {j.ahi}</div>

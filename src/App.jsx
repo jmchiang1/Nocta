@@ -30,7 +30,7 @@ import { ChangePasswordSheet } from './screens/ChangePasswordSheet.jsx';
 import { DeleteAccountSheet } from './screens/DeleteAccountSheet.jsx';
 import { DesktopApp } from './components/desktop/DesktopApp.jsx';
 import { StatusPill } from './components/StatusPill.jsx';
-import { DesktopFullNight } from './components/desktop/DesktopFullNight.jsx';
+import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import { DesktopCompare } from './components/desktop/DesktopCompare.jsx';
 import { DesktopCalendar } from './components/desktop/DesktopCalendar.jsx';
 
@@ -75,12 +75,16 @@ const PAGE_SHEETS = new Set([
   'metricDetail',
 ]);
 
-/* wide dialogs the desktop dashboard draws itself (not Sheet-based) */
+/* what the desktop dashboard draws itself, not Sheet-based (the full night
+ * as a page, the rest as wide dialogs); Escape closes them */
 const DESKTOP_DIALOGS = new Set(['fullnight', 'compare', 'calendar']);
 
 function Shell() {
+  const store = useStore();
   const { tab, tabNonce, tabDir, sheet, sheets, sheetLeaving, onboarded, viewMode, closeSheet, tonightLayout, onboardingNonce } =
-    useStore();
+    store;
+  // development only: lets the QA walkthrough open any sheet directly
+  if (import.meta.env.DEV) window.__nocta = store;
 
   // the desktop-only dialogs aren't built on Sheet, so they need their own Escape
   const desktopDialog = viewMode === 'desktop' && DESKTOP_DIALOGS.has(sheet?.kind);
@@ -99,7 +103,9 @@ function Shell() {
     return (
       <div className="desktop-stage desktop-onboarding">
         <DevPanel />
-        <Onboarding key={onboardingNonce} />
+        <ErrorBoundary key={`ob-${onboardingNonce}`}>
+          <Onboarding key={onboardingNonce} />
+        </ErrorBoundary>
         <StatusPill />
       </div>
     );
@@ -110,7 +116,9 @@ function Shell() {
       <div className="stage">
         <DevPanel />
         <div className="phone">
-          <Onboarding key={onboardingNonce} />
+          <ErrorBoundary key={`ob-${onboardingNonce}`}>
+            <Onboarding key={onboardingNonce} />
+          </ErrorBoundary>
           <StatusPill />
         </div>
       </div>
@@ -123,22 +131,22 @@ function Shell() {
     return (
       <div className="desktop-stage">
         <DevPanel />
-        <DesktopApp />
-        {/* full-night gets a wide, desktop-native dialog; every other sheet
+        <ErrorBoundary key={`app-${tabNonce}`}>
+          <DesktopApp />
+        </ErrorBoundary>
+        {/* the full night is a page of the dashboard (DesktopApp), not a
+         * dialog; whatever opens over it (a metric page) is. Every other sheet
          * renders as a centered desktop card (CSS in desktop.css re-styles the
          * shared Sheet markup so it isn't a phone-shaped bottom sheet) */}
-        {sheet && (
+        {sheet && sheet.kind !== 'fullnight' && (
           <div
             className="desktop-modal-wrap"
             onClick={(e) => {
               if (e.target === e.currentTarget) closeSheet();
             }}
           >
-            {sheet.kind === 'fullnight' ? (
-              <div className="desktop-dialog">
-                <DesktopFullNight />
-              </div>
-            ) : sheet.kind === 'compare' ? (
+            <ErrorBoundary key={sheet.kind} onReset={closeSheet}>
+            {sheet.kind === 'compare' ? (
               <div className="desktop-dialog cmp2-dialog">
                 <DesktopCompare />
               </div>
@@ -149,6 +157,7 @@ function Shell() {
             ) : (
               ActiveSheet && <ActiveSheet />
             )}
+            </ErrorBoundary>
           </div>
         )}
       </div>
@@ -174,7 +183,9 @@ function Shell() {
            * so chart and card entrance animations replay each time the user
            * "lands" on a page. dir-* slides it in from the direction of travel. */}
           <div className={`screen-host dir-${tabDir}`} key={tabNonce}>
-            <Screen />
+            <ErrorBoundary>
+              <Screen />
+            </ErrorBoundary>
           </div>
           <TabBar />
         </div>
@@ -183,7 +194,11 @@ function Shell() {
         {/* (a desktop-only dialog, e.g. compare, isn't a phone sheet: skipped) */}
         {sheets.map((s, i) => {
           const SheetView = SHEETS[s.kind];
-          return SheetView ? <SheetView key={`${i}-${s.kind}`} /> : null;
+          return SheetView ? (
+            <ErrorBoundary key={`${i}-${s.kind}`} onReset={closeSheet}>
+              <SheetView />
+            </ErrorBoundary>
+          ) : null;
         })}
         <StatusPill />
       </div>

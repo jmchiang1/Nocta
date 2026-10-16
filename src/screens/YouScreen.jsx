@@ -5,14 +5,15 @@
  * Prototype-only controls (reset check-in, replay onboarding) live in the
  * DevPanel outside the phone, so the app itself reads as shipped. */
 import { useStore } from '../lib/store.jsx';
+import { wearableStatusLine } from '../lib/wearables.js';
 import { USER, CONNECTED_DEVICES, DEVICE_PHOTO } from '../data/account.js';
 import { machineName } from '../data/therapy.js';
-import { ProfileAvatar } from '../components/ProfileAvatar.jsx';
+import { EditableAvatar, PhotoLinks } from '../components/EditableAvatar.jsx';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
 
 export function YouScreen() {
-  const { openSheet, deviceConnections, machineId, authUser } = useStore();
+  const { openSheet, deviceConnections, machineId, authUser, authConfigured, wearables } = useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
 
 
@@ -24,9 +25,7 @@ export function YouScreen() {
 
       <section className="profile-card" aria-label="Your profile">
         <div className="profile-head">
-          <div className="avatar">
-            <ProfileAvatar user={authUser} />
-          </div>
+          <EditableAvatar />
           <div>
             {/* who: from sign-in. What: from the card. Nothing filled in */}
             <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
@@ -36,6 +35,7 @@ export function YouScreen() {
               {USER.daysOnTherapy} nights on the machine
               {USER.therapyStart && ` · since ${USER.therapyStart}`}
             </div>
+            <PhotoLinks />
           </div>
         </div>
       </section>
@@ -60,7 +60,7 @@ export function YouScreen() {
           </div>
           <div className="lr-main">
             <div className="lr-title">Settings</div>
-            <div className="lr-sub">Photo, password, reminders, and your data</div>
+            <div className="lr-sub">Password, reminders, and your data</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
@@ -68,7 +68,6 @@ export function YouScreen() {
 
       <div className="section-head">
         <h3>Connected devices</h3>
-        {connectedDevices.length > 0 && <span className="meta">tap to manage</span>}
       </div>
       <div className="list">
         {connectedDevices.map((d) => {
@@ -90,7 +89,7 @@ export function YouScreen() {
               )}
               <div className="lr-main">
                 <div className="lr-title">{d.title}</div>
-                <div className="lr-sub">Connected</div>
+                <div className="lr-sub">{wearableStatusLine(wearables.links[d.key])}</div>
               </div>
               <Icon name="chevronRight" size={17} />
             </button>
@@ -100,7 +99,7 @@ export function YouScreen() {
           <div className="list-row empty">
             <div className="lr-main">
               <div className="lr-title">No devices connected</div>
-              <div className="lr-sub">Nocta reads your CPAP’s SD card. Wearables can’t be connected yet.</div>
+              <div className="lr-sub">{authConfigured ? 'Connect a wearable to see your body overnight.' : 'Nocta reads your CPAP’s SD card. Wearables can’t be connected yet.'}</div>
             </div>
           </div>
         )}
@@ -110,7 +109,7 @@ export function YouScreen() {
           </div>
           <div className="lr-main">
             <div className="lr-title">Wearables</div>
-            <div className="lr-sub">Coming soon</div>
+            <div className="lr-sub">{authConfigured ? 'Oura, Fitbit, Whoop, Withings' : 'Coming soon'}</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>

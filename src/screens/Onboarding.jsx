@@ -490,7 +490,7 @@ function Pairing({ data, update, next }) {
         </p>
       </Step>
       {importing && (
-        <Sheet eyebrow="Your machine" title="Import from SD card" onClose={() => setImporting(false)} full>
+        <Sheet title="Import from SD card" onClose={() => setImporting(false)} full>
           {(close) => (
             <CardImport
               onCancel={close}

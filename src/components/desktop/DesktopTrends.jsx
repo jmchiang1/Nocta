@@ -5,7 +5,7 @@
  * to Nox), the best/worst night and the journal. Same getTrends() data. */
 import { useState } from 'react';
 import { THERAPY_START, LAST_NIGHT } from '../../data/history.js';
-import { getTrends } from '../../data/trends.js';
+import { getTrends, trendAxes } from '../../data/trends.js';
 import { pressureRange } from '../../data/therapy.js';
 import { journalHistory } from '../../data/journal.js';
 import { useStore } from '../../lib/store.jsx';
@@ -14,7 +14,9 @@ import { Icon } from '../Icons.jsx';
 import { Mascot } from '../Mascot.jsx';
 import { Rich } from '../Rich.jsx';
 import { PatternCard } from '../PatternCard.jsx';
+import { TrendLegend } from '../TrendLegend.jsx';
 import { LineChart, StackedBars, Bars } from '../Charts.jsx';
+import { moreTrendCharts } from '../MoreTrends.jsx';
 
 const RANGE_LABEL = { '7d': '7 days', '30d': '30 days', '90d': '90 days', custom: 'Custom' };
 const RANGE_TABS = ['7d', '30d', '90d', 'custom'];
@@ -52,35 +54,31 @@ export function DesktopTrends() {
   const t = getTrends(fixtureId, range, custom);
   const rx = pressureRange(); // the prescribed window the machine records, if any
 
+  // every chart carries its own key (components/TrendLegend.jsx), so all four
+  // are the same height
+  // real axes on every Trends chart: dates across, the metric's unit up
+  // settings changes are marked on every chart
+  const ax = (k) => trendAxes(k, t.dates, { markers: t.markers });
   const CHARTS = {
     ahi: {
       title: 'AHI (events an hour)',
       meta: `avg ${t.ahiAvg}/h`,
-      body: (
-        <>
-          <div className="legend dash-legend">
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--alert)' }} /> Central</span>
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-deep)' }} /> Obstructive</span>
-            <span><span className="swatch" style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--data-1)' }} /> Hypopnea</span>
-          </div>
-          <StackedBars series={t.ahiSeries} height={CHART_H} />
-        </>
-      ),
+      body: <StackedBars series={t.ahiSeries} height={CHART_H} axes={ax('ahi')} />,
     },
     leak: {
       title: 'Leak rate',
-      meta: 'L/min · 24 threshold',
-      body: <LineChart values={t.leakSeries} color="data" threshold={24} height={CHART_H} />,
+      meta: 'L/min',
+      body: <LineChart values={t.leakSeries} color="data" threshold={24} height={CHART_H} axes={ax('leak')} />,
     },
     hours: {
       title: 'Usage',
-      meta: 'hours · 4 h compliance bar',
-      body: <Bars values={t.hoursSeries} color="data" target={4} height={CHART_H} />,
+      meta: 'hours a night',
+      body: <Bars values={t.hoursSeries} color="data" target={4} height={CHART_H} axes={ax('hours')} />,
     },
     pressure: {
       title: 'Pressure',
-      meta: rx ? `cmH₂O · shaded: prescribed ${rx[0]}–${rx[1]}` : 'cmH₂O',
-      body: <LineChart values={t.pressureSeries} color="data" band={rx ?? undefined} height={CHART_H} />,
+      meta: 'cmH₂O',
+      body: <LineChart values={t.pressureSeries} color="data" band={rx ?? undefined} height={CHART_H} axes={ax('pressure')} />,
     },
   };
   const chart = CHARTS[metric];
@@ -170,10 +168,24 @@ export function DesktopTrends() {
               <h3>{chart.title}</h3>
               <span className="meta">{chart.meta}</span>
             </div>
+            <TrendLegend metric={metric} rx={rx} />
             {chart.body}
-            <div className="chart-axis">
-              {t.xLabels.map((l, i) => (
-                <span key={i}>{l}</span>
+          </section>
+
+          {/* the power-user trends, always shown, two to a row */}
+          <section aria-labelledby="more-trends">
+            <div className="dash-head">
+              <h3 id="more-trends">More trends</h3>
+            </div>
+            <div className="dash-more-trends">
+              {moreTrendCharts(t, 200).map((c) => (
+                <section className="chart-card trend-chart" key={`${c.key}-${range}`} aria-label={c.title}>
+                  <div className="tc-head">
+                    <h3>{c.title}</h3>
+                    {c.meta && <span className="meta">{c.meta}</span>}
+                  </div>
+                  {c.body}
+                </section>
               ))}
             </div>
           </section>
@@ -182,7 +194,6 @@ export function DesktopTrends() {
             <section>
               <div className="dash-head">
                 <h3>Patterns</h3>
-                <span className="dash-head-meta">from your journal</span>
               </div>
               <div className="dash-patterns">
                 {t.patterns.map((p, i) => (

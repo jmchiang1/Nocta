@@ -5,7 +5,7 @@ The splash says **Get started** / **I already have an account**. Both lead to th
 
 | Option | What happens |
 |---|---|
-| Continue with Google | Supabase OAuth: a redirect to Google and back. |
+| Continue with Google | Supabase OAuth in a popup window (`src/lib/authPopup.js`); the page never leaves. Falls back to a full-page redirect if the browser blocks popups. |
 | Email + password | Sign up (confirmed by an email link), sign in, forgot password → reset link → new password. |
 | Look around without an account | A guest. Nothing is saved, so there's no setup: the medical disclaimer, then the app with sample data. It's a flag on the phone, not a Supabase user. |
 
@@ -90,6 +90,23 @@ Email sign-in is already on in General. Before real people sign up:
 | Forgot password → link | "Choose a new password" → Welcome back |
 | Look around without an account | Disclaimer, then Tonight with sample data |
 | As a guest: You › Account › Create an account | The sign-up screen, then setup |
+
+## Delete account (Edge Function)
+
+Settings › Delete account calls the `delete-account` Edge Function
+(`supabase/functions/delete-account/`). A browser can't delete its own Supabase user,
+so the function checks the caller's session and deletes exactly that user with the
+service role key Supabase gives every function (it never ships in the app). Nocta's
+own tables (`nocta_wearable_*`) cascade on the user's deletion.
+
+Deployed to "General" on 2026-10-15. To redeploy:
+
+```
+supabase functions deploy delete-account --project-ref hhkeuxpmcbfkifvhvdxp --no-verify-jwt --use-api
+```
+
+`--no-verify-jwt` because the project uses the new JWT signing keys; the function
+verifies the session itself (`auth.getUser`) and answers 401 to anything else.
 
 ## Before the App Store
 

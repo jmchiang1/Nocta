@@ -41,6 +41,11 @@ re-rendering are materially cleaner as components. Everything else in the handof
   theirs is saved. Real when
   `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set in `.env.local`, mock
   otherwise. See `docs/AUTH_SETUP.md`. Never put the secret/service_role key in the app.
+- **Wearables**: Oura, Fitbit (via the Google Health API), Whoop and Withings connect for real through the Supabase edge
+  function `nocta-wearables` (`supabase/functions/`, tokens server-side only). Synced
+  nights are cached on the device by date (`src/lib/wearables.js`) and feed only the
+  "Your body overnight" cards (`src/lib/bodySource.js`), never insights or escalation.
+  Needs a signed-in account; other devices are "coming soon". See `docs/WEARABLES_SETUP.md`.
 - **AI (future)**: OpenAI API with Structured Outputs (strict JSON schema mode).
 - **Data source (future)**: SleepHQ API (OAuth2 password grant).
 - **Hosting target**: static site host (Vercel / Netlify / GitHub Pages). A serverless

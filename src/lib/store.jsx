@@ -13,10 +13,24 @@ import {
   DEFAULT_DEVICE_CONNECTIONS,
   DEFAULT_DEVICE_ENABLED,
   DEFAULT_DEVICE_READS,
+  deviceByKey,
 } from '../data/account.js';
 import { DEFAULT_SIGNIN_SCENARIO } from '../data/auth.js';
 import { useAuth } from './auth.jsx';
 import { saveImport, clearImport } from './importStore.js';
+import {
+  LIVE_WEARABLES,
+  isLiveWearable,
+  wearablesReadyFor,
+  takeWearableReturn,
+  listenForWearableReturn,
+  loadWearableCache,
+  clearWearableCache,
+  fetchWearableStatus,
+  startWearableConnect,
+  syncWearable,
+  disconnectWearable,
+} from './wearables.js';
 
 const StoreContext = createContext(null);
 
@@ -26,6 +40,9 @@ const VIEW_KEY = 'nocta.layout.v1'; // v1 view key held a forced layout from the
 /* the width at which the desktop dashboard takes over from the mobile app */
 const DESKTOP_QUERY = '(min-width: 768px)'; // tablets get the dashboard (icon rail under 820)
 const EMPTY_CHECKIN = { done: false, tags: EMPTY_CHECKIN_TAGS };
+const WEARABLE_AUTOSYNC_KEY = 'nocta.wearableAutoSync.v1';
+/* a connected wearable pulls new nights on open once its last sync is this old */
+const WEARABLE_STALE_MS = 60 * 60_000;
 const TAB_ORDER = ['tonight', 'trends', 'therapy', 'you'];
 /* how long the "bringing in last night" live activity runs after an import */
 const SYNC_MS = 1700;
@@ -208,7 +225,7 @@ export function StoreProvider({ children }) {
   const [deviceEnabled, setDeviceEnabledState] = useState(DEFAULT_DEVICE_ENABLED);
   const [deviceReads, setDeviceReads] = useState(DEFAULT_DEVICE_READS);
 
-  const setDeviceConnected = useCallback(
+  const setMockConnected = useCallback(
     (key, connected) => setDeviceConnections((c) => ({ ...c, [key]: connected })),
     []
   );
@@ -242,6 +259,176 @@ export function StoreProvider({ children }) {
     setSheetLeaving(false);
     setSheets((st) => st.slice(0, -1));
   }, []);
+  // everything at once (desktop: leaving the full-night page for another tab)
+  const closeAllSheets = useCallback(() => {
+    setSheetLeaving(false);
+    setSheets([]);
+  }, []);
+
+  /* ---- real wearables (Oura, Fitbit, Whoop, Withings; lib/wearables.js) ----
+   * With a signed-in account, the server says what's connected. links:
+   * { [provider]: { connectedAt, lastSyncAt, syncing?, needsReconnect? } }.
+   * `available` lists the ones set up on the server (docs/WEARABLES_SETUP.md).
+   * wearableNonce bumps whenever synced nights change, so cards re-read. */
+  const wearablesReady = wearablesReadyFor(auth.authUser);
+  const [wearables, setWearables] = useState({ loaded: false, available: [], links: {} });
+  const [wearableNonce, setWearableNonce] = useState(0);
+  const [wearableAutoSync, setWearableAutoSyncState] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(WEARABLE_AUTOSYNC_KEY)) || {};
+    } catch {
+      return {};
+    }
+  });
+  const setWearableAutoSync = useCallback((provider, on) => {
+    setWearableAutoSyncState((a) => {
+      const next = { ...a, [provider]: on };
+      try {
+        localStorage.setItem(WEARABLE_AUTOSYNC_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+  const patchLink = useCallback(
+    (provider, patch) =>
+      setWearables((w) => {
+        const links = { ...w.links };
+        if (patch === null) delete links[provider];
+        else links[provider] = { ...links[provider], ...patch };
+        return { ...w, links };
+      }),
+    []
+  );
+
+  /* pull new nights; resolves to { nights, syncedAt, throttled? }, throws with
+   * .code ('reconnect', 'not_connected', 'failed', …) */
+  const syncWearableNow = useCallback(
+    async (provider) => {
+      patchLink(provider, { syncing: true });
+      try {
+        const res = await syncWearable(provider);
+        patchLink(provider, { syncing: false, needsReconnect: false, lastSyncAt: res.syncedAt });
+        setWearableNonce((n) => n + 1);
+        return res;
+      } catch (e) {
+        if (e.code === 'not_connected') patchLink(provider, null);
+        else patchLink(provider, { syncing: false, needsReconnect: e.code === 'reconnect' });
+        throw e;
+      }
+    },
+    [patchLink]
+  );
+
+  /* opens the provider's approve screen in a new tab (→ 'tab'), or leaves for
+   * it if the tab was blocked (→ 'redirect'); the result comes back through
+   * handleWearableReturn either way */
+  const connectWearable = useCallback(
+    (provider) => startWearableConnect(provider, deviceByKey(provider)?.title),
+    []
+  );
+
+  /* the server's links → the store's shape */
+  const linksFrom = (status) =>
+    Object.fromEntries(
+      status.links.map((l) => [
+        l.provider,
+        { connectedAt: l.connectedAt, lastSyncAt: l.lastSyncAt, ...(l.test ? { test: true } : {}) },
+      ])
+    );
+
+  /* a result from the provider: connected → the device sheet, which runs the
+   * first sync (justConnected changes every time, so an open sheet restarts) */
+  const handleWearableReturn = useCallback(
+    (back, links) => {
+      const title = deviceByKey(back.provider)?.title ?? 'That device';
+      if (back.result === 'connected' && links[back.provider]) {
+        setTab('you');
+        openSheet('deviceDetail', { deviceKey: back.provider, justConnected: Date.now() });
+      } else if (back.result === 'denied') {
+        showToast(`${title} wasn’t connected`, 'info');
+      } else {
+        showToast(`Couldn’t connect ${title}. Try again.`, 'info');
+      }
+    },
+    [setTab, openSheet, showToast]
+  );
+
+  /* the provider tab reports back (lib/wearables.js): re-read the server's
+   * view, then act on it */
+  useEffect(() => {
+    if (!wearablesReady) return undefined;
+    return listenForWearableReturn(async (back) => {
+      try {
+        const status = await fetchWearableStatus();
+        const links = linksFrom(status);
+        setWearables({ loaded: true, available: status.available, links });
+        handleWearableReturn(back, links);
+      } catch (e) {
+        console.warn('[wearables] status after connect', e);
+        showToast('Couldn’t reach Nocta’s server. Try again in a moment.', 'info');
+      }
+    });
+  }, [wearablesReady, handleWearableReturn, showToast]);
+
+  /* on sign-in (and every open): cached nights, the server's view, the return
+   * from an approve screen, then a quiet catch-up for stale connections */
+  useEffect(() => {
+    if (!wearablesReady) {
+      setWearables({ loaded: false, available: [], links: {} });
+      return undefined;
+    }
+    let alive = true;
+    (async () => {
+      await loadWearableCache();
+      if (!alive) return;
+      setWearableNonce((n) => n + 1);
+      let status;
+      try {
+        status = await fetchWearableStatus();
+      } catch (e) {
+        console.warn('[wearables] status unavailable (is nocta-wearables deployed?)', e);
+        return;
+      }
+      if (!alive) return;
+      const links = linksFrom(status);
+      setWearables({ loaded: true, available: status.available, links });
+
+      // the tab-blocked fallback: this tab itself came back from the provider
+      const back = takeWearableReturn();
+      if (back) handleWearableReturn(back, links);
+      Object.entries(links).forEach(([p, l]) => {
+        if (back?.provider === p) return; // the connected sheet runs its own first sync
+        const stale = !l.lastSyncAt || Date.now() - Date.parse(l.lastSyncAt) > WEARABLE_STALE_MS;
+        if (stale && wearableAutoSync[p] !== false) syncWearableNow(p).catch((e) => console.warn(e));
+      });
+    })();
+    return () => {
+      alive = false;
+    };
+    // once per signed-in account; the rest is read fresh inside
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wearablesReady, auth.authUser?.email]);
+
+  /* what the screens treat as connected: the server's word for the live three */
+  const effectiveConnections = wearablesReady
+    ? { ...deviceConnections, ...Object.fromEntries(LIVE_WEARABLES.map((p) => [p, !!wearables.links[p]])) }
+    : deviceConnections;
+
+  /* disconnecting a live wearable revokes it on the server; the others are local */
+  const setDeviceConnected = useCallback(
+    async (key, connected) => {
+      if (wearablesReady && isLiveWearable(key)) {
+        if (connected) return;
+        await disconnectWearable(key);
+        patchLink(key, null);
+        return;
+      }
+      setMockConnected(key, connected);
+    },
+    [wearablesReady, patchLink, setMockConnected]
+  );
 
   /* bumped whenever any night's check-in changes, so screens showing an
    * older night re-read it (lib/checkins.js) */
@@ -278,6 +465,7 @@ export function StoreProvider({ children }) {
       /* ignore */
     }
     setOnboardingNonce((n) => n + 1);
+    clearWearableCache().catch(() => {}); // someone else may sign in here next
     signOutAuth();
   }, [signOutAuth]);
 
@@ -361,6 +549,7 @@ export function StoreProvider({ children }) {
     sheets,
     openSheet,
     pushSheet,
+    closeAllSheets,
     closeSheet,
     signinScenario,
     setSigninScenario,
@@ -377,8 +566,15 @@ export function StoreProvider({ children }) {
     setMaskId,
     machineId,
     setMachineId,
-    deviceConnections,
+    deviceConnections: effectiveConnections,
     setDeviceConnected,
+    wearablesReady,
+    wearables,
+    wearableNonce,
+    connectWearable,
+    syncWearableNow,
+    wearableAutoSync,
+    setWearableAutoSync,
     deviceEnabled,
     setDeviceEnabled,
     deviceReads,

@@ -50,9 +50,10 @@ export const maskById = (id) => (id ? (MASKS.find((m) => m.id === id) ?? null) :
 const CARD_MASK = { Pillows: 'Nasal pillow', Nasal: 'Nasal', FullFace: 'Full face' };
 export const cardMaskType = (settings) => CARD_MASK[settings?.maskType] ?? null;
 
-/* Third-party body-data sources. Apple Health is the iPhone aggregator
- * (HealthKit); Watch and Oura write to it. `reads` is the per-source list
- * shown on the device detail sheet so the user sees what Nocta will pull. */
+/* Third-party body-data sources. Oura, Fitbit, Whoop and Withings connect for real
+ * (lib/wearables.js); the rest are listed as coming soon. Apple Health is the
+ * iPhone aggregator (HealthKit). `reads` is the per-source list shown on the
+ * device detail sheet: for the live three, exactly what Nocta pulls. */
 export const CONNECTED_DEVICES = [
   {
     key: 'watch',
@@ -76,15 +77,15 @@ export const CONNECTED_DEVICES = [
     icon: 'dotRing',
     title: 'Oura Ring',
     short: 'Ring data',
-    blurb: 'Sleep stages and recovery signals from your Oura ring.',
-    reads: ['Sleep stages', 'Heart-rate variability', 'Heart rate', 'Body temperature', 'Readiness score'],
+    blurb: 'Sleep stages, heart rate, HRV, breathing rate, and blood oxygen from your Oura ring.',
+    reads: ['Sleep stages', 'Heart rate', 'Heart-rate variability', 'Respiratory rate', 'Blood oxygen'],
   },
   {
     key: 'fitbit',
     icon: 'heart',
     title: 'Fitbit',
-    short: 'Wrist data',
-    blurb: 'Heart rate, sleep stages, and breathing rate from your Fitbit.',
+    short: 'Through your Google account',
+    blurb: 'Sleep stages, heart rate, HRV, breathing rate, and blood oxygen from your Fitbit or Pixel Watch, through your Google account.',
     reads: ['Heart rate', 'Heart-rate variability', 'Sleep stages', 'Blood oxygen', 'Respiratory rate'],
   },
   {
@@ -107,13 +108,22 @@ export const CONNECTED_DEVICES = [
     key: 'whoop',
     icon: 'exercise',
     title: 'Whoop',
-    short: 'Strain & recovery',
-    blurb: 'Strain, recovery, and sleep from your Whoop strap.',
-    reads: ['Strain', 'Recovery score', 'Sleep performance', 'Heart rate'],
+    short: 'Wrist strap',
+    blurb: 'Sleep stages, resting heart rate, HRV, breathing rate, and blood oxygen from your Whoop strap.',
+    reads: ['Sleep stages', 'Heart rate', 'Heart-rate variability', 'Respiratory rate', 'Blood oxygen'],
+  },
+  {
+    key: 'withings',
+    icon: 'bed',
+    title: 'Withings',
+    short: 'Sleep mat or watch',
+    blurb: 'Sleep stages, heart rate, and breathing rate from your Withings sleep mat or watch.',
+    reads: ['Sleep stages', 'Heart rate', 'Respiratory rate'],
   },
 ];
 
-/* nothing is connected until a real connection exists (none can be made yet) */
+/* nothing is connected until a real connection exists. For Oura, Fitbit, Whoop
+ * and Withings that's the server's say (lib/store.jsx); the rest can't connect yet */
 export const DEFAULT_DEVICE_CONNECTIONS = {
   watch: false,
   health: false,
@@ -122,6 +132,7 @@ export const DEFAULT_DEVICE_CONNECTIONS = {
   garmin: false,
   samsung: false,
   whoop: false,
+  withings: false,
 };
 
 /* Master enable map — independent of the OAuth connection. Lets the user
@@ -136,6 +147,7 @@ export const DEFAULT_DEVICE_ENABLED = {
   garmin: true,
   samsung: true,
   whoop: true,
+  withings: true,
 };
 
 /* Per-device permission map — which of a device's `reads` Nocta is allowed

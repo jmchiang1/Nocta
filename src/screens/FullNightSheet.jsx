@@ -1,60 +1,52 @@
-/* Nocta — full-night detail: events by type, then the time-aligned chart
- * stack + episodes. (The morning
- * check-in lives on Tonight now, under the night's suggestion.) */
-import { useState } from 'react';
+/* Nocta — the full night (phone): its own page, pushed in from Tonight. The
+ * night in three numbers, events by type, then every machine chart
+ * (components/NightCharts.jsx, shared with the desktop page) and the night's
+ * events, each opening to its breathing waveform. (The morning check-in
+ * lives on Tonight, under the night's suggestion.) */
 import { useStore } from '../lib/store.jsx';
-import { FIXTURES, EPISODES } from '../data/fixtures.js';
-import { TimeAxis } from '../components/TimeAxis.jsx';
+import { FIXTURES } from '../data/fixtures.js';
 import { NightTimeline } from '../components/NightTimeline.jsx';
-import { nightSeries } from '../lib/nightSeries.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { SleepStages } from '../components/SleepStages.jsx';
-import { LineChart, Bars } from '../components/Charts.jsx';
+import { primaryBody } from '../lib/bodySource.js';
+import { nightPanels, NightEvents } from '../components/NightCharts.jsx';
 
-function Episode({ ep }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="episode">
-      <button className="episode-head" onClick={() => setOpen((o) => !o)}>
-        <span className={`ep-badge ${ep.type}`}>{ep.type.toUpperCase()}</span>
-        <span className="ep-time">{ep.time}</span>
-        <span className="ep-dur">{ep.dur}s</span>
-        <Icon name={open ? 'chevronUp' : 'chevronDown'} size={16} />
-      </button>
-      <div className={`episode-collapse${open ? ' open' : ''}`}>
-        <div className="episode-body">
-          <div className="episode-body-inner">
-            <div className="ep-detail">
-              <span className="ed-k">Pressure that minute</span>
-              <span className="ed-v">{ep.pressure}</span>
-            </div>
-            <div className="ep-detail">
-              <span className="ed-k">Next 3 minutes</span>
-              <span className="ed-v">{ep.response}</span>
-            </div>
-            {/* the machine can't tell how you slept; a wearable could */}
-            {ep.position && (
-              <div className="ep-detail">
-                <span className="ed-k">Sleeping position</span>
-                <span className="ed-v">{ep.position}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+const CHART_H = 180; // room for the axes
+
+/* a chart section: tappable through to its metric page when it has one */
+function Panel({ title, meta, onOpen, children }) {
+  const head = (
+    <span className="section-head">
+      <h3>{title}</h3>
+      {(meta || onOpen) && (
+        <span className="meta">
+          {meta}
+          {onOpen && <Icon name="chevronRight" size={14} />}
+        </span>
+      )}
+    </span>
+  );
+  return onOpen ? (
+    <button className="fn-metric" type="button" onClick={onOpen}>
+      {head}
+      <span className="chart-card">{children}</span>
+    </button>
+  ) : (
+    <section className="fn-metric">
+      {head}
+      <div className="chart-card">{children}</div>
+    </section>
   );
 }
 
 export function FullNightSheet() {
-  const { fixtureId, closeSheet, pushSheet } = useStore();
+  const { fixtureId, closeSheet, pushSheet, deviceConnections, deviceEnabled, deviceReads } = useStore();
   const fx = FIXTURES[fixtureId];
-  const episodes = EPISODES[fixtureId] || [];
-
-  const { resp, pressure, leak, snore } = nightSeries(fixtureId);
-  // each machine graph opens its own full page (MetricDetailSheet)
-  const open = (metric) => pushSheet('metricDetail', { metric });
+  // a connected wearable's record of this night (lib/bodySource.js)
+  const body = primaryBody(fx, deviceConnections, deviceEnabled, deviceReads);
+  // each machine graph with its own page opens it (MetricDetailSheet)
+  const panels = nightPanels(fixtureId, { height: CHART_H, open: (metric) => pushSheet('metricDetail', { metric }) });
 
   return (
     <Sheet
@@ -92,103 +84,30 @@ export function FullNightSheet() {
             ahi={fx.ahi.value}
             escalated={fx.insight.escalation_flag === 'hard'}
             fixtureId={fixtureId}
-            sleepStages={fx.bodyResponse?.stages}
+            detailed
+            sleepStages={body?.stages}
           />
 
           {/* only with a connected wearable: the machine can't see sleep stages */}
-          {fx.bodyResponse?.stages && (
+          {body?.stages && (
             <>
               <div className="section-head">
                 <h3>Sleep stages</h3>
-                <span className="meta">{fx.bodyResponse.source}</span>
+                <span className="meta">{body.source}</span>
               </div>
               <div className="chart-card">
-                <SleepStages stages={fx.bodyResponse.stages} session={fx.session} />
+                <SleepStages stages={body.stages} session={fx.session} detailed />
               </div>
             </>
           )}
 
-          <button className="fn-metric" type="button" onClick={() => open('resp')}>
-            <span className="section-head">
-              <h3>Breathing rate</h3>
-              <span className="meta">
-                breaths a minute
-                <Icon name="chevronRight" size={14} />
-              </span>
-            </span>
-            <span className="chart-card">
-              {resp ? (
-                <LineChart values={resp} color="data" />
-              ) : (
-                <span className="fn-nodata">No breathing rate recorded this night</span>
-              )}
-              <TimeAxis session={fx.session} />
-            </span>
-          </button>
-
-          <button className="fn-metric" type="button" onClick={() => open('pressure')}>
-            <span className="section-head">
-              <h3>Pressure</h3>
-              <span className="meta">
-                cmH₂O
-                <Icon name="chevronRight" size={14} />
-              </span>
-            </span>
-            <span className="chart-card">
-              {pressure ? <LineChart values={pressure} color="data" /> : <span className="fn-nodata">No pressure recorded this night</span>}
-              <TimeAxis session={fx.session} />
-            </span>
-          </button>
-
-          <button className="fn-metric" type="button" onClick={() => open('leak')}>
-            <span className="section-head">
-              <h3>Leak rate</h3>
-              <span className="meta">
-                L/min · 24 threshold
-                <Icon name="chevronRight" size={14} />
-              </span>
-            </span>
-            <span className="chart-card">
-              {leak ? (
-                <LineChart values={leak} color="data" threshold={24} />
-              ) : (
-                <span className="fn-nodata">No leak recorded this night</span>
-              )}
-              <TimeAxis session={fx.session} />
-            </span>
-          </button>
-
-          <button className="fn-metric" type="button" onClick={() => open('snore')}>
-            <span className="section-head">
-              <h3>Snore index</h3>
-              <span className="meta">
-                from the machine
-                <Icon name="chevronRight" size={14} />
-              </span>
-            </span>
-            <span className="chart-card">
-              {snore ? <Bars values={snore} color="data" /> : <span className="fn-nodata">No snore data this night</span>}
-              <TimeAxis session={fx.session} />
-            </span>
-          </button>
-
-          <div className="section-head">
-            {/* a hand-picked sample, so say plainly how it relates to the total */}
-            <h3>{episodes.length < fx.timeline.eventCount ? 'Longest events' : 'Events'}</h3>
-            <span className="meta">
-              {episodes.length < fx.timeline.eventCount
-                ? `${episodes.length} of ${fx.timeline.eventCount}`
-                : `all ${episodes.length}`}
-            </span>
-          </div>
-          {episodes.map((ep, i) => (
-            <Episode key={i} ep={ep} />
+          {panels.map((p) => (
+            <Panel key={p.key} title={p.title} meta={p.meta} onOpen={p.onOpen}>
+              {p.body}
+            </Panel>
           ))}
 
-          {/* <p className="disclaimer">
-            Charts show what your machine recorded. Tap any episode to see the breath
-            trace.
-          </p> */}
+          <NightEvents fixtureId={fixtureId} />
         </>
       )}
     </Sheet>

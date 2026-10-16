@@ -142,12 +142,18 @@ async function start(userId: string, body: any) {
 async function status(userId: string) {
   const { data, error } = await db
     .from('nocta_wearable_links')
-    .select('provider, connected_at, last_sync_at')
+    .select('provider, connected_at, last_sync_at, scope')
     .eq('user_id', userId);
   if (error) throw error;
   return json({
     available: (Object.keys(PROVIDERS) as ProviderKey[]).filter((p) => credsFor(p)),
-    links: data.map((l) => ({ provider: l.provider, connectedAt: l.connected_at, lastSyncAt: l.last_sync_at })),
+    links: data.map((l) => ({
+      provider: l.provider,
+      connectedAt: l.connected_at,
+      lastSyncAt: l.last_sync_at,
+      // connected through a sandbox (OURA_SANDBOX): its nights are test data
+      ...(l.scope === 'sandbox' ? { test: true } : {}),
+    })),
   });
 }
 

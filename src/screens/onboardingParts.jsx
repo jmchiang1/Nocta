@@ -3,6 +3,7 @@
  * and the working / error states. */
 import { useState, useEffect } from 'react';
 import { Icon } from '../components/Icons.jsx';
+import { NoxThinking } from '../components/NoxThinking.jsx';
 
 export const SLEEPHQ_LOGO = '/brands/sleephq.png';
 const CONNECT_MS = 1700;
@@ -61,14 +62,11 @@ export function ErrorNote({ children, tone = 'error' }) {
   );
 }
 
-/* a centred "working" state: the mark inside a slowly turning ring */
+/* a centred "working" state: Nox, thinking it over */
 export function Working({ title, copy, foot }) {
   return (
     <Step center foot={foot}>
-      <div className="si-working" aria-hidden="true">
-        <span className="si-working-ring" />
-        <img src="/Nocta-constellation-sm.svg" alt="" />
-      </div>
+      <NoxThinking className="si-working" />
       <h1 className="ob-title" aria-live="polite">
         {title}
       </h1>

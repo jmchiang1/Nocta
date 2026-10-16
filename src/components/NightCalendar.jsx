@@ -141,13 +141,6 @@ function NightDetail({ date, onOpen }) {
           </div>
         ))}
       </dl>
-      <p className="cal-detail-note">
-        {night.hours === 0
-          ? 'No session recorded, so this night doesn’t count toward compliance.'
-          : metCompliance(night)
-            ? 'Over 4 hours, so this night counts toward compliance.'
-            : 'Under 4 hours, so this night doesn’t count toward compliance.'}
-      </p>
       {v.fx && (
         <button className="btn ghost cal-open" type="button" onClick={() => onOpen(v.fx.id)}>
           Open this night

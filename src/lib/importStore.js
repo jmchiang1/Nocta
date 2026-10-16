@@ -62,3 +62,15 @@ export async function saveImport(card) {
 export async function clearImport() {
   await tx('readwrite', (s) => s.delete(KEY));
 }
+
+/* other keyed records kept beside the card in the same store (lib/wearables.js
+ * keeps each wearable's synced nights here as 'wearable:<provider>') */
+export async function getItem(key) {
+  try {
+    return (await tx('readonly', (s) => s.get(key))) ?? null;
+  } catch {
+    return null;
+  }
+}
+export const putItem = (key, value) => tx('readwrite', (s) => s.put(value, key));
+export const deleteItem = (key) => tx('readwrite', (s) => s.delete(key));

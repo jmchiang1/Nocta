@@ -3,8 +3,10 @@
  * they always agree with each other and with history.js. All of it comes
  * from the CPAP card (data/history.js › cardNight):
  *   - nightSeries: the machine's per-minute readings across the night's
- *     sessions — pressure, leak, breathing rate, snore. The 25 Hz flow
- *     waveform isn't read (lib/resmed), so there's no breath-by-breath trace.
+ *     sessions, every one of them (charts fit the data, never the other way
+ *     round): pressure, the set pressure in and out, leak, breathing rate,
+ *     snore, flow limitation, breath size and volume a minute. The
+ *     breath-by-breath waveform around each event is lib/waves.js.
  *   - nightBins: the night's recorded events per time bucket, by type, plus
  *     the buckets where leak ran above the line.
  *   - session helpers for clock-time axes. */
@@ -16,7 +18,6 @@ export const pct = (arr, p) => {
 };
 
 const LEAK_LINE = 24;
-const MAX_POINTS = 180; // plenty for a chart; keeps a 9-hour night light
 
 /* ---- clock time ---- */
 
@@ -61,20 +62,36 @@ function minuteSeries(raw, key) {
   return out;
 }
 
-/* average down to at most MAX_POINTS (a bucket's max for leak, so a short
- * spike isn't averaged away) */
-function downsample(series, peak = false) {
-  if (!series || series.length <= MAX_POINTS) return series;
-  const k = series.length / MAX_POINTS;
-  return Array.from({ length: MAX_POINTS }, (_, i) => {
-    const slice = series.slice(Math.floor(i * k), Math.floor((i + 1) * k)).filter((v) => v != null);
-    if (!slice.length) return null;
-    return peak ? Math.max(...slice) : slice.reduce((a, b) => a + b, 0) / slice.length;
-  });
-}
 /* gaps (mask off between sessions) stay null, so charts break there instead
  * of drawing readings the machine never took */
 const filled = (series) => series;
+
+/* the clock minute of the day (running past 1440 after midnight) where each
+ * plotted point of a series starts — the x axis of the night's charts */
+const wallMin = (at) => {
+  const d = new Date(ms(at));
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+};
+function seriesClock(raw, key, n) {
+  const sessions = (raw?.sessions ?? []).filter((s) => s.series?.[key]);
+  if (!sessions.length || !n) return null;
+  const start = wallMin(sessions[0].start);
+  const len = Math.max(1, Math.round((ms(sessions.at(-1).end) - ms(sessions[0].start)) / 6e4));
+  const k = len > n ? len / n : 1;
+  return Array.from({ length: n }, (_, i) => start + Math.floor(i * k));
+}
+
+const SERIES_KEYS = {
+  resp: 'respRate',
+  pressure: 'pressure',
+  leak: 'leak',
+  snore: 'snore',
+  flow: 'flowLimit',
+  inhale: 'inhale',
+  exhale: 'exhale',
+  tidal: 'tidalVolume',
+  minVent: 'minuteVent',
+};
 
 const seriesCache = new Map();
 export function nightSeries(fixtureId) {
@@ -82,15 +99,53 @@ export function nightSeries(fixtureId) {
   const raw = cardNight(date);
   const key = `${date}:${raw?.sessions?.length ?? 0}:${NIGHTS.length}`;
   if (seriesCache.has(key)) return seriesCache.get(key);
-  const out = {
-    resp: filled(downsample(minuteSeries(raw, 'respRate')), true),
-    pressure: filled(downsample(minuteSeries(raw, 'pressure')), true),
-    leak: filled(downsample(minuteSeries(raw, 'leak'), true)),
-    snore: filled(downsample(minuteSeries(raw, 'snore'), true)),
-  };
+  // chart key → the card's per-minute series
+  const out = Object.fromEntries(Object.entries(SERIES_KEYS).map(([k, src]) => [k, filled(minuteSeries(raw, src))]));
+  // each point's clock minute, per series (for the charts' time axis)
+  out.clock = Object.fromEntries(Object.entries(SERIES_KEYS).map(([k, src]) => [k, seriesClock(raw, src, out[k]?.length)]));
   seriesCache.set(key, out);
   return out;
 }
+
+/* ---- a clock-time x axis for a night's chart (charts' `axes` prop) ----
+ * mins: each point's clock minute of the day. Whole hours get a tick ("1 AM"),
+ * every other hour when the chart is too narrow for all of them; the
+ * tooltip reads the point's own time ("1:42 AM"). */
+const clockText = (m) => {
+  const t = ((Math.round(m) % 1440) + 1440) % 1440;
+  const h = Math.floor(t / 60);
+  return `${h % 12 || 12}:${String(t % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+};
+const hourText = (m) => clockText(m).replace(':00', '');
+
+export function clockAxes(mins, extra = {}) {
+  const hours = mins.length ? (mins.at(-1) - mins[0]) / 60 : 0;
+  return {
+    labels: mins.map(clockText),
+    tick: (i, width) => {
+      const step = hours * 46 > width - 60 ? 2 : 1;
+      const h = Math.floor(mins[i] / 60);
+      const isHour = i === 0 ? mins[0] % 60 === 0 : h > Math.floor(mins[i - 1] / 60);
+      return isHour && h % step === 0 ? hourText(h * 60) : null;
+    },
+    xTitle: 'Time',
+    ...extra,
+  };
+}
+
+/* the axes of each machine graph of a night (full night, metric pages) */
+const METRIC_AXIS = {
+  resp: { yTitle: 'Breaths a minute', unit: 'breaths/min' },
+  pressure: { yTitle: 'cmH₂O', unit: 'cmH₂O' },
+  leak: { yTitle: 'L/min', unit: 'L/min' },
+  snore: { yTitle: 'Snore index' },
+  flow: { yTitle: 'Flow limitation (0–1)', decimals: 2 },
+  inhale: { yTitle: 'cmH₂O', unit: 'cmH₂O' },
+  tidal: { yTitle: 'mL', unit: 'mL', decimals: 0 },
+  minVent: { yTitle: 'L/min', unit: 'L/min' },
+};
+export const metricAxes = (key, series) =>
+  series.clock?.[key] ? clockAxes(series.clock[key], METRIC_AXIS[key]) : undefined;
 
 /* ---- breathing events by type, per time bucket ---- */
 

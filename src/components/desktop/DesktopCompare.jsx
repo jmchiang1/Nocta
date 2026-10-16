@@ -164,8 +164,7 @@ export function DesktopCompare() {
       </div>
 
       <p className="disclaimer">
-        Side-by-side readings, not a verdict on your therapy. Patterns across many
-        nights matter more than any single comparison. Bring questions to your doctor.
+        Side-by-side readings, not a verdict on your therapy.
       </p>
     </div>
   );

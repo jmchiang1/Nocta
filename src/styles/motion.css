@@ -262,13 +262,35 @@
 .screen.framed:has(> .sky) .compact-bar .cb-title {
   text-shadow: 0 1px 12px var(--bg-base);
 }
+/* the fade sits right under the title bar (status bar + 44 px), short, so
+ * content stays visible up to the day and date instead of vanishing in a
+ * tall empty band */
 .screen.framed:has(> .sky) .scroll {
+  --bar-b: calc(var(--sb-h, 12px) + 44px);
   -webkit-mask-image: linear-gradient(
     180deg,
-    rgb(0 0 0 / calc(1 - var(--k, 0))) 96px,
-    #000 136px
+    rgb(0 0 0 / calc(1 - var(--k, 0))) calc(var(--bar-b) - 6px),
+    #000 calc(var(--bar-b) + 14px)
   );
-  mask-image: linear-gradient(180deg, rgb(0 0 0 / calc(1 - var(--k, 0))) 96px, #000 136px);
+  mask-image: linear-gradient(
+    180deg,
+    rgb(0 0 0 / calc(1 - var(--k, 0))) calc(var(--bar-b) - 6px),
+    #000 calc(var(--bar-b) + 14px)
+  );
+}
+/* tabs without a sticky title: content scrolls away under the status bar,
+ * fading over just its height so it never sits on top of the clock */
+.screen.framed.no-sticky:not(:has(> .sky)) .scroll {
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    rgb(0 0 0 / calc(1 - var(--k, 0))) var(--sb-h, 12px),
+    #000 calc(var(--sb-h, 12px) + 24px)
+  );
+  mask-image: linear-gradient(
+    180deg,
+    rgb(0 0 0 / calc(1 - var(--k, 0))) var(--sb-h, 12px),
+    #000 calc(var(--sb-h, 12px) + 24px)
+  );
 }
 
 /* staggered arrival — every top-level block on a screen rises in a beat
@@ -364,7 +386,6 @@
   padding: 18px 16px;
   border-radius: var(--r-xl);
   background: color-mix(in srgb, var(--surface-1) 56%, transparent);
-  border: 1px solid var(--hairline);
 }
 .sk-bars {
   display: flex;
@@ -532,8 +553,9 @@
 .glass {
   position: relative;
 }
-/* shared material structure */
-.glass,
+/* shared material structure. Phone only: liquid glass is the iOS look; the
+ * desktop dashboard keeps flat, quiet controls (desktop.css) */
+.phone .glass,
 .phone .tabbar {
   isolation: isolate;
   border: 0;
@@ -550,7 +572,7 @@
 }
 /* light glass — every other glass control (back / close buttons, segmented
  * control): a clear lens with a faint white lift, no dimming */
-.glass {
+.phone .glass {
   background: var(--glass-fill-light);
   -webkit-backdrop-filter: blur(14px) saturate(150%);
   backdrop-filter: blur(14px) saturate(150%);
@@ -558,7 +580,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 -6px 12px -8px rgba(0, 0, 0, 0.3);
 }
-.glass::before,
+.phone .glass::before,
 .phone .tabbar::before {
   content: '';
   position: absolute;
@@ -583,7 +605,7 @@
     linear-gradient(#000 0 0);
   pointer-events: none;
 }
-.glass::after,
+.phone .glass::after,
 .phone .tabbar::after {
   content: '';
   position: absolute;
@@ -1227,36 +1249,6 @@
 /* =================================================================
  * Therapy
  * ================================================================= */
-.dc-dot.live {
-  position: relative;
-  flex-shrink: 0;
-}
-.dc-dot.live::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--good);
-  animation: breathe 2.8s ease-out infinite;
-}
-@keyframes breathe {
-  0% {
-    opacity: 0.55;
-    transform: scale(1);
-  }
-  70%,
-  100% {
-    opacity: 0;
-    transform: scale(2.6);
-  }
-}
-.phone .device-card .dc-top {
-  gap: 8px;
-}
-.compliance-dot {
-  animation: popIn 0.4s var(--ease-spring) backwards;
-  animation-delay: calc(350ms + var(--i, 0) * 16ms);
-}
 .export-row .lr-sub {
   animation: fade 0.3s ease;
 }
@@ -1286,7 +1278,6 @@
  * ================================================================= */
 .profile-card {
   border-radius: var(--r-lg);
-  border: 1px solid var(--hairline);
   background: linear-gradient(180deg, var(--surface-1) 0%, var(--bg-base) 140%);
   padding: 18px 18px 16px;
 }
@@ -1449,10 +1440,32 @@
   }
 }
 
-/* stars: three tiers, bright → faint; some twinkle */
+/* stars: three tiers, bright → faint; some twinkle, a few glimmer. Each
+ * tier drifts slowly right and back, near (bright) stars a little further
+ * than far ones, so the field has depth without ever visibly "moving". */
 .sky-stars {
   position: absolute;
-  inset: 0;
+  inset: -2% -6%; /* a little spare sky at the sides to drift into */
+  animation: starDrift 180s ease-in-out infinite alternate;
+}
+.sky-stars.t1-layer {
+  --drift: 36px;
+}
+.sky-stars.t2-layer {
+  --drift: 24px;
+  animation-duration: 200s;
+}
+.sky-stars.t3-layer {
+  --drift: 14px;
+  animation-duration: 230s;
+}
+@keyframes starDrift {
+  from {
+    transform: translateX(calc(var(--drift) * -0.5));
+  }
+  to {
+    transform: translateX(calc(var(--drift) * 0.5));
+  }
 }
 .sky-stars i {
   position: absolute;
@@ -1479,8 +1492,64 @@
     opacity: calc(var(--a) * var(--tier-show, 1) * 0.3);
   }
 }
+/* glimmer: long stretches of a steady star, then a quick flare and a small
+ * cross of light (the glint), like a star catching the eye. Never brighter
+ * than the night's weather allows (--tier-show). */
+.sky-stars i.gl {
+  animation: glimmer var(--g) ease-in-out var(--gd) infinite;
+}
+.sky-stars i.gl::before,
+.sky-stars i.gl::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 1px;
+  opacity: 0;
+  animation: glint var(--g) ease-in-out var(--gd) infinite;
+}
+.sky-stars i.gl::before {
+  width: 700%;
+  height: 1px;
+  translate: -50% -50%;
+  background: linear-gradient(90deg, transparent, var(--text-primary), transparent);
+}
+.sky-stars i.gl::after {
+  width: 1px;
+  height: 700%;
+  translate: -50% -50%;
+  background: linear-gradient(180deg, transparent, var(--text-primary), transparent);
+}
+@keyframes glimmer {
+  0%, 86%, 100% {
+    transform: scale(1);
+  }
+  91% {
+    opacity: var(--tier-show, 1);
+    transform: scale(1.7);
+  }
+  96% {
+    transform: scale(1);
+  }
+}
+@keyframes glint {
+  0%, 87%, 96%, 100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  91% {
+    opacity: calc(0.85 * var(--tier-show, 1));
+    transform: scale(1);
+  }
+}
 
-/* clouds: soft blurred drifts of night blue-grey, hidden on clear nights */
+/* clouds: soft, blurred, night blue-grey. Each one sails slowly to the
+ * right across the whole sky and wraps back in from the left, like Apple
+ * Weather's. A lane is a full-width strip that slides one sky-width (plus
+ * the cloud's own width), so the cloud leaves fully before it returns; the
+ * cloud itself is two overlapping puffs (::before, ::after). Negative delays
+ * start each one somewhere along its trip. Wisps on clear nights, thicker
+ * as the weather turns (--clouds). */
 .sky-clouds {
   position: absolute;
   inset: 0;
@@ -1488,6 +1557,15 @@
   transition: opacity 1.4s ease;
 }
 .sky-clouds i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--h);
+  animation: cloudSail var(--sail) linear var(--at) infinite;
+}
+.sky-clouds i::before,
+.sky-clouds i::after {
+  content: '';
   position: absolute;
   border-radius: 50%;
   filter: blur(16px);
@@ -1498,44 +1576,30 @@
     transparent
   );
 }
-.sky-clouds .c5 {
-  width: 340px;
-  height: 120px;
-  left: 120px;
-  top: 20px;
-  animation: cloudDrift 80s linear infinite alternate-reverse;
+.sky-clouds i::before {
+  left: 0;
+  top: 0;
+  width: var(--w);
+  height: var(--h);
 }
-.sky-clouds .c1 {
-  width: 380px;
-  height: 120px;
-  left: -90px;
-  top: 110px;
-  animation: cloudDrift 70s linear infinite alternate;
+.sky-clouds i::after {
+  left: calc(var(--w) * 0.28);
+  top: calc(var(--h) * -0.35);
+  width: calc(var(--w) * 0.5);
+  height: calc(var(--h) * 1.1);
+  opacity: 0.8;
 }
-.sky-clouds .c2 {
-  width: 300px;
-  height: 80px;
-  right: -90px;
-  top: 190px;
-  animation: cloudDrift 85s linear infinite alternate-reverse;
-}
-.sky-clouds .c3 {
-  width: 420px;
-  height: 110px;
-  left: -120px;
-  top: 330px;
-  animation: cloudDrift 95s linear infinite alternate;
-}
-.sky-clouds .c4 {
-  width: 280px;
-  height: 70px;
-  right: -50px;
-  top: 470px;
-  animation: cloudDrift 75s linear infinite alternate-reverse;
-}
-@keyframes cloudDrift {
+.sky-clouds .c1 { --w: 380px; --h: 120px; top: 110px; --sail: 210s; --at: -40s; }
+.sky-clouds .c2 { --w: 300px; --h: 80px; top: 190px; --sail: 250s; --at: -175s; }
+.sky-clouds .c3 { --w: 420px; --h: 110px; top: 330px; --sail: 230s; --at: -120s; }
+.sky-clouds .c4 { --w: 280px; --h: 70px; top: 470px; --sail: 270s; --at: -20s; }
+.sky-clouds .c5 { --w: 340px; --h: 120px; top: 20px; --sail: 240s; --at: -150s; }
+@keyframes cloudSail {
+  from {
+    transform: translateX(calc(var(--w) * -1));
+  }
   to {
-    transform: translateX(90px);
+    transform: translateX(100%);
   }
 }
 
@@ -1577,13 +1641,13 @@
   --t1: 1;
   --t2: 0.85;
   --t3: 0.6;
-  --clouds: 0;
+  --clouds: 0.22; /* a few faint wisps drifting by */
 }
 .sky-bright {
   --t1: 1;
   --t2: 1;
   --t3: 0.85;
-  --clouds: 0;
+  --clouds: 0.12;
 }
 .sky-hazy {
   --t1: 0.9;
@@ -1601,7 +1665,8 @@
   opacity: 0.45;
 }
 /* a doctor-worthy night: the cloud carries a faint coral, never a red sky */
-.sky-overcast .sky-clouds i {
+.sky-overcast .sky-clouds i::before,
+.sky-overcast .sky-clouds i::after {
   background: radial-gradient(
     closest-side,
     color-mix(in srgb, var(--alert) 32%, var(--surface-3)),

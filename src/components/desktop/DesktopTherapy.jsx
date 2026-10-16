@@ -1,19 +1,20 @@
-/* Nocta — desktop Therapy view. Same order as the mobile screen: compliance
- * leads (it's the one number insurance holds you to), then the machine, the
- * mask and the equipment schedule side by side, then the doctor export. */
+/* Nocta — desktop Therapy view. Compliance leads (it's the one number
+ * insurance holds you to); under it the machine, its mask, the SD import and
+ * the doctor export sit beside the equipment schedule, which is always open
+ * here (there's the room). */
 import { useStore } from '../../lib/store.jsx';
 import { cardDevice, machineName, deviceCells } from '../../data/therapy.js';
 import { EquipmentList } from '../EquipmentList.jsx';
 import { openDoctorReport } from '../../lib/doctorReport.js';
-import { deviceStatus } from '../../lib/deviceStatus.js';
+import { deviceSource } from '../../lib/deviceStatus.js';
 import { SdImportCard } from '../SdImportCard.jsx';
 import { Icon } from '../Icons.jsx';
 import { MaskCard } from '../MaskCard.jsx';
 import { ComplianceCard } from '../ComplianceCard.jsx';
 
 export function DesktopTherapy() {
-  const { machineId, openSheet, showToast, syncNonce, cardData } = useStore();
-  const status = deviceStatus(cardData, syncNonce > 0);
+  const { machineId, openSheet, showToast, cardData } = useStore();
+  const source = deviceSource(cardData);
   // the card names the machine and its settings; nothing is filled in
   const device = cardDevice();
   const machine = machineName(machineId);
@@ -29,7 +30,6 @@ export function DesktopTherapy() {
       <header className="dash-topbar">
         <div>
           <h1 className="dash-h1">Therapy</h1>
-          <div className="dash-sub">Your machine, mask, and the paperwork</div>
         </div>
       </header>
 
@@ -44,14 +44,10 @@ export function DesktopTherapy() {
             <h3>Your machine</h3>
           </div>
           <section className="device-card">
-            <div className="dc-top">
-              <span className={`dc-dot${status.live ? ' live' : ' idle'}`} aria-hidden="true" />
-              <span className={`dc-status${status.live ? '' : ' idle'}`}>{status.status}</span>
-            </div>
             <h3>
               {machine.brand} {machine.name}
             </h3>
-            <div className="dc-sub">{status.source}</div>
+            <div className="dc-sub">{source}</div>
             {cells.length > 0 ? (
               <div className="dc-grid">
                 {cells.map((c) => (
@@ -77,14 +73,6 @@ export function DesktopTherapy() {
 
           {/* the machine's own data comes in from its card, so it sits here */}
           <SdImportCard card={cardData} onOpen={() => openSheet('cardImport')} />
-        </div>
-
-        <div className="dash-col">
-          <div className="section-head">
-            <h3>Equipment</h3>
-            <span className="meta">log when you replace</span>
-          </div>
-          <EquipmentList />
 
           <div className="section-head">
             <h3>For your doctor</h3>
@@ -101,11 +89,14 @@ export function DesktopTherapy() {
             </button>
           </div>
         </div>
-      </div>
 
-      <p className="disclaimer">
-        The export contains your data only, with no Nocta insights. It is not a medical record.
-      </p>
+        <div className="dash-col">
+          <div className="section-head">
+            <h3>Equipment</h3>
+          </div>
+          <EquipmentList collapsible={false} />
+        </div>
+      </div>
     </>
   );
 }

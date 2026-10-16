@@ -41,6 +41,7 @@ export type Night = {
   phases: string[] | null;
   awakenings: number | null;
   latencyMin: number | null;
+  test?: true; // from a provider's sandbox (OURA_SANDBOX), not a real night
 };
 
 /* the provider said the grant is gone (revoked, expired): the person has to
@@ -100,10 +101,10 @@ export function sleepDay(wallClock: string) {
 const MIN_NIGHT_HOURS = 2;
 
 /* one night per sleep day: the longest time in bed wins */
-function longestPerDay(nights: Night[]) {
+function longestPerDay(nights: Night[], minHours = MIN_NIGHT_HOURS) {
   const best = new Map<string, Night>();
   for (const n of nights) {
-    if (n.inBedHours < MIN_NIGHT_HOURS) continue;
+    if (n.inBedHours < minHours) continue;
     const cur = best.get(n.date);
     if (!cur || n.inBedHours > cur.inBedHours) best.set(n.date, n);
   }
@@ -142,7 +143,9 @@ async function oauthToken(url: string, form: Record<string, string>): Promise<To
 
 async function getJson(url: string, token: string) {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
-  if (res.status === 401 || res.status === 403) throw new ReconnectError(`${url} ${res.status}`);
+  // only 401 means the grant is gone; a 403 is "not allowed for this data"
+  // (a scope not granted, an API not enabled), which reconnecting won't fix
+  if (res.status === 401) throw new ReconnectError(`${url} ${res.status}`);
   if (!res.ok) throw new Error(`${url} ${res.status}: ${JSON.stringify(await readJson(res))}`);
   return res.json();
 }
@@ -150,7 +153,13 @@ async function getJson(url: string, token: string) {
 /* ------------------------------------------------------------------- Oura */
 /* API v2. sleep documents carry the overnight heart-rate samples (5 min),
  * HRV, breathing rate and a 5-minute stage string; SpO₂ is a separate daily
- * average keyed by Oura's own `day`. */
+ * average keyed by Oura's own `day`.
+ *
+ * OURA_SANDBOX=1: test without a ring. Connect skips Oura's sign-in and comes
+ * straight back, and nights come from Oura's sandbox (canned data, any token).
+ * Its "nights" are a few minutes long, so the nap cutoff is off and every
+ * night is marked `test`, which the app labels as test data. */
+const ouraSandbox = () => Deno.env.get('OURA_SANDBOX') === '1';
 
 const OURA_PHASE: Record<string, string> = { '1': 'deep', '2': 'light', '3': 'rem', '4': 'awake' };
 
@@ -168,11 +177,12 @@ function awakeningsFrom(phases: string[]) {
 
 async function ouraPages(path: string, token: string, from: string, to: string) {
   const out: any[] = [];
+  const base = `https://api.ouraring.com/v2/${ouraSandbox() ? 'sandbox/' : ''}usercollection`;
   let next: string | null = null;
   do {
     const q = new URLSearchParams({ start_date: from, end_date: to });
     if (next) q.set('next_token', next);
-    const body = await getJson(`https://api.ouraring.com/v2/usercollection/${path}?${q}`, token);
+    const body = await getJson(`${base}/${path}?${q}`, token);
     out.push(...(body.data ?? []));
     next = body.next_token ?? null;
   } while (next);
@@ -184,6 +194,8 @@ const oura = {
   // scope is dropped from the consent screen rather than refused, so ask for both
   scope: 'daily spo2 spo2Daily',
   authorizeUrl(c: Creds, redirectUri: string, state: string) {
+    // sandbox: no Oura sign-in, straight back to the callback
+    if (ouraSandbox()) return `${redirectUri}?${new URLSearchParams({ state, code: 'sandbox' })}`;
     const q = new URLSearchParams({
       response_type: 'code',
       client_id: c.clientId,
@@ -193,8 +205,10 @@ const oura = {
     });
     return `https://cloud.ouraring.com/oauth/authorize?${q}`;
   },
-  exchange: (c: Creds, code: string, redirectUri: string) =>
-    oauthToken('https://api.ouraring.com/oauth/token', {
+  exchange: (c: Creds, code: string, redirectUri: string): Promise<Tokens> =>
+    ouraSandbox()
+      ? Promise.resolve({ access_token: 'sandbox', refresh_token: null, expires_at: null, scope: 'sandbox', provider_user_id: null })
+      : oauthToken('https://api.ouraring.com/oauth/token', {
       grant_type: 'authorization_code',
       code,
       redirect_uri: redirectUri,
@@ -209,6 +223,7 @@ const oura = {
       client_secret: c.clientSecret,
     }),
   async revoke(_c: Creds, token: string) {
+    if (token === 'sandbox') return;
     await fetch(`https://api.ouraring.com/oauth/revoke?access_token=${encodeURIComponent(token)}`);
   },
   async nights(token: string, from: string, to: string): Promise<Night[]> {
@@ -256,9 +271,10 @@ const oura = {
           phases,
           awakenings: phases ? awakeningsFrom(phases) : null,
           latencyMin: s.latency != null ? Math.round(s.latency / 60) : null,
+          ...(ouraSandbox() ? { test: true as const } : {}),
         };
       });
-    return longestPerDay(nights);
+    return longestPerDay(nights, ouraSandbox() ? 0 : MIN_NIGHT_HOURS);
   },
 };
 
@@ -483,7 +499,199 @@ const withings = {
   },
 };
 
-export const PROVIDERS = { oura, whoop, withings } as const;
+/* ----------------------------------------------------------------- Fitbit */
+/* Through the Google Health API: Google turns off the Fitbit Web API on
+ * 2026-10-30, and Fitbit data now comes from the person's Google account.
+ * Google sign-in, two read-only scopes. A sleep session carries its stage
+ * segments and a summary; HRV, SpO₂, breathing rate and resting heart rate
+ * are daily records dated the morning the sleep ended; overnight heart rate
+ * comes from a 5-minute rollup. Only Google wearables (Fitbit, Pixel Watch)
+ * count, so another app's sleep log in the same account can't double up. */
+
+const GH = 'https://health.googleapis.com/v4/users/me/dataTypes';
+const GH_FAMILY = 'users/me/dataSourceFamilies/google-wearables';
+const GH_STAGE: Record<string, string> = { DEEP: 'deep', LIGHT: 'light', REM: 'rem', AWAKE: 'awake' };
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const civilYmd = (d: any) => `${d.year}-${pad2(d.month)}-${pad2(d.day)}`;
+/* civil time when Google gives it; else the UTC instant shifted by '-14400s' */
+function ghWall(civil: any, utc: string, offset?: string) {
+  if (civil?.date) return `${civilYmd(civil.date)}T${pad2(civil.time?.hours ?? 0)}:${pad2(civil.time?.minutes ?? 0)}`;
+  return new Date(Date.parse(utc) + (parseFloat(offset ?? '0') || 0) * 1000).toISOString().slice(0, 16);
+}
+
+async function postJson(url: string, token: string, body: unknown) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) throw new ReconnectError(`${url} ${res.status}`);
+  if (!res.ok) throw new Error(`${url} ${res.status}: ${JSON.stringify(await readJson(res))}`);
+  return res.json();
+}
+
+/* every data point of one type in a filter range (newest first, paged) */
+async function ghList(type: string, filter: string, token: string) {
+  const out: any[] = [];
+  let next: string | null = null;
+  do {
+    const q = new URLSearchParams({ filter, dataSourceFamily: GH_FAMILY, pageSize: type === 'sleep' ? '25' : '1000' });
+    if (next) q.set('pageToken', next);
+    const body = await getJson(`${GH}/${type}/dataPoints?${q}`, token);
+    out.push(...(body.dataPoints ?? []));
+    next = body.nextPageToken || null;
+  } while (next);
+  return out;
+}
+
+/* 5-minute heart-rate windows across the range (Google allows 14 days a call) */
+async function ghHeartRate(token: string, from: string, to: string) {
+  const windows: { t: number; avg: number; min: number }[] = [];
+  const end = Date.parse(`${to}T00:00:00Z`);
+  for (let t = Date.parse(`${from}T00:00:00Z`); t < end; t += 14 * 86_400_000) {
+    const stop = Math.min(end, t + 14 * 86_400_000);
+    let next: string | null = null;
+    do {
+      const body = await postJson(`${GH}/heart-rate/dataPoints:rollUp`, token, {
+        range: { startTime: new Date(t).toISOString(), endTime: new Date(stop).toISOString() },
+        windowSize: '300s',
+        pageSize: 10000,
+        dataSourceFamily: GH_FAMILY,
+        ...(next ? { pageToken: next } : {}),
+      });
+      for (const w of body.rollupDataPoints ?? []) {
+        if (w.heartRate?.beatsPerMinuteAvg != null) {
+          windows.push({ t: Date.parse(w.startTime), avg: w.heartRate.beatsPerMinuteAvg, min: w.heartRate.beatsPerMinuteMin });
+        }
+      }
+      next = body.nextPageToken || null;
+    } while (next);
+  }
+  return windows;
+}
+
+/* stage segments → one stage every 5 minutes (gaps are skipped) */
+function phasesFromSegments(segments: any[], startMs: number, endMs: number) {
+  const segs = segments
+    .map((x) => ({ a: Date.parse(x.startTime), b: Date.parse(x.endTime), type: GH_STAGE[x.type] }))
+    .filter((x) => x.type);
+  const out: string[] = [];
+  for (let t = startMs; t < endMs; t += 300_000) {
+    const seg = segs.find((x) => t >= x.a && t < x.b);
+    if (seg) out.push(seg.type);
+  }
+  return out.length ? out : null;
+}
+
+const fitbit = {
+  scope: [
+    'https://www.googleapis.com/auth/googlehealth.sleep.readonly',
+    'https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly',
+  ].join(' '),
+  authorizeUrl(c: Creds, redirectUri: string, state: string) {
+    const q = new URLSearchParams({
+      response_type: 'code',
+      client_id: c.clientId,
+      redirect_uri: redirectUri,
+      scope: this.scope,
+      state,
+      access_type: 'offline', // a refresh token, so syncing keeps working
+      prompt: 'consent', // Google only hands out the refresh token on consent
+      include_granted_scopes: 'true',
+    });
+    return `https://accounts.google.com/o/oauth2/v2/auth?${q}`;
+  },
+  exchange: (c: Creds, code: string, redirectUri: string) =>
+    oauthToken('https://oauth2.googleapis.com/token', {
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri,
+      client_id: c.clientId,
+      client_secret: c.clientSecret,
+    }),
+  // Google keeps the same refresh token (oauthToken carries it over)
+  refresh: (c: Creds, refreshToken: string) =>
+    oauthToken('https://oauth2.googleapis.com/token', {
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: c.clientId,
+      client_secret: c.clientSecret,
+    }),
+  async revoke(_c: Creds, token: string) {
+    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST' });
+  },
+  async nights(token: string, from: string, to: string): Promise<Night[]> {
+    const range = (field: string) => `${field} >= "${from}" AND ${field} < "${to}"`;
+    // the dailies and heart rate are extras: a missing one shouldn't sink the sync
+    const extra = (p: Promise<any[]>) => p.catch((e) => (e instanceof ReconnectError ? Promise.reject(e) : []));
+    const [sleeps, hrvs, spo2s, resps, rhrs, hrWindows] = await Promise.all([
+      ghList('sleep', range('sleep.interval.civil_end_time'), token),
+      extra(ghList('daily-heart-rate-variability', range('daily_heart_rate_variability.date'), token)),
+      extra(ghList('daily-oxygen-saturation', range('daily_oxygen_saturation.date'), token)),
+      extra(ghList('daily-respiratory-rate', range('daily_respiratory_rate.date'), token)),
+      extra(ghList('daily-resting-heart-rate', range('daily_resting_heart_rate.date'), token)),
+      extra(ghHeartRate(token, from, to)),
+    ]);
+    const daily = (pts: any[], key: string, pick: (v: any) => unknown) =>
+      new Map(pts.filter((p) => p[key]?.date).map((p) => [civilYmd(p[key].date), num(pick(p[key]))]));
+    const hrvBy = daily(hrvs, 'dailyHeartRateVariability', (v) => v.averageHeartRateVariabilityMilliseconds);
+    const spo2By = daily(spo2s, 'dailyOxygenSaturation', (v) => v.averagePercentage);
+    const respBy = daily(resps, 'dailyRespiratoryRate', (v) => v.breathsPerMinute);
+    const rhrBy = daily(rhrs, 'dailyRestingHeartRate', (v) => Number(v.beatsPerMinute));
+
+    const nights = sleeps
+      .map((p: any) => p.sleep)
+      .filter((sl: any) => sl?.interval && !sl.metadata?.nap)
+      .map((sl: any): Night => {
+        const iv = sl.interval;
+        const start = ghWall(iv.civilStartTime, iv.startTime, iv.startUtcOffset);
+        const end = ghWall(iv.civilEndTime, iv.endTime, iv.endUtcOffset);
+        const morning = end.slice(0, 10); // the dailies are dated the day the sleep ended
+        const a = Date.parse(iv.startTime);
+        const b = Date.parse(iv.endTime);
+        const sum = sl.summary ?? {};
+        const mins: Record<string, number> = Object.fromEntries(
+          (sum.stagesSummary ?? []).map((x: any) => [x.type, Number(x.minutes)])
+        );
+        const staged = sl.type === 'STAGES' && mins.DEEP != null;
+        const phases = staged ? phasesFromSegments(sl.stages ?? [], a, b) : null;
+        const win = hrWindows.filter((w) => w.t >= a && w.t < b);
+        const resting = rhrBy.get(morning) ?? null;
+        const minutes = (k: string) => round1((mins[k] ?? 0) / 60);
+        return {
+          date: sleepDay(start),
+          start,
+          end,
+          inBedHours: round1((num(Number(sum.minutesInSleepPeriod)) ?? (b - a) / 60_000) / 60),
+          asleepHours: num(Number(sum.minutesAsleep)) != null ? round1(Number(sum.minutesAsleep) / 60) : null,
+          hr: win.length
+            ? {
+                avg: Math.round(win.reduce((t, w) => t + w.avg, 0) / win.length),
+                low: Math.round(Math.min(...win.map((w) => w.min))),
+                resting,
+                series: win.length > 3 ? win.map((w) => Math.round(w.avg)) : null,
+              }
+            : resting != null
+              ? { avg: null, low: null, resting, series: null }
+              : null,
+          hrv: hrvBy.get(morning) != null ? Math.round(hrvBy.get(morning)!) : null,
+          respRate: respBy.get(morning) != null ? round1(respBy.get(morning)!) : null,
+          spo2: spo2By.get(morning) != null ? round1(spo2By.get(morning)!) : null,
+          stages: staged
+            ? { deep: minutes('DEEP'), rem: minutes('REM'), light: minutes('LIGHT'), awake: minutes('AWAKE') }
+            : null,
+          phases,
+          awakenings: phases ? awakeningsFrom(phases) : null,
+          // Fitbit reports 0 when it didn't estimate it
+          latencyMin: Number(sum.minutesToFallAsleep) > 0 ? Number(sum.minutesToFallAsleep) : null,
+        };
+      });
+    return longestPerDay(nights);
+  },
+};
+
+export const PROVIDERS = { oura, fitbit, whoop, withings } as const;
 export type ProviderKey = keyof typeof PROVIDERS;
 export const isProvider = (p: unknown): p is ProviderKey => typeof p === 'string' && p in PROVIDERS;
 
@@ -491,5 +699,6 @@ export const isProvider = (p: unknown): p is ProviderKey => typeof p === 'string
 export function credsFor(p: ProviderKey): Creds | null {
   const id = Deno.env.get(`${p.toUpperCase()}_CLIENT_ID`);
   const secret = Deno.env.get(`${p.toUpperCase()}_CLIENT_SECRET`);
-  return id && secret ? { clientId: id, clientSecret: secret } : null;
+  if (id && secret) return { clientId: id, clientSecret: secret };
+  return p === 'oura' && ouraSandbox() ? { clientId: 'sandbox', clientSecret: 'sandbox' } : null;
 }
