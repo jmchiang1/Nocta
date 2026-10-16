@@ -1,27 +1,26 @@
-/* Nocta — equipment replacement, Therapy (mobile + desktop). The card can't
- * know when a part was replaced, so a part's age exists only once the person
- * logs it ("Replaced today", or a date). Until then it says "Not logged" and
- * shows the recommended interval — never an invented age. */
+/* Nocta — equipment replacement, Therapy (mobile + desktop). The card shows
+ * where each part is in its replacement cycle; tapping a part opens it
+ * (screens/EquipmentSheet.jsx), where the replacement is logged. The CPAP
+ * card can't know when a part was replaced, so a part's age exists only once
+ * the person logs it. Until then it says "Not logged" — never an invented age. */
 import { useState, useEffect } from 'react';
+import { useStore } from '../lib/store.jsx';
 import { Icon } from './Icons.jsx';
 import { ProgressBar } from './Charts.jsx';
-import { equipmentStatus, logReplaced, onEquipment, TODAY } from '../lib/equipment.js';
-import { validDate } from '../lib/format.js';
-
-const EARLIEST = '2000-01-01';
-
-const ago = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+import { equipmentStatus, onEquipment, PARTS } from '../lib/equipment.js';
+import { partStatus } from '../screens/EquipmentSheet.jsx';
 
 /* `collapsible` folds the parts under the summary (mobile); the desktop page
  * has the room to keep them open, so there it's a plain header */
 export function EquipmentList({ collapsible = true }) {
+  const { openSheet } = useStore();
   const [parts, setParts] = useState(equipmentStatus);
   useEffect(() => onEquipment(() => setParts(equipmentStatus())), []);
-  const [editing, setEditing] = useState(null);
 
   const logged = parts.filter((p) => p.ageDays != null);
   const due = logged.filter((p) => p.ageDays >= p.lifespanDays * 0.8);
-  const [expanded, setExpanded] = useState(due.length > 0 || logged.length === 0);
+  // folded to start (the summary line already says what's due); tap to open
+  const [expanded, setExpanded] = useState(false);
   const open = !collapsible || expanded;
 
   const title = !logged.length
@@ -55,47 +54,50 @@ export function EquipmentList({ collapsible = true }) {
       )}
       {open &&
         parts.map((p) => {
-          const pct = p.ageDays == null ? null : p.ageDays / p.lifespanDays;
-          const dueSoon = pct != null && pct >= 0.8;
+          const s = partStatus(p);
           return (
-            <div className="equip-row" key={p.id}>
-              <div className="er-top">
+            <button
+              type="button"
+              className="equip-row"
+              key={p.id}
+              onClick={() => openSheet('equipment', { partId: p.id })}
+              aria-label={`${p.name}: ${s.text}. Log a replacement`}
+            >
+              <span className="er-top">
                 <span className="er-name">{p.name}</span>
-                <span className={`er-age${dueSoon ? ' alert' : ''}`}>
-                  {p.ageDays == null
-                    ? `Not logged · replace every ${p.lifespanDays} days`
-                    : `${p.ageDays} / ${p.lifespanDays} days · since ${ago(p.replacedOn)}${pct >= 1 ? ' · replace now' : dueSoon ? ' · replace soon' : ''}`}
-                </span>
-              </div>
-              {pct != null && <ProgressBar pct={Math.min(100, pct * 100)} color={dueSoon ? 'alert' : 'data'} height={6} />}
-              <div className="er-actions">
-                <button type="button" className="er-log" onClick={() => logReplaced(p.id, TODAY())}>
-                  Replaced today
-                </button>
-                {editing === p.id ? (
-                  <input
-                    type="date"
-                    className="er-date"
-                    min={EARLIEST}
-                    max={TODAY()}
-                    defaultValue={p.replacedOn ?? ''}
-                    aria-label={`When you last replaced the ${p.name.toLowerCase()}`}
-                    autoFocus
-                    onChange={(e) => {
-                      const v = validDate(e.target.value, EARLIEST, TODAY());
-                      if (v) logReplaced(p.id, v);
-                    }}
-                    onBlur={() => setEditing(null)}
-                  />
-                ) : (
-                  <button type="button" className="er-log subtle" onClick={() => setEditing(p.id)}>
-                    {p.replacedOn ? 'Change date' : 'Pick a date'}
-                  </button>
-                )}
-              </div>
-            </div>
+                <span className={`er-age tnum${s.alert ? ' alert' : ''}`}>{s.text}</span>
+                <Icon name="chevronRight" size={15} className="er-chev" />
+              </span>
+              <ProgressBar pct={s.pct} color={s.alert ? 'alert' : 'data'} height={6} />
+            </button>
           );
         })}
     </div>
+  );
+}
+
+/* what the Equipment section shows, for the (i) beside its heading. The
+ * replacement times come from the part list itself, so they can't drift. */
+const byLifespan = PARTS.reduce((m, p) => m.set(p.lifespanDays, [...(m.get(p.lifespanDays) ?? []), p.name]), new Map());
+
+export function EquipmentInfo() {
+  return (
+    <>
+      <p>
+        Mask cushions, filters and tubing wear out with use. Log the day you last replaced a part, and
+        Nocta keeps count of its age and shows when it’s due.
+      </p>
+      <ul className="tnum">
+        {[...byLifespan].map(([days, names]) => (
+          <li key={days}>
+            <strong>Every {days} days:</strong> {names.join(', ').toLowerCase().replace(/^./, (c) => c.toUpperCase())}
+          </li>
+        ))}
+      </ul>
+      <p>
+        A part shows as due once it’s 80% of the way to its replacement time. Your CPAP card can’t tell
+        when you swapped something, so a part says “Not logged” until you add the date.
+      </p>
+    </>
   );
 }

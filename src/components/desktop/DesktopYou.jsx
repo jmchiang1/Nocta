@@ -10,7 +10,7 @@ import { USER, CONNECTED_DEVICES, DEVICE_PHOTO, maskById } from '../../data/acco
 import { machineName } from '../../data/therapy.js';
 import { EditableAvatar, PhotoLinks } from '../EditableAvatar.jsx';
 import { Icon } from '../Icons.jsx';
-import { AccountContent } from '../../screens/AccountSheet.jsx';
+import { AccountContent, GuestAccountCard } from '../../screens/AccountSheet.jsx';
 import { SettingsContent } from '../../screens/SettingsSheet.jsx';
 
 export function DesktopYou() {
@@ -25,6 +25,7 @@ export function DesktopYou() {
     wearables,
     hasData,
   } = useStore();
+  const guest = !authUser || authUser.kind === 'guest';
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
   const machine = machineName(machineId);
   const mask = maskById(maskId);
@@ -38,36 +39,41 @@ export function DesktopYou() {
       </header>
 
       <div className="dash-settings">
-        <section className="profile-card dash-profile" aria-label="Your profile">
-          <div className="profile-head">
-            <EditableAvatar />
-            <div>
-              {/* who: from sign-in; nothing filled in when it isn't known */}
-              <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
-              {authUser?.name && authUser?.email && <div className="ph-sub">{authUser.email}</div>}
-              <PhotoLinks />
+        {/* a guest sees what an account would give them, not a profile of sample nights */}
+        {guest ? (
+          <GuestAccountCard />
+        ) : (
+          <section className="profile-card dash-profile" aria-label="Your profile">
+            <div className="profile-head">
+              <EditableAvatar />
+              <div>
+                {/* who: from sign-in; nothing filled in when it isn't known */}
+                <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
+                {authUser?.name && authUser?.email && <div className="ph-sub">{authUser.email}</div>}
+                <PhotoLinks />
+              </div>
             </div>
-          </div>
-          {/* plain facts, no scores: compliance and AHI live on Therapy and Trends */}
-          <dl className="dash-profile-facts">
-            <div>
-              <dt>On the machine</dt>
-              <dd className="tnum">{USER.daysOnTherapy} nights</dd>
-            </div>
-            <div>
-              <dt>Since</dt>
-              <dd>{USER.therapyStart ?? '—'}</dd>
-            </div>
-            <div>
-              <dt>Machine</dt>
-              <dd>{hasData ? machine.short : '—'}</dd>
-            </div>
-            <div>
-              <dt>Mask</dt>
-              <dd>{mask ? mask.name : 'Not set'}</dd>
-            </div>
-          </dl>
-        </section>
+            {/* plain facts, no scores: compliance and AHI live on Therapy and Trends */}
+            <dl className="dash-profile-facts">
+              <div>
+                <dt>On the machine</dt>
+                <dd className="tnum">{USER.daysOnTherapy} nights</dd>
+              </div>
+              <div>
+                <dt>Since</dt>
+                <dd>{USER.therapyStart ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>Machine</dt>
+                <dd>{hasData ? machine.short : '—'}</dd>
+              </div>
+              <div>
+                <dt>Mask</dt>
+                <dd>{mask ? mask.name : 'Not set'}</dd>
+              </div>
+            </dl>
+          </section>
+        )}
 
         {/* the order of a desktop settings page: devices, reminders, your
          * data, then how you're signed in, with the disclaimer last */}

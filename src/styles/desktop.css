@@ -823,6 +823,12 @@
   justify-content: center;
 }
 
+/* a part opens its popup: the row answers the pointer */
+.dash .equip-row:hover .er-name,
+.dash .equip-row:hover .er-chev {
+  color: var(--accent-soft);
+}
+
 /* side-by-side columns end together (Therapy, You, the Trends rail): the
  * columns stretch to the taller one, and the card that closes each column
  * grows to fill what's left, so no column stops short */
@@ -2004,4 +2010,29 @@ html:has(.desktop-modal-wrap) {
  * the pair (not the top, where the dialog's row puts other notes) */
 .desktop-modal-wrap .ci-actions:has(> .btn ~ .btn) > .confirm-row {
   order: 3;
+}
+
+/* the guest card on desktop: the text on the left, its one button inline
+ * on the right at its own width, rather than stacked full width */
+.desktop-stage .guest-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+}
+.desktop-stage .guest-card-top {
+  margin-bottom: 0;
+}
+.desktop-stage .guest-card .btn {
+  width: auto;
+  padding: 0 24px;
+  white-space: nowrap;
+}
+
+/* the section heading's (i) and its note: rectangular, as the rest of desktop */
+.desktop-stage .info-tip-btn {
+  border-radius: var(--r-sm);
+}
+.desktop-stage .info-tip-note {
+  border-radius: var(--r-md);
 }

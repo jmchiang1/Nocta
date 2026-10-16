@@ -16,19 +16,32 @@
  *             something the *user* did (a logged check-in), never as a
  *             verdict on the night.
  *
+ * `sound` ('land' | 'happy'): a little sound as he touches down (with
+ * `pop`), like a friendly game; Settings › Sound effects turns them off.
  * `pop`: he arrives with a little boing — rises, squashes, stretches and
  * settles (on the whole face, so it plays alongside any state above). Used
  * wherever he turns up on a new screen.
  *
  * At 24px and below it switches to a simpler optical size — wider eyes, no
  * craters, a bigger bite — so it never turns into a smudge. */
-import { useId } from 'react';
+import { useId, useEffect } from 'react';
+import { noxLand, noxHappy } from '../lib/sound.js';
+
+const SOUNDS = { land: noxLand, happy: noxHappy };
+const LAND_MS = 300; // the moment the pop's boing touches down
 
 const EYE_X = [37, 55]; // eye centres in the 100×100 box
 const EYE_Y = 55;
 
-export function Mascot({ size = 24, state = 'still', label, className = '', pop = false }) {
+export function Mascot({ size = 24, state = 'still', label, className = '', pop = false, sound }) {
   const id = useId().replace(/:/g, ''); // React ids contain colons, which break url(#…)
+  useEffect(() => {
+    if (!sound || !SOUNDS[sound]) return undefined;
+    const t = setTimeout(SOUNDS[sound], pop ? LAND_MS : 0);
+    return () => clearTimeout(t);
+    // once, as he arrives
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const small = size <= 24;
   const ew = small ? 12.4 : 8.5;
   const eh = small ? 18.7 : 17;

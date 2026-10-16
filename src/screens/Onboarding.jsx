@@ -884,7 +884,9 @@ function useFitScale(innerRef, outerRef) {
       const pad = parseFloat(getComputedStyle(inner.closest('.ob-content') ?? inner).paddingBottom) || 0;
       const room = bottom - outer.getBoundingClientRect().top - pad - 16;
       const scale = Math.max(0.4, Math.min(1, room / natural));
-      setFit({ scale, height: Math.round(natural * scale) });
+      // small changes don't re-fit: widening the card shortens it, which
+      // would otherwise nudge the scale back and forth
+      setFit((f) => (Math.abs(f.scale - scale) < 0.02 && f.height ? f : { scale, height: Math.round(natural * scale) }));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -913,7 +915,13 @@ function Expectations({ next }) {
         <div
           className="ob-why-stage"
           ref={inner}
-          style={fit.scale < 1 ? { transform: `scale(${fit.scale})`, transformOrigin: 'top center' } : undefined}
+          // shrunk to fit the height but still the full width: laid out wider
+          // by the same factor, then scaled from the left edge
+          style={
+            fit.scale < 1
+              ? { width: `${100 / fit.scale}%`, transform: `scale(${fit.scale})`, transformOrigin: 'top left' }
+              : undefined
+          }
         >
           <span className="ob-example-tag">Example</span>
           <WhyHorizon

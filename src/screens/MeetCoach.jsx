@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mascot } from '../components/Mascot.jsx';
 import { prefersReducedMotion } from '../lib/motion.jsx';
+import { noxLand, noxHop } from '../lib/sound.js';
 
 export const COACH_NAME = 'Nox';
 
@@ -88,7 +89,16 @@ export function MeetCoach({ next }) {
 
   useEffect(() => {
     if (still) return undefined;
-    const timers = [setTimeout(() => setMood('waking'), FLY), setTimeout(() => setMood('idle'), END + 200)];
+    const timers = [
+      setTimeout(() => {
+        setMood('waking');
+        noxLand(); // touch-down
+      }, FLY),
+      // a bip for each of his two happy hops
+      setTimeout(() => noxHop(0), HOP_AT),
+      setTimeout(() => noxHop(1), HOP_AT + HOPS[0].dur),
+      setTimeout(() => setMood('idle'), END + 200),
+    ];
     const history = [];
     let raf;
     let t0;

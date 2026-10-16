@@ -19,6 +19,7 @@ import { LegalSheet } from './screens/LegalSheet.jsx';
 import { DeviceDetailSheet } from './screens/DeviceDetailSheet.jsx';
 import { AddDeviceSheet } from './screens/AddDeviceSheet.jsx';
 import { MaskPickerSheet } from './screens/MaskPickerSheet.jsx';
+import { EquipmentSheet } from './screens/EquipmentSheet.jsx';
 import { MachinePickerSheet } from './screens/MachinePickerSheet.jsx';
 import { JournalSheet } from './screens/JournalSheet.jsx';
 import { DoctorSummarySheet } from './screens/DoctorSummarySheet.jsx';
@@ -55,6 +56,7 @@ const SHEETS = {
   deviceDetail: DeviceDetailSheet,
   addDevice: AddDeviceSheet,
   maskPicker: MaskPickerSheet,
+  equipment: EquipmentSheet,
   machinePicker: MachinePickerSheet,
   journal: JournalSheet,
   doctor: DoctorSummarySheet,

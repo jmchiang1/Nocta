@@ -4,9 +4,9 @@ import { NoDataBanner } from '../components/NoNights.jsx';
 import { useStore } from '../lib/store.jsx';
 import { cardDevice, machineName, deviceCells } from '../data/therapy.js';
 import { tracksCompliance } from '../data/compliance.js';
-import { EquipmentList } from '../components/EquipmentList.jsx';
+import { EquipmentList, EquipmentInfo } from '../components/EquipmentList.jsx';
+import { InfoTip } from '../components/InfoTip.jsx';
 import { openDoctorReport } from '../lib/doctorReport.js';
-import { deviceSource } from '../lib/deviceStatus.js';
 import { SdImportCard } from '../components/SdImportCard.jsx';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -21,7 +21,6 @@ export function TherapyScreen() {
   const device = cardDevice();
   const machine = machineName(machineId);
   const cells = deviceCells();
-  const source = deviceSource(cardData);
 
   /* the real export: a printable summary of the last 30 nights, opened in a
    * new tab with the print dialog (save as PDF from there) */
@@ -48,7 +47,6 @@ export function TherapyScreen() {
           <h3>
             {machine.brand} {machine.name}
           </h3>
-          <div className="dc-sub">{source}</div>
           {cells.length > 0 ? (
             <div className="dc-grid">
               {cells.map((c) => (
@@ -79,6 +77,9 @@ export function TherapyScreen() {
 
       <div className="section-head">
         <h3>Equipment</h3>
+        <InfoTip label="What Equipment shows">
+          <EquipmentInfo />
+        </InfoTip>
       </div>
       <EquipmentList />
 

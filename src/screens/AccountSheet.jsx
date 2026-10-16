@@ -7,11 +7,10 @@ import { Icon } from '../components/Icons.jsx';
 
 const PROVIDER_LOGO = { apple: '/brands/apple.svg', google: '/brands/google.svg' };
 
-/* how the account is signed in. A guest has nothing saved, so their way
- * forward is a real account: Sign in with Google leaves guest mode and runs
- * setup (or restores, if that Google account already uses Nocta). */
+/* how the account is signed in. A guest's way to an account is the card at
+ * the top of You (GuestAccountCard); here they can only leave guest mode. */
 function SignInSection({ onSignOut }) {
-  const { authUser, switchToAccount } = useStore();
+  const { authUser } = useStore();
   // the demo opened straight into the app (DevPanel) has no session: show the mock account
   const who = authUser;
   const guest = who?.kind === 'guest';
@@ -23,17 +22,7 @@ function SignInSection({ onSignOut }) {
         <h3>Sign in</h3>
       </div>
       <div className="list">
-        {guest ? (
-          <div className="list-row">
-            <div className="lr-icon bare">
-              <Icon name="lock" size={17} />
-            </div>
-            <div className="lr-main">
-              <div className="lr-title">No account</div>
-              <div className="lr-sub">Exploring with sample data. Nothing is saved.</div>
-            </div>
-          </div>
-        ) : (
+        {guest ? null : (
           who && (
             <div className="list-row">
               <div className="lr-icon bare">
@@ -47,7 +36,6 @@ function SignInSection({ onSignOut }) {
                 <div className="lr-title">
                   Signed in with {PROVIDERS[who.kind]?.label ?? 'email'}
                 </div>
-                <div className="lr-sub">{relay ? 'Using Hide My Email' : who.email}</div>
               </div>
             </div>
           )
@@ -58,27 +46,33 @@ function SignInSection({ onSignOut }) {
           </div>
           <div className="lr-main">
             <div className="lr-title">{guest ? 'Leave guest mode' : 'Sign out'}</div>
-            <div className="lr-sub">
-              {guest ? 'Back to the welcome screen' : 'You can sign back in from the welcome screen'}
-            </div>
           </div>
         </button>
       </div>
 
-      {guest && (
-        <div className="acct-save">
-          <p className="settings-note">
-            Make an account to bring in your own CPAP data and keep your check-ins.
-          </p>
-          <button className="btn primary" onClick={() => switchToAccount('signup')}>
-            Create an account
-          </button>
-          <button className="btn subtle" onClick={() => switchToAccount('signin')}>
-            I already have one
-          </button>
-        </div>
-      )}
     </>
+  );
+}
+
+/* a guest's You page leads with this instead of a profile: they're looking
+ * at sample nights, and an account is how their own come in and stay */
+/* one way out: back to the welcome screen, where they can make an account
+ * or sign in to one they have */
+export function GuestAccountCard() {
+  const { resetOnboarding } = useStore();
+  return (
+    <section className="guest-card" aria-label="You're looking around">
+      <div className="guest-card-top">
+        <h2>You’re looking around</h2>
+        <p>
+          These are sample nights. Make an account to bring in your own CPAP data and keep your
+          check-ins and settings.
+        </p>
+      </div>
+      <button className="btn primary" onClick={resetOnboarding}>
+        Create an account or sign in
+      </button>
+    </section>
   );
 }
 

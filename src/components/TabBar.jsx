@@ -16,11 +16,11 @@ const TABS = [
 ];
 
 export function TabBar() {
-  const { tab, setTab, tabBarHidden, authUser } = useStore();
+  const { tab, setTab, authUser } = useStore();
   const index = Math.max(0, TABS.findIndex((t) => t.id === tab));
 
   return (
-    <nav className={`tabbar${tabBarHidden ? ' tucked' : ''}`} aria-label="Primary">
+    <nav className="tabbar" aria-label="Primary">
       <span
         className="tab-indicator"
         aria-hidden="true"

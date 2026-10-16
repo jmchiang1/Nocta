@@ -10,6 +10,24 @@
  * back — nothing else changes (with it off, no audio context is ever made). */
 export const SOUND_ENABLED = false;
 
+/* Nox's little sounds (landing, hopping, a happy finish) are separate: on
+ * unless the person turns "Sound effects" off in Settings (this device). */
+const PREF_KEY = 'nocta.soundEffects.v1';
+export function soundEffectsOn() {
+  try {
+    return localStorage.getItem(PREF_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+export function setSoundEffects(on) {
+  try {
+    localStorage.setItem(PREF_KEY, on ? 'on' : 'off');
+  } catch {
+    /* ignore */
+  }
+}
+
 let ac = null;
 let master = null;
 let wet = null;
@@ -57,9 +75,10 @@ function noise() {
   return noiseBuf;
 }
 
-/* the context if it's running, else null (and a nudge to resume) */
-function ready() {
-  if (!SOUND_ENABLED || !init()) return null;
+/* the context if it's running, else null (and a nudge to resume). `nox`:
+ * one of Nox's sounds, which follow the Settings switch, not the splash's */
+function ready(nox = false) {
+  if (!(nox ? soundEffectsOn() : SOUND_ENABLED) || !init()) return null;
   if (ac.state !== 'running' && !resuming) {
     resuming = true;
     ac.resume()
@@ -72,10 +91,10 @@ function ready() {
 }
 
 // unlock on the first gesture (resume() only succeeds inside one)
-if (SOUND_ENABLED && typeof window !== 'undefined') {
+if (typeof window !== 'undefined') {
   const GESTURES = ['pointerdown', 'keydown', 'touchend'];
   const unlock = () => {
-    if (!init()) return;
+    if (!(SOUND_ENABLED || soundEffectsOn()) || !init()) return;
     ac.resume()
       .then(() => GESTURES.forEach((e) => window.removeEventListener(e, unlock, true)))
       .catch(() => {});
@@ -204,4 +223,58 @@ export function pad(freqs, { gain = 0.03, attack = 1.6 } = {}) {
       oscs.forEach((o) => o.stop(ac.currentTime + release + 0.05));
     },
   };
+}
+
+/* ---- Nox's sounds: short, bright and soft, like a friendly game ----
+ * a quick upward "boop" with a tiny glass ping on top; a smaller "bip" for
+ * a hop; three rising notes for a happy finish. Quiet by design. */
+function blip(t, from, to, { dur = 0.09, gain = 0.07, type = 'triangle', send = 0.25 } = {}) {
+  const o = ac.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(from, t);
+  o.frequency.exponentialRampToValueAtTime(to, t + dur * 0.7);
+  const env = ac.createGain();
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.linearRampToValueAtTime(gain, t + 0.008);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(env);
+  route(env, { send });
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+function ping(t, freq, { gain = 0.035, decay = 0.35 } = {}) {
+  const o = ac.createOscillator();
+  o.frequency.value = freq;
+  const env = ac.createGain();
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.linearRampToValueAtTime(gain, t + 0.004);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  o.connect(env);
+  route(env, { send: 0.45 });
+  o.start(t);
+  o.stop(t + decay + 0.02);
+}
+
+/* Nox lands on a page: "boop-bip" */
+export function noxLand() {
+  if (!ready(true)) return;
+  const t = ac.currentTime + 0.01;
+  blip(t, 330, 620, { dur: 0.11, gain: 0.08 });
+  blip(t + 0.085, 620, 990, { dur: 0.09, gain: 0.06 });
+  ping(t + 0.1, 1980);
+}
+
+/* a little hop */
+export function noxHop(step = 0) {
+  if (!ready(true)) return;
+  const t = ac.currentTime + 0.01;
+  blip(t, 520 + step * 90, 880 + step * 120, { dur: 0.07, gain: 0.05 });
+}
+
+/* he's pleased: three notes up, and a sparkle */
+export function noxHappy() {
+  if (!ready(true)) return;
+  const t = ac.currentTime + 0.01;
+  [523, 659, 784].forEach((f, i) => blip(t + i * 0.075, f, f * 1.02, { dur: 0.14, gain: 0.06, type: 'sine' }));
+  ping(t + 0.24, 2093, { gain: 0.03, decay: 0.5 });
 }

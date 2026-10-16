@@ -7,6 +7,7 @@ import { Icon } from '../Icons.jsx';
 import { Mascot } from '../Mascot.jsx';
 import { StatusPill } from '../StatusPill.jsx';
 import { prefersReducedMotion } from '../../lib/motion.jsx';
+import { noxLand } from '../../lib/sound.js';
 import { DesktopTonight } from './DesktopTonight.jsx';
 import { DesktopNoNights } from '../NoNights.jsx';
 import { DesktopTrends } from './DesktopTrends.jsx';
@@ -73,6 +74,7 @@ function flyNox(fromEl) {
   const LOOP_R = 70;
   let target = null;
   let lastSpark = 0;
+  let landed = false;
   let sparks = 0;
   const t0 = performance.now();
 
@@ -130,6 +132,10 @@ function flyNox(fromEl) {
         sparkle(c0.x + dx, c0.y + dy, sparks++);
       }
     } else {
+      if (!landed) {
+        landed = true;
+        noxLand(); // he touches down in the dialog
+      }
       // touch down: squash, then settle at the dialog's size
       const g = (t - LAND) / (1 - LAND);
       const b = Math.sin(Math.PI * g);

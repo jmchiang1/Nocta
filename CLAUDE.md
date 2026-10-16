@@ -49,7 +49,11 @@ re-rendering are materially cleaner as components. Everything else in the handof
   nights are cached on the device by date (`src/lib/wearables.js`) and feed only the
   "Your body overnight" cards (`src/lib/bodySource.js`), never insights or escalation.
   Needs a signed-in account; other devices are "coming soon". See `docs/WEARABLES_SETUP.md`.
-- **AI (future)**: OpenAI API with Structured Outputs (strict JSON schema mode).
+- **AI (Nox chat)**: Claude (`claude-opus-5-5`) through the Supabase edge function
+  `nocta-nox`, signed-in accounts only, daily question cap. The app sends a plain-text
+  summary of the person's data with each question (`src/lib/nox.js`); nothing is stored
+  but a per-day count. Guests get the pre-written Nox in `src/data/coach.js`. The
+  why-card insights are still the rule engine (`src/lib/insights.js`), not an LLM.
 - **Data source (future)**: SleepHQ API (OAuth2 password grant).
 - **Hosting target**: static site host (Vercel / Netlify / GitHub Pages). A serverless
   function layer is added only when real APIs come online (BUILD_PLAN Phases 3–4).

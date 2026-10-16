@@ -706,7 +706,8 @@ export function ProgressBar({ pct, color = 'accent', gradient = false, marker, h
     labels: [''],
     datasets: [
       {
-        data: [val],
+        // nothing yet draws nothing (a rounded 0 still shows as a sliver)
+        data: [val > 0 ? val : null],
         backgroundColor: gradient
           ? (ctx) => {
               const { chart } = ctx;

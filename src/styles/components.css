@@ -50,6 +50,19 @@ button,
 .segmented {
   border: 0 !important;
 }
+/* …except the hairline between rows: a row that happens to be a button
+ * (settings and list rows, equipment parts, the calendar's list, the "open
+ * the full night" / "ask Nox" / mask rows) keeps the divider it draws */
+:is(.list-row, .equip-row):not(:last-child),
+.nl-list li:not(:last-child) > button.nl-row,
+.equip.open .equip-summary {
+  border-bottom: 1px solid var(--hairline) !important;
+}
+.row-cta,
+.dc-mask,
+.ask-row:not(.insight-list .ask-row) {
+  border-top: 1px solid var(--hairline) !important;
+}
 .btn {
   display: flex;
   align-items: center;
@@ -1744,6 +1757,13 @@ html:has(.phone .sheet) body {
   border-top: 1px solid var(--hairline);
   background: var(--bg-base);
   flex-shrink: 0;
+}
+/* more than one button: stacked with a little air between (desktop puts
+ * them side by side — desktop.css) */
+.sheet-foot:has(> .btn ~ .btn) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* ============ JOURNAL — month accordion (Sleep journal subpage) ============

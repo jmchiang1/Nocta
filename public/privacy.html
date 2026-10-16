@@ -48,9 +48,26 @@
         erases it, and so does clearing your browser's data for this site. If you use Nocta on
         another device, that device keeps its own copy.
       </p>
+
+      <h2>When you ask Nox a question</h2>
       <p>
-        Nox, Nocta's coach, runs in your browser using fixed rules. Your data is not sent to an
-        AI service. If that ever changes, we'll update this policy before it does.
+        Without an account, Nox answers from replies written ahead of time, in your browser.
+        Nothing is sent anywhere.
+      </p>
+      <p>
+        With an account, Nox uses an AI model from <strong>Anthropic</strong> to answer. When you
+        send a question, Nocta builds a summary of your data on your device and sends it with your
+        question and the chat so far. The summary covers your recent nights' numbers (hours,
+        breathing events, leak, pressure), your check-in tags, your setup answers, your equipment
+        dates, and wearable summaries if you've connected one. It does not include your name, your
+        email, or minute-by-minute data.
+      </p>
+      <p>
+        Nocta's server passes this to Anthropic and sends the answer back to you. It does not keep
+        your questions, the answers, or the summary, only a count of how many questions you've asked
+        today, so it can set a daily limit. Anthropic processes the request under its commercial
+        terms, which don't allow it to train its models on this data. Chats are not saved: closing
+        Nox clears the conversation.
       </p>
 
       <h2>What our servers keep</h2>
@@ -73,6 +90,10 @@
         <li>Which company it's for, when you connected, and when Nocta last synced.</li>
         <li>For Withings, the user number Withings assigns you.</li>
       </ul>
+      <p>
+        <strong>Nox.</strong> A count of how many questions you've asked Nox each day. Not the
+        questions or the answers.
+      </p>
       <p>
         The access key never reaches your browser. When Nocta syncs, our server uses the key to ask
         the company for your recent nights and passes them straight to your browser. Our server does
@@ -103,6 +124,7 @@
       <ul>
         <li><strong>Supabase</strong> stores your account and wearable access keys, on servers in the United States.</li>
         <li><strong>Vercel</strong> hosts the website. Like most web hosts, it records basic request details such as your IP address.</li>
+        <li><strong>Anthropic</strong> runs the AI model behind Nox's answers, if you ask Nox a question with an account.</li>
         <li><strong>Google Fonts</strong> supplies Nocta's typefaces. Your browser downloads them from Google, which sees your IP address.</li>
         <li><strong>Google</strong>, if you sign in with Google or connect a Fitbit.</li>
         <li><strong>Oura, Whoop and Withings</strong>, only if you connect one of them.</li>

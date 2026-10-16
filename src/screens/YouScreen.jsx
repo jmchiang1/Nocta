@@ -14,11 +14,12 @@ import { EditableAvatar, PhotoLinks } from '../components/EditableAvatar.jsx';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { SettingsContent } from './SettingsSheet.jsx';
-import { AccountContent } from './AccountSheet.jsx';
+import { AccountContent, GuestAccountCard } from './AccountSheet.jsx';
 
 export function YouScreen() {
   const { openSheet, deviceConnections, machineId, authUser, authConfigured, wearables, resetOnboarding, hasData } =
     useStore();
+  const guest = !authUser || authUser.kind === 'guest';
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
 
   return (
@@ -27,29 +28,34 @@ export function YouScreen() {
         <h1>You</h1>
       </header>
 
-      <section className="profile-card" aria-label="Your profile">
-        <div className="profile-head">
-          <EditableAvatar />
-          <div>
-            {/* who: from sign-in. What: from the card. Nothing filled in */}
-            <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
-            {/* the machine and its nights come from the card: none yet, none shown */}
-            {hasData && <div className="ph-sub">{machineName(machineId).name}</div>}
-            {/* one plain milestone; compliance and AHI live on Therapy and Trends */}
-            <div className="ph-meta tnum">
-              {hasData ? (
-                <>
-                  {USER.daysOnTherapy} nights on the machine
-                  {USER.therapyStart && ` · since ${USER.therapyStart}`}
-                </>
-              ) : (
-                'No nights yet'
-              )}
+      {/* a guest sees what an account would give them, not a profile of sample nights */}
+      {guest ? (
+        <GuestAccountCard />
+      ) : (
+        <section className="profile-card" aria-label="Your profile">
+          <div className="profile-head">
+            <EditableAvatar />
+            <div>
+              {/* who: from sign-in. What: from the card. Nothing filled in */}
+              <div className="ph-name">{authUser?.name ?? authUser?.email ?? 'Your profile'}</div>
+              {/* the machine and its nights come from the card: none yet, none shown */}
+              {hasData && <div className="ph-sub">{machineName(machineId).name}</div>}
+              {/* one plain milestone; compliance and AHI live on Therapy and Trends */}
+              <div className="ph-meta tnum">
+                {hasData ? (
+                  <>
+                    {USER.daysOnTherapy} nights on the machine
+                    {USER.therapyStart && ` · since ${USER.therapyStart}`}
+                  </>
+                ) : (
+                  'No nights yet'
+                )}
+              </div>
+              <PhotoLinks />
             </div>
-            <PhotoLinks />
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <div className="section-head">
         <h3>Connected devices</h3>

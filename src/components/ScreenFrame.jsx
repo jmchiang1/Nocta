@@ -7,17 +7,10 @@
  *  - No pull-to-refresh: data only arrives by SD card import (Therapy), so
  *    there's nothing for a pull to fetch. */
 import { useRef, useState } from 'react';
-import { useStore } from '../lib/store.jsx';
 import { StatusBar } from './StatusBar.jsx';
 import { TonightSky } from './NightSky.jsx';
 
 const COMPACT_AT = 64; // px scrolled before the compact title appears
-/* tab bar compact/full: compacting needs a deliberate, sustained scroll down
- * (so a small nudge while reading doesn't shrink the nav); restoring is quick */
-const BAR_HIDE_AFTER = 80; // px of continuous downward travel before it compacts
-const BAR_HIDE_BELOW = 160; // never compact while this close to the top
-const BAR_SHOW_AFTER = 12; // px of upward travel before it's full size again
-const BAR_SHOW_NEAR = 40; // always full size this close to the top/bottom
 
 /* `sky`: Tonight's night-sky backdrop (components/NightSky.jsx), pinned to
  * the top of the screen behind the content. Pass a weather condition
@@ -27,12 +20,8 @@ const BAR_SHOW_NEAR = 40; // always full size this close to the top/bottom
  * (Tonight only — its day and date). Other tabs just scroll, with a short fade
  * under the status bar so content never runs into the clock. */
 export function ScreenFrame({ title, children, className = '', sky = false, stickyTitle = false }) {
-  const { setTabBarHidden } = useStore();
   const scrollRef = useRef(null);
   const [compact, setCompact] = useState(false);
-  const prevY = useRef(0);
-  const dir = useRef(0); // +1 scrolling down, -1 scrolling up
-  const anchor = useRef(0); // scrollTop where the current direction began
 
   function onScroll(e) {
     const el = e.currentTarget;
@@ -41,18 +30,7 @@ export function ScreenFrame({ title, children, className = '', sky = false, stic
     // under the clear title bar (CSS mask) without re-rendering
     el.style.setProperty('--k', Math.min(1, y / COMPACT_AT).toFixed(3));
     setCompact(y > COMPACT_AT);
-    const delta = y - prevY.current;
-    prevY.current = y;
-    if (delta === 0) return;
-    const d = delta > 0 ? 1 : -1;
-    if (d !== dir.current) {
-      dir.current = d;
-      anchor.current = y - delta;
-    }
-    const nearEdge = y < BAR_SHOW_NEAR || y + el.clientHeight > el.scrollHeight - BAR_SHOW_NEAR;
-    if (nearEdge) setTabBarHidden(false);
-    else if (d > 0 && y > BAR_HIDE_BELOW && y - anchor.current > BAR_HIDE_AFTER) setTabBarHidden(true);
-    else if (d < 0 && anchor.current - y > BAR_SHOW_AFTER) setTabBarHidden(false);
+    // the tab bar stays as it is while scrolling (it no longer tucks away)
   }
 
   return (

@@ -6,9 +6,9 @@ import { NoDataBanner } from '../NoNights.jsx';
 import { useStore } from '../../lib/store.jsx';
 import { cardDevice, machineName, deviceCells } from '../../data/therapy.js';
 import { tracksCompliance } from '../../data/compliance.js';
-import { EquipmentList } from '../EquipmentList.jsx';
+import { EquipmentList, EquipmentInfo } from '../EquipmentList.jsx';
+import { InfoTip } from '../InfoTip.jsx';
 import { openDoctorReport } from '../../lib/doctorReport.js';
-import { deviceSource } from '../../lib/deviceStatus.js';
 import { SdImportCard } from '../SdImportCard.jsx';
 import { Icon } from '../Icons.jsx';
 import { MaskCard } from '../MaskCard.jsx';
@@ -18,7 +18,6 @@ export function DesktopTherapy() {
   const { machineId, openSheet, showToast, cardData, hasData, authUser, profile } = useStore();
   // compliance only for an account that said it's in a window (data/compliance.js)
   const compliance = hasData && tracksCompliance(authUser, profile.answers);
-  const source = deviceSource(cardData);
   // the card names the machine and its settings; nothing is filled in
   const device = cardDevice();
   const machine = machineName(machineId);
@@ -59,7 +58,6 @@ export function DesktopTherapy() {
                 <h3>
                   {machine.brand} {machine.name}
                 </h3>
-                <div className="dc-sub">{source}</div>
                 {cells.length > 0 ? (
                   <div className="dc-grid">
                     {cells.map((c) => (
@@ -114,6 +112,9 @@ export function DesktopTherapy() {
         <div className="dash-col">
           <div className="section-head">
             <h3>Equipment</h3>
+            <InfoTip label="What Equipment shows">
+              <EquipmentInfo />
+            </InfoTip>
           </div>
           <EquipmentList collapsible={false} />
         </div>

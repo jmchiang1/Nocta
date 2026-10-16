@@ -9,6 +9,7 @@
  * Parsing runs here, in the browser (lib/resmed); the result is kept on this
  * device (lib/importStore). Numbers are shown plainly — no good/bad colouring
  * of clinical metrics (CLAUDE.md safety rails). */
+import { noxHappy } from '../lib/sound.js';
 import { prefersReducedMotion } from '../lib/motion.jsx';
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../lib/store.jsx';
@@ -353,6 +354,7 @@ export function CardImport({ onFinish, onCancel }) {
       setResult(saved);
       // a beat for Nox to be pleased about it, then the result rises in
       setPhase('celebrate');
+      noxHappy();
       await new Promise((r) => setTimeout(r, prefersReducedMotion() ? 0 : CELEBRATE_MS));
       setJustRead(true);
       setPhase('done');

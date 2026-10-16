@@ -74,11 +74,8 @@ export function StoreProvider({ children }) {
    * re-tap — the shell uses it to slide the incoming screen from the
    * direction of travel */
   const [tabDir, setTabDir] = useState(0);
-  /* the tab bar compacts while scrolling down (see ScreenFrame) */
-  const [tabBarHidden, setTabBarHidden] = useState(false);
   const tabRef = useRef('tonight');
   const setTab = useCallback((next) => {
-    setTabBarHidden(false);
     setTabDir(Math.sign(TAB_ORDER.indexOf(next) - TAB_ORDER.indexOf(tabRef.current)));
     tabRef.current = next;
     setTabState(next);
@@ -554,8 +551,6 @@ export function StoreProvider({ children }) {
     setTab,
     tabNonce,
     tabDir,
-    tabBarHidden,
-    setTabBarHidden,
     sheetLeaving,
     setSheetLeaving,
     toast,

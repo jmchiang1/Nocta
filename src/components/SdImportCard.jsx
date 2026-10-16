@@ -20,7 +20,7 @@ export function SdImportCard({ card, onOpen }) {
           <p>
             {card
               ? `${card.nights.length} nights · ${shortDate(card.range.first, { month: 'short', year: 'numeric' })} to ${shortDate(card.range.last)}`
-              : 'Bring in your real nights from the card in your machine. It takes about a minute, and the card is read on this device.'}
+              : 'Upload your CPAP data from your device'}
           </p>
         </div>
       </div>

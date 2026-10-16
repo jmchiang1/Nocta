@@ -1,6 +1,7 @@
 /* Nocta — Settings subpage. Full-screen sheet from the You tab.
  * Profile photo, sign-in & security, reminders, export and delete, and the
  * medical disclaimer. */
+import { soundEffectsOn, setSoundEffects, noxHop } from '../lib/sound.js';
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { PRIVACY_NOTE, MEDICAL_NOTE } from '../data/account.js';
@@ -34,6 +35,7 @@ export function SettingsContent({ children }) {
   const { profile, authUser, pushSheet: openSheet, showToast } = useStore();
   const missing = missingQuestions(profile).length;
   const [exporting, setExporting] = useState(false);
+  const [sounds, setSounds] = useState(soundEffectsOn);
   const guest = !authUser || authUser.kind === 'guest';
 
   return (
@@ -52,7 +54,6 @@ export function SettingsContent({ children }) {
                 </div>
                 <div className="lr-main">
                   <div className="lr-title">Change password</div>
-                  <div className="lr-sub">{authUser.email}</div>
                 </div>
                 <Icon name="chevronRight" size={17} />
               </button>
@@ -63,10 +64,6 @@ export function SettingsContent({ children }) {
                 </div>
                 <div className="lr-main">
                   <div className="lr-title">Signed in with {authUser.kind === 'apple' ? 'Apple' : 'Google'}</div>
-                  <div className="lr-sub">
-                    There’s no Nocta password to change. Your password is managed by your{' '}
-                    {authUser.kind === 'apple' ? 'Apple ID' : 'Google account'}.
-                  </div>
                 </div>
               </div>
             )}
@@ -85,7 +82,6 @@ export function SettingsContent({ children }) {
           </div>
           <div className="lr-main">
             <div className="lr-title">Morning check-in reminder</div>
-            <div className="lr-sub">7:00 AM. Sent by the iPhone app once it’s out; the web version can’t send reminders</div>
           </div>
           <Switch on={Boolean(profile.checkinReminder)} onChange={setCheckinReminder} label="Morning check-in reminder" />
         </div>
@@ -96,11 +92,6 @@ export function SettingsContent({ children }) {
             </div>
             <div className="lr-main">
               <div className="lr-title">Quick questions</div>
-              <div className="lr-sub">
-                {missing
-                  ? `Now and then on Tonight, ask the ${missing === 1 ? 'question' : `${missing} questions`} I skipped`
-                  : 'You’ve answered everything'}
-              </div>
             </div>
             <Switch
               on={!profile.reminders.off}
@@ -109,6 +100,30 @@ export function SettingsContent({ children }) {
             />
           </div>
         )}
+      </div>
+
+      {/* ---- sound: Nox's little sounds as he lands and hops (lib/sound.js) ---- */}
+      <div className="section-head">
+        <h3>Sound</h3>
+      </div>
+      <div className="list">
+        <div className="list-row">
+          <div className="lr-icon bare">
+            <Icon name="sound" size={17} />
+          </div>
+          <div className="lr-main">
+            <div className="lr-title">Sound effects</div>
+          </div>
+          <Switch
+            on={sounds}
+            onChange={(on) => {
+              setSoundEffects(on);
+              setSounds(on);
+              if (on) noxHop(1); // a little hello
+            }}
+            label="Sound effects"
+          />
+        </div>
       </div>
 
       {/* ---- your data ---- */}
@@ -135,7 +150,6 @@ export function SettingsContent({ children }) {
           </div>
           <div className="lr-main">
             <div className="lr-title">Export my data</div>
-            <div className="lr-sub">{exporting ? 'Preparing your file…' : 'Download everything Nocta holds, as a JSON file'}</div>
           </div>
         </button>
         <button className="list-row" onClick={() => openSheet('deleteAccount')}>
@@ -144,18 +158,12 @@ export function SettingsContent({ children }) {
           </div>
           <div className="lr-main">
             <div className="lr-title destructive">{guest ? 'Erase this device’s data' : 'Delete account'}</div>
-            <div className="lr-sub">{guest ? 'Remove everything Nocta keeps here' : 'Permanently delete your account and data'}</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
       </div>
 
       {children}
-
-      <div className="section-head">
-        <h3>Medical disclaimer</h3>
-      </div>
-      <p className="settings-note">{MEDICAL_NOTE}</p>
 
       {/* ---- privacy and terms: subpages (LegalSheet) showing the public
        * pages' text (public/privacy.html, public/terms.html) ---- */}
@@ -169,7 +177,6 @@ export function SettingsContent({ children }) {
           </div>
           <div className="lr-main">
             <div className="lr-title">Privacy Policy</div>
-            <div className="lr-sub">What Nocta keeps, and where</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
@@ -179,11 +186,16 @@ export function SettingsContent({ children }) {
           </div>
           <div className="lr-main">
             <div className="lr-title">Terms of Service</div>
-            <div className="lr-sub">The rules for using Nocta</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
       </div>
+
+      {/* last on the page: what Nocta is, and isn't */}
+      <div className="section-head">
+        <h3>Medical disclaimer</h3>
+      </div>
+      <p className="settings-note">{MEDICAL_NOTE}</p>
     </>
   );
 }
