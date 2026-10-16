@@ -1,6 +1,6 @@
 /* Nocta — Nox with Claude behind it (supabase/functions/nocta-nox), for
- * signed-in accounts. Guests and the mock sign-in keep the pre-written Nox
- * (data/coach.js).
+ * signed-in accounts, when switched on (NOX_SMART_ON below). Guests, the mock
+ * sign-in, and everyone while it's off keep the pre-written Nox (data/coach.js).
  *
  * The CPAP data stays on this device. When someone asks a question, this
  * builds a plain-text summary of it: nightly numbers, check-in tags, setup
@@ -17,8 +17,13 @@ import { equipmentStatus } from './equipment.js';
 import { LIVE_WEARABLES, wearableNight } from './wearables.js';
 import { deviceByKey, MASKS } from '../data/account.js';
 
+/* The smart Nox is built but off until the Claude API key is set on the
+ * server and the function deployed (docs/NOX_SETUP.md). With it off, everyone
+ * gets the pre-written Nox and nothing mentions a smarter one. */
+export const NOX_SMART_ON = import.meta.env.VITE_NOX_SMART === '1';
+
 /* the real Nox needs a real account: the server counts questions per person */
-export const noxLiveFor = (authUser) => authConfigured && !!authUser && authUser.kind !== 'guest';
+export const noxLiveFor = (authUser) => NOX_SMART_ON && authConfigured && !!authUser && authUser.kind !== 'guest';
 
 const SUMMARY_NIGHTS = 90;
 const USUAL_NIGHTS = 30;

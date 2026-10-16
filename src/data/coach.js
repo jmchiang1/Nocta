@@ -12,6 +12,10 @@ import { nightSeries } from '../lib/nightSeries.js';
 import { baselineFor } from '../lib/insights.js';
 import { equipmentStatus } from '../lib/equipment.js';
 import { getCard } from '../lib/dataset.js';
+import { NOX_SMART_ON } from '../lib/nox.js';
+
+/* only mention the smart Nox once it exists (lib/nox.js › NOX_SMART_ON) */
+const SIGN_IN_FOR_SMART = NOX_SMART_ON ? ' Sign in, and I can answer questions about your own nights.' : '';
 
 /* recent nights where central events ran above 5 an hour (the hard
  * escalation line), newest first, with the usual level before them */
@@ -356,7 +360,9 @@ const PRESETS_FIRST = [
   },
   {
     match: ['smart nox', 'smart version', 'sign in', 'log in', 'login', 'create an account', 'ai version', 'real answers', 'basic version'],
-    text: "Right now I'm the basic version of Nox: my answers are written ahead of time. Sign in with an account and I can answer real questions about your own nights. You'll find it under **You › Account**.",
+    text: NOX_SMART_ON
+      ? "Right now I'm the basic version of Nox: my answers are written ahead of time. Sign in with an account and I can answer real questions about your own nights. You'll find it under **You › Account**."
+      : "You can sign in or create an account under **You › Account**. My answers here are written ahead of time, so I know common questions about CPAP, your mask, and your numbers.",
   },
 ];
 
@@ -400,7 +406,7 @@ const SMALLTALK = [
   },
   {
     match: [/who are you|what are you|your name|are you (a )?(bot|robot|ai|human|real|person)|chatgpt|\bgpt\b|claude/],
-    text: "I'm **Nox**, Nocta's coach. I explain your CPAP data in plain language. In this basic version my answers are written ahead of time; sign in and I can answer questions about your own nights.",
+    text: `I'm **Nox**, Nocta's coach. I explain your CPAP data in plain language. My answers here are written ahead of time.${SIGN_IN_FOR_SMART}`,
   },
   {
     match: [/what can you do|how do you work|what do you know|^help\W*$|can you help/],
@@ -412,7 +418,7 @@ const SMALLTALK = [
   },
   {
     match: [/stupid|dumb|useless|hate you|shut up|you suck|worst app/],
-    text: "Sorry I'm not getting it right. I'm the basic version, so I only know common questions. Try asking about your AHI, your leak, or your mask, or sign in for the version that can answer anything about your nights.",
+    text: `Sorry I'm not getting it right. My answers are written ahead of time, so I only know common questions. Try asking about your AHI, your leak, or your mask.${SIGN_IN_FOR_SMART}`,
   },
   {
     match: [/love you|marry me|you're cute|youre cute/],
@@ -608,8 +614,7 @@ const REPLIES = [
   },
 ];
 
-const DEFAULT_REPLY =
-  "I don't have an answer written for that one yet. I know common questions about CPAP, your mask, and your numbers: try *What was my AHI last night?* or *How can I reduce my leak?* Sign in, and I can answer questions about your own nights.";
+const DEFAULT_REPLY = `I don't have an answer written for that one yet. I know common questions about CPAP, your mask, and your numbers: try *What was my AHI last night?* or *How can I reduce my leak?*${SIGN_IN_FOR_SMART}`;
 
 const ALL_REPLIES = [...SAFETY, ...PRESETS_FIRST, ...REPLIES, ...PRESETS_LATE, ...SMALLTALK];
 const matches = (q, m) => (m instanceof RegExp ? m.test(q) : q.includes(m));

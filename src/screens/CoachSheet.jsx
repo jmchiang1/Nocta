@@ -2,13 +2,13 @@
  *
  * Signed in: the real Nox. Each question goes to Claude with a summary of the
  * person's data (lib/nox.js → supabase/functions/nocta-nox) and the answer
- * streams in. Guests: the pre-written Nox (data/coach.js), keyword-matched
- * replies written to the same safety rails, with a note that signing in
- * gets the smart version. */
+ * streams in. Guests (and everyone while the smart Nox is off, lib/nox.js ›
+ * NOX_SMART_ON): the pre-written Nox (data/coach.js), keyword-matched replies
+ * written to the same safety rails, opening with a note that says so. */
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { SUGGESTED_PROMPTS, contextOpener, coachReply } from '../data/coach.js';
-import { noxLiveFor, askNox } from '../lib/nox.js';
+import { noxLiveFor, askNox, NOX_SMART_ON } from '../lib/nox.js';
 import { FIXTURES } from '../data/fixtures.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -230,8 +230,20 @@ export function CoachSheet() {
           </div>
         )}
 
-        {/* a guest is talking to the pre-written Nox: say what signing in gets */}
-        {authConfigured && !live && (
+        {/* the pre-written Nox says so. Once the smart Nox is on, a guest also
+         * hears that signing in gets it. */}
+        {!NOX_SMART_ON && (
+          <div className="msg coach">
+            <div className="msg-row">
+              <Mascot size={24} state="still" />
+              <div className="bubble coach">
+                I’m the basic version of Nox, with answers written ahead of time. I know common
+                questions about CPAP, your mask, and your numbers.
+              </div>
+            </div>
+          </div>
+        )}
+        {NOX_SMART_ON && authConfigured && !live && (
           <div className="msg coach">
             <div className="msg-row">
               <Mascot size={24} state="still" />
