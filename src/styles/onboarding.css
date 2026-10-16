@@ -109,7 +109,7 @@
 }
 /* top-anchored, so every title lands in the same place step to step */
 .ob-content {
-  padding: 28px 24px 28px;
+  padding: 20px 24px 20px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -139,13 +139,48 @@
 }
 
 .ob-title {
-  margin: 0 0 12px;
+  margin: 0;
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 32px;
   line-height: 1.12;
   letter-spacing: -0.03em;
   color: var(--text-primary);
+}
+/* ---- a step's title and its (i): why-we-ask opens as a card over the
+ * answers, so the step never has to scroll (Onboarding.jsx › StepTitle) ---- */
+.ob-head {
+  position: relative;
+  z-index: 5;
+}
+.ob-title-info {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px -10px -2px; /* a 44 px target around a 20 px icon */
+  vertical-align: middle;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-tertiary);
+  transition: color var(--dur-fast) ease;
+}
+.ob-title-info.on,
+.ob-title-info:hover {
+  color: var(--text-primary);
+}
+.ob-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-width: none;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  background: var(--surface-3);
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.7);
+  font-size: 16px;
+  animation: popIn 0.22s var(--ease-out) both;
 }
 .ob-copy {
   margin: 0;
@@ -165,7 +200,7 @@
 /* ---- labelled fields ---- */
 .ob-field {
   width: 100%;
-  margin-top: 28px;
+  margin-top: 20px;
 }
 .ob-field-label {
   font-size: 15px;
@@ -177,7 +212,7 @@
   margin-top: 10px;
 }
 .ob-filters {
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
 /* ---- option cards ---- */
@@ -185,9 +220,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  margin-top: 28px;
+  margin-top: 22px;
 }
 .ob-field .ob-chips {
   margin-top: 0;
@@ -198,8 +233,8 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  min-height: 60px;
-  padding: 16px 18px;
+  min-height: 52px;
+  padding: 12px 16px;
   border-radius: var(--r-lg);
   background: var(--glass-fill);
   border: 1px solid var(--hairline-strong);
@@ -217,7 +252,7 @@
   transform: scale(0.985);
 }
 .ob-option.selected {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface-1));
   border-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 .ob-option > svg {
@@ -252,10 +287,9 @@
   display: flex;
   align-items: stretch;
   width: 100%;
-  min-height: 60px;
+  min-height: 52px;
   border-radius: var(--r-lg);
   background: var(--glass-fill);
-  border: 1px solid var(--hairline-strong);
   overflow: hidden;
   transition:
     border-color var(--dur-fast) ease,
@@ -275,7 +309,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 6px 16px 18px;
+  padding: 12px 6px 12px 16px;
   font-family: inherit;
   font-size: 17px;
   font-weight: 500;
@@ -1599,7 +1633,7 @@
   color: var(--data-1);
 }
 /* ---- splash: the peek, top right ----
- * a small glass pill, level with the back button on the screens that follow;
+ * a small flat pill, level with the back button on the screens that follow;
  * the button itself is 48pt tall for the touch target */
 .ob-intro-peek {
   position: absolute;
@@ -1619,13 +1653,10 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
-  background: var(--glass-fill-light);
-  border: 1px solid var(--hairline-strong);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.1);
 }
 .ob-intro-peek:active span {
-  background: var(--glass-fill-light-hover);
+  background: rgba(255, 255, 255, 0.16);
 }
 .ob-intro.dawn .ob-intro-peek {
   opacity: 1;
@@ -1754,4 +1785,79 @@
   place-items: center;
   background: color-mix(in srgb, var(--data-1) 14%, transparent);
   color: var(--data-1);
+}
+
+/* ---- short screens (a phone with Safari's bars showing): every step still
+ * fits without scrolling — slightly smaller titles, 48 px answer rows (the
+ * touch-target floor), tighter gaps, a shorter mask list ---- */
+@media (max-height: 780px) {
+  .ob-content {
+    padding: 14px 24px 14px;
+  }
+  .ob-title {
+    font-size: 28px;
+  }
+  .ob-chips {
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .ob-field {
+    margin-top: 16px;
+  }
+  .ob-field-label {
+    margin-bottom: 8px;
+  }
+  .ob-filters {
+    margin-top: 16px;
+  }
+  .ob-option {
+    min-height: 48px;
+    padding: 10px 16px;
+  }
+  .ob-cond-chip {
+    min-height: 48px;
+  }
+  .ob-cond-main {
+    padding: 10px 6px 10px 16px;
+  }
+  .ob-mask-results {
+    max-height: 220px;
+  }
+  .ob-foot {
+    padding-top: 8px;
+  }
+}
+/* the example card's slot: it scales inside, the slot takes its new height */
+.ob-fit {
+  position: relative;
+  margin-top: 30px;
+}
+.ob-fit > .ob-why-stage {
+  margin-top: 0;
+}
+
+/* very short screens (iPhone SE-sized, or bars showing on a small phone) */
+@media (max-height: 700px) {
+  .ob-content {
+    padding: 10px 24px 10px;
+  }
+  .ob-title {
+    font-size: 26px;
+  }
+}
+/* the wearables sit two to a row once the screen is short, so seven answers
+ * take four rows */
+@media (max-height: 740px) {
+  .ob-chips.ob-wear {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ob-chips.ob-wear .ob-option {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .ob-chips.ob-wear .ob-option-label {
+    font-size: 15px;
+    line-height: 1.2;
+  }
 }

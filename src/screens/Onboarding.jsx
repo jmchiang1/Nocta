@@ -9,7 +9,7 @@
  * Setup progress is kept on the device as it goes (DRAFT_KEY): Google sign-in
  * leaves the page and an email confirmation link may open in a new tab, and
  * neither should cost the person eleven steps. Pairing/health are mocked. */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useId } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -137,6 +137,51 @@ function Intro({ settled, onStart, onGuest }) {
           I already have an account
         </button>
       </div>
+    </div>
+  );
+}
+
+/* a step's title, with why-we-ask tucked behind an (i) beside it so every
+ * screen fits without scrolling. The explanation opens as a small card over
+ * the content (it doesn't push the answers down); tap again, tap outside or
+ * press Escape to close it. */
+function StepTitle({ title, children }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const away = (e) => {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    };
+    const esc = (e) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('pointerdown', away);
+    window.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+  return (
+    <div className="ob-head" ref={ref}>
+      <h1 className="ob-title">
+        {title}
+        <button
+          type="button"
+          className={`ob-title-info${open ? ' on' : ''}`}
+          aria-label="Why we ask"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <Icon name="info" size={20} />
+        </button>
+      </h1>
+      {open && (
+        <p id={id} className="ob-copy ob-tip" role="note">
+          {children}
+        </p>
+      )}
     </div>
   );
 }
@@ -311,11 +356,9 @@ function SkipFoot({ next, ready = true }) {
 function Goals({ data, update, next }) {
   return (
     <Step foot={<SkipFoot next={next} ready={data.goals.length > 0} />}>
-      <h1 className="ob-title">What brings you here?</h1>
-      <p className="ob-copy">
-        Pick what matters most and Nocta will lead with the insights that fit. Choose as many
-        as you like.
-      </p>
+      <StepTitle title="What brings you here?">
+        Pick what matters most and Nocta will lead with the insights that fit. Choose as many as you like.
+      </StepTitle>
       <ChipGroup multi options={GOALS} value={data.goals} onChange={(v) => update({ goals: v })} />
     </Step>
   );
@@ -324,10 +367,9 @@ function Goals({ data, update, next }) {
 function AboutYou({ data, update, next }) {
   return (
     <Step foot={<SkipFoot next={next} ready={Boolean(data.birthYear && data.sex)} />}>
-      <h1 className="ob-title">A little about you</h1>
-      <p className="ob-copy">
+      <StepTitle title="A little about you">
         These help Nocta read your numbers against the right baseline.
-      </p>
+      </StepTitle>
       <Field label="Birth year">
         <SelectInput
           placeholder="Select year"
@@ -375,11 +417,9 @@ function AboutYou({ data, update, next }) {
 function SleepingPosition({ data, update, next }) {
   return (
     <Step foot={<SkipFoot next={next} ready={Boolean(data.sleepPosition)} />}>
-      <h1 className="ob-title">How do you usually sleep?</h1>
-      <p className="ob-copy">
-        Position matters. On your back and stomach, the airway crowds more easily than on
-        your side.
-      </p>
+      <StepTitle title="How do you usually sleep?">
+        Position matters. On your back and stomach, the airway crowds more easily than on your side.
+      </StepTitle>
       <ChipGroup
         options={SLEEP_POSITIONS}
         value={data.sleepPosition}
@@ -392,11 +432,9 @@ function SleepingPosition({ data, update, next }) {
 function SleepConditions({ data, update, next, onInfo }) {
   return (
     <Step foot={<SkipFoot next={next} ready={data.sleepConditions.length > 0} />}>
-      <h1 className="ob-title">Anything else affecting your sleep?</h1>
-      <p className="ob-copy">
-        Other conditions help Nocta tell apart what's CPAP-related and what isn't. Tap the
-        info icon if you're unsure what something means.
-      </p>
+      <StepTitle title="Anything else affecting your sleep?">
+        Other conditions help Nocta tell apart what's CPAP-related and what isn't. Tap the info icon if you're unsure what something means.
+      </StepTitle>
       <InfoChipGroup
         options={SLEEP_CONDITIONS}
         value={data.sleepConditions}
@@ -424,12 +462,10 @@ function Health({ data, update, next }) {
   const pick = (id) => update({ healthDevice: data.healthDevice === id ? null : id });
   return (
     <Step foot={<SkipFoot next={next} ready={Boolean(data.healthDevice)} />}>
-      <h1 className="ob-title">Do you wear a watch or ring to bed?</h1>
-      <p className="ob-copy">
-        Nocta can’t read wearables yet. Tell us which one you have, and we’ll let you know
-        when it can line it up with your therapy.
-      </p>
-      <div className="ob-chips ob-stack-gap">
+      <StepTitle title="Do you wear a watch or ring to bed?">
+        Nocta can’t read wearables yet. Tell us which one you have, and we’ll let you know when it can line it up with your therapy.
+      </StepTitle>
+      <div className="ob-chips ob-stack-gap ob-wear">
         {WEARABLES.map((w) => {
           const sel = data.healthDevice === w.id;
           return (
@@ -532,10 +568,9 @@ function Equipment({ data, update, next }) {
 
   return (
     <Step foot={<SkipFoot next={next} ready={Boolean(data.maskModel && data.maskSize && data.cushion)} />}>
-      <h1 className="ob-title">Your mask &amp; supplies</h1>
-      <p className="ob-copy">
+      <StepTitle title="Your mask & supplies">
         Find the mask you use. Nocta tracks its parts and reminds you before they wear out.
-      </p>
+      </StepTitle>
 
       {picking || !chosen ? (
         <div className="ob-reveal" key="pick">
@@ -618,11 +653,9 @@ function Compliance({ data, update, next }) {
   const cleared = data.complianceWindow === 'no';
   return (
     <Step foot={<SkipFoot next={next} ready={Boolean(data.complianceWindow)} />}>
-      <h1 className="ob-title">Insurance &amp; compliance</h1>
-      <p className="ob-copy">
-        Many insurers want proof of use, often 4+ hours on at least 21 nights out of 30.
-        Nocta can track it so you don't have to.
-      </p>
+      <StepTitle title="Insurance & compliance">
+        Many insurers want proof of use, often 4+ hours on at least 21 nights out of 30. Nocta can track it so you don't have to.
+      </StepTitle>
       <Field label="Are you in a compliance window?">
         <ChipGroup
           options={COMPLIANCE_WINDOW}
@@ -689,28 +722,63 @@ function Compliance({ data, update, next }) {
   );
 }
 
+/* the example card scales down to the room the step leaves it, so the step
+ * never scrolls on a short screen (it's a picture of the card, not the card
+ * to use). Its own height is unaffected by the transform, so this settles in
+ * one pass; it re-fits when the window changes size. */
+function useFitScale(innerRef, outerRef) {
+  const [fit, setFit] = useState({ scale: 1, height: null });
+  useLayoutEffect(() => {
+    const inner = innerRef.current;
+    const outer = outerRef.current;
+    const body = inner?.closest('.ob-body');
+    const content = inner?.closest('.ob-content');
+    if (!inner || !body || !content) return undefined;
+    const measure = () => {
+      const natural = inner.offsetHeight;
+      const others = content.offsetHeight - outer.offsetHeight; // everything but the card
+      const room = body.clientHeight - others - 12; // a little air above the footer
+      const scale = Math.max(0.55, Math.min(1, room / natural));
+      setFit({ scale, height: Math.round(natural * scale) });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(body);
+    ro.observe(inner);
+    return () => ro.disconnect();
+  }, [innerRef, outerRef]);
+  return fit;
+}
+
 /* the real why-card, played in like it will be tomorrow morning: the card
  * rises, the verdict arrives a word at a time, the night's bars grow in, then
  * the one action lands. Choreography lives in onboarding.css (.ob-why-stage). */
 function Expectations({ next }) {
   // the same sky-first insight Tonight leads with (WhyHorizon), on a real night
   const example = FIXTURES[EXAMPLE_FIXTURE];
+  const outer = useRef(null);
+  const inner = useRef(null);
+  const fit = useFitScale(inner, outer);
   return (
     <Step foot={<button className="btn primary" onClick={next}>Got it</button>}>
-      <h1 className="ob-title">Tomorrow morning</h1>
-      <p className="ob-copy">
-        Each morning you'll wake up to this. Once Nocta knows your usual, it shows how
-        last night compared. No 0–100 scores. No jargon.
-      </p>
-      <div className="ob-why-stage">
-        <span className="ob-example-tag">Example</span>
-        <WhyHorizon
-          insight={example.insight}
-          timeline={example.timeline}
-          session={example.session}
-          usual={example.ahi.avgSoFar}
-          fixtureId={EXAMPLE_FIXTURE}
-        />
+      <StepTitle title="Tomorrow morning">
+        Each morning you'll wake up to this. Once Nocta knows your usual, it shows how last night compared. No 0–100 scores. No jargon.
+      </StepTitle>
+      <div className="ob-fit" ref={outer} style={fit.height ? { height: fit.height } : undefined}>
+        <div
+          className="ob-why-stage"
+          ref={inner}
+          style={fit.scale < 1 ? { transform: `scale(${fit.scale})`, transformOrigin: 'top center' } : undefined}
+        >
+          <span className="ob-example-tag">Example</span>
+          <WhyHorizon
+            insight={example.insight}
+            timeline={example.timeline}
+            session={example.session}
+            usual={example.ahi.avgSoFar}
+            fixtureId={EXAMPLE_FIXTURE}
+          />
+        </div>
       </div>
     </Step>
   );
@@ -739,11 +807,9 @@ function Notifications({ update, next }) {
         </>
       }
     >
-      <h1 className="ob-title">A gentle morning nudge</h1>
-      <p className="ob-copy">
-        Want a quiet reminder to do your check-in each morning? It's the habit
-        that makes Nocta's insights sharper over time.
-      </p>
+      <StepTitle title="A gentle morning nudge">
+        Want a quiet reminder to do your check-in each morning? It's the habit that makes Nocta's insights sharper over time.
+      </StepTitle>
       <p className="ob-note">
         One nudge a day, never more. Reminders come from the iPhone app once it’s out; you can
         change this any time in Settings.
@@ -1108,7 +1174,7 @@ export function Onboarding() {
       <div className="ob-ambient" aria-hidden="true" />
       <StatusBar />
       <div className="ob-nav">
-        <button className="ob-back glass" onClick={back} aria-label="Back">
+        <button className="ob-back" onClick={back} aria-label="Back">
           <Icon name="chevronLeft" size={20} />
         </button>
         <div

@@ -93,7 +93,7 @@ export function TrendsScreen() {
         </div>
       </header>
 
-      <div className="segmented glass" role="tablist" style={{ '--seg-n': RANGE_TABS.length }}>
+      <div className="segmented" role="tablist" style={{ '--seg-n': RANGE_TABS.length }}>
         <span
           className="seg-thumb"
           aria-hidden="true"

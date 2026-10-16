@@ -38,6 +38,18 @@
 }
 
 /* ============ BUTTONS ============ */
+/* No button carries a border (the user's call, 2026-10-16): fills, tints
+ * and type mark them, and a selected state is a stronger fill, never an
+ * outline. !important because many controls set their own border; focus
+ * rings use outline, which this leaves alone. */
+button,
+.btn,
+[role='button'],
+[role='tab'],
+[role='switch'],
+.segmented {
+  border: 0 !important;
+}
 .btn {
   display: flex;
   align-items: center;
@@ -58,7 +70,7 @@
   color: var(--text-on-accent);
 }
 .btn.ghost {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--hairline-strong);
   color: var(--text-primary);
 }
@@ -565,7 +577,7 @@
   font-weight: 700;
 }
 .day.selected {
-  background: rgba(240, 164, 122, 0.1);
+  background: rgba(240, 164, 122, 0.16);
   border-color: rgba(240, 164, 122, 0.32);
 }
 .day.selected .d-label {
@@ -577,14 +589,14 @@
 /* Selected tint follows the moon: neutral for a logged night, coral for an
  * escalation night. Not peach — peach is reserved for the AI. */
 .day.logged.selected {
-  background: rgba(123, 149, 216, 0.12);
+  background: rgba(123, 149, 216, 0.18);
   border-color: rgba(123, 149, 216, 0.32);
 }
 .day.logged.selected .d-label {
   color: var(--text-primary);
 }
 .day.escalation.selected {
-  background: rgba(224, 122, 106, 0.12);
+  background: rgba(224, 122, 106, 0.18);
   border-color: rgba(224, 122, 106, 0.32);
 }
 .day.escalation.selected .d-label {
@@ -2599,12 +2611,12 @@ button.cal-day:hover {
 
 .cal-day.selected {
   border-color: color-mix(in srgb, var(--data-1) 70%, transparent);
-  background: color-mix(in srgb, var(--data-1) 10%, var(--surface-1));
+  background: color-mix(in srgb, var(--data-1) 18%, var(--surface-1));
 }
 
 .cal-day.escalation.selected {
   border-color: color-mix(in srgb, var(--alert) 60%, transparent);
-  background: color-mix(in srgb, var(--alert) 8%, var(--surface-1));
+  background: color-mix(in srgb, var(--alert) 15%, var(--surface-1));
 }
 
 .cal-top {

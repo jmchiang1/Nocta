@@ -26,7 +26,7 @@ function Frame({ onBack, children, screenKey, enter = 'fwd' }) {
       <StatusBar />
       <div className="ob-nav">
         {onBack ? (
-          <button className="ob-back glass" onClick={onBack} aria-label="Back">
+          <button className="ob-back" onClick={onBack} aria-label="Back">
             <Icon name="chevronLeft" size={20} />
           </button>
         ) : (

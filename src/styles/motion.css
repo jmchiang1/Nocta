@@ -550,12 +550,8 @@
  *      return on the bottom-right edge (mask-composite cuts out the middle)
  *   4. inner shadow at the base so the surface has thickness
  * ================================================================= */
-.glass {
-  position: relative;
-}
-/* shared material structure. Phone only: liquid glass is the iOS look; the
- * desktop dashboard keeps flat, quiet controls (desktop.css) */
-.phone .glass,
+/* shared material structure. The tab bar is the one liquid-glass surface
+ * (the user's call, 2026-10-16): every button, segment and pill is flat. */
 .phone .tabbar {
   isolation: isolate;
   border: 0;
@@ -570,17 +566,6 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     inset 0 -10px 18px -10px rgba(0, 0, 0, 0.45);
 }
-/* light glass — every other glass control (back / close buttons, segmented
- * control): a clear lens with a faint white lift, no dimming */
-.phone .glass {
-  background: var(--glass-fill-light);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
-  backdrop-filter: blur(14px) saturate(150%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -6px 12px -8px rgba(0, 0, 0, 0.3);
-}
-.phone .glass::before,
 .phone .tabbar::before {
   content: '';
   position: absolute;
@@ -605,7 +590,6 @@
     linear-gradient(#000 0 0);
   pointer-events: none;
 }
-.phone .glass::after,
 .phone .tabbar::after {
   content: '';
   position: absolute;
@@ -628,13 +612,8 @@
   overflow: hidden;
 }
 .lg-svg .phone .tabbar {
-  --glass-fill: rgba(10, 12, 20, 0.42);
-  -webkit-backdrop-filter: url(#lg-bar) saturate(160%) brightness(0.68);
-  backdrop-filter: url(#lg-bar) saturate(160%) brightness(0.68);
-}
-.lg-svg .phone :is(.sheet-close, .sheet-back, .ob-back).glass {
-  -webkit-backdrop-filter: url(#lg-circle) saturate(150%);
-  backdrop-filter: url(#lg-circle) saturate(150%);
+  -webkit-backdrop-filter: url(#lg-bar) saturate(170%) brightness(1.12);
+  backdrop-filter: url(#lg-bar) saturate(170%) brightness(1.12);
 }
 
 /* tab bar — a floating glass capsule, icon-only (labels are visually
@@ -687,9 +666,9 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 
-/* circular glass buttons — back (pages) and close (modals) */
-.phone .sheet-close.glass,
-.phone .sheet-back.glass,
+/* round buttons — back (pages) and close (modals): a flat fill */
+.phone .sheet-close,
+.phone .sheet-back,
 .phone .ob-back {
   width: 38px;
   height: 38px;
@@ -699,24 +678,23 @@
   color: var(--text-primary);
 }
 /* 38px visible, 48px tap target */
-.phone .sheet-close.glass > svg,
-.phone .sheet-back.glass > svg {
+.phone .sheet-close > svg,
+.phone .sheet-back > svg {
   position: relative;
 }
-.phone .sheet-back.glass {
+.phone .sheet-back {
   margin-left: -4px;
 }
 .phone .sheet-back > svg {
   transform: translateX(-1px);
 }
-/* press/hover feedback for standalone glass *buttons* only — a glass
- * container (the segmented control) must not resize when a child is tapped */
+/* press/hover feedback for the round buttons */
 @media (hover: hover) {
-  .phone button.glass:hover {
-    background: var(--glass-fill-light-hover);
+  .phone :is(.sheet-close, .sheet-back, .ob-back):hover {
+    background: rgba(255, 255, 255, 0.16);
   }
 }
-.phone button.glass:active {
+.phone :is(.sheet-close, .sheet-back, .ob-back):active {
   transform: scale(0.9);
 }
 
@@ -1044,16 +1022,10 @@
 .segmented:has(.seg-thumb) {
   position: relative;
 }
-/* Trends range control in light glass; the thumb is a brighter glass lens,
- * same language as the tab bar's active capsule */
-.phone .segmented.glass {
-  border: 0;
-}
-.phone .segmented.glass .seg-thumb {
-  background: rgba(255, 255, 255, 0.13);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+/* Trends range control: a flat track, the thumb a brighter flat fill */
+.phone .segmented .seg-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
 }
 .seg-thumb {
   position: absolute;

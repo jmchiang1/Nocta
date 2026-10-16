@@ -1,5 +1,7 @@
-/* Nocta — You tab. Profile, account, settings, connected devices.
- * Account and Settings push full-screen subpages. Each connected device row
+/* Nocta — You tab. Profile, connected devices, then every setting as one
+ * long list, as on desktop: the Settings and Account sections render inline
+ * (the same SettingsContent / AccountContent the desktop You page uses),
+ * not one tap away. Each connected device row
  * opens a device-detail sheet (with disconnect), not a flat toggle.
  * Journal history lives on Trends — it's data, not app config.
  * Prototype-only controls (reset check-in, replay onboarding) live in the
@@ -11,9 +13,11 @@ import { machineName } from '../data/therapy.js';
 import { EditableAvatar, PhotoLinks } from '../components/EditableAvatar.jsx';
 import { ScreenFrame } from '../components/ScreenFrame.jsx';
 import { Icon } from '../components/Icons.jsx';
+import { SettingsContent } from './SettingsSheet.jsx';
+import { AccountContent } from './AccountSheet.jsx';
 
 export function YouScreen() {
-  const { openSheet, deviceConnections, machineId, authUser, authConfigured, wearables } = useStore();
+  const { openSheet, deviceConnections, machineId, authUser, authConfigured, wearables, resetOnboarding } = useStore();
   const connectedDevices = CONNECTED_DEVICES.filter((d) => deviceConnections[d.key]);
 
 
@@ -39,32 +43,6 @@ export function YouScreen() {
           </div>
         </div>
       </section>
-
-      <div className="section-head">
-        <h3>Account &amp; settings</h3>
-      </div>
-      <div className="list">
-        <button className="list-row" onClick={() => openSheet('account')}>
-          <div className="lr-icon bare">
-            <Icon name="you" size={17} />
-          </div>
-          <div className="lr-main">
-            <div className="lr-title">Account</div>
-            <div className="lr-sub">Sign-in and sign out</div>
-          </div>
-          <Icon name="chevronRight" size={17} />
-        </button>
-        <button className="list-row" onClick={() => openSheet('settings')}>
-          <div className="lr-icon bare">
-            <Icon name="settings" size={17} />
-          </div>
-          <div className="lr-main">
-            <div className="lr-title">Settings</div>
-            <div className="lr-sub">Password, reminders, and your data</div>
-          </div>
-          <Icon name="chevronRight" size={17} />
-        </button>
-      </div>
 
       <div className="section-head">
         <h3>Connected devices</h3>
@@ -115,7 +93,11 @@ export function YouScreen() {
         </button>
       </div>
 
-      {/* <p className="disclaimer">Nocta 1.0 · Your therapy data arrives via SleepHQ.</p> */}
+      {/* every setting, inline: sign-in & security, reminders, your data,
+       * sign in / out, and the medical disclaimer */}
+      <SettingsContent>
+        <AccountContent onSignOut={resetOnboarding} />
+      </SettingsContent>
     </ScreenFrame>
   );
 }

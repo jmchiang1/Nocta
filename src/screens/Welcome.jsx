@@ -75,7 +75,7 @@ export function Welcome({ data, onDone, returning = false }) {
 
         <ul className="wl-pills" aria-label="What's set up">
           {pills.map((p, i) => (
-            <li key={p.text} className={`wl-pill glass${p.later ? ' later' : ''}`} style={{ '--i': i }}>
+            <li key={p.text} className={`wl-pill${p.later ? ' later' : ''}`} style={{ '--i': i }}>
               <Icon name={p.icon} size={15} />
               {p.text}
             </li>

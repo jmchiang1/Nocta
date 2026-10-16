@@ -115,7 +115,7 @@ export function SettingsContent({ children }) {
       <div className="section-head">
         <h3>Your data</h3>
       </div>
-      <p className="settings-note">{PRIVACY_NOTE}</p>
+      {/* <p className="settings-note">{PRIVACY_NOTE}</p> */}
       <div className="list">
         <button
           className="list-row"

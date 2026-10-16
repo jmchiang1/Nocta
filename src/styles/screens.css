@@ -135,7 +135,7 @@
 }
 .trend-tile.on {
   border-color: color-mix(in srgb, var(--data-1) 60%, transparent);
-  background: color-mix(in srgb, var(--data-1) 10%, var(--surface-1));
+  background: color-mix(in srgb, var(--data-1) 18%, var(--surface-1));
 }
 .trend-tile.on .tt-label {
   color: var(--data-1);
@@ -881,11 +881,6 @@
 }
 .ck-card.has-nox .ob-pill {
   background: color-mix(in srgb, var(--bg-base) 84%, transparent);
-}
-/* frosted on the phone only (the iOS glass look); flat on desktop */
-.phone .ck-card.has-nox .ob-pill {
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
 }
 /* every so often a curious head tilt, one way then the other, with long
  * rests between (the eyes glance on their own 14s loop, so the two drift) */

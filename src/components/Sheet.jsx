@@ -161,7 +161,7 @@ export function Sheet({
            * modals dismiss with an X on the trailing edge */}
           <div className={`sheet-head${backNav ? ' with-back' : ''}`}>
             {backNav && (
-              <button className="sheet-back glass" onClick={close} aria-label="Back">
+              <button className="sheet-back" onClick={close} aria-label="Back">
                 <Icon name="chevronLeft" size={19} />
               </button>
             )}
@@ -178,7 +178,7 @@ export function Sheet({
             </div>
             {headRight ||
               (!backNav && (
-                <button className="sheet-close glass" onClick={close} aria-label="Close">
+                <button className="sheet-close" onClick={close} aria-label="Close">
                   <Icon name="x" size={17} />
                 </button>
               ))}
