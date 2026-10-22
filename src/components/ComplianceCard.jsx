@@ -7,13 +7,16 @@
  * stands at the earliest day it can be, labelled underneath. Pass
  * `fixtureId` to show it as of a different night. */
 import { useStore } from '../lib/store.jsx';
-import { complianceAsOf } from '../data/compliance.js';
-import { dateForFixture } from '../data/history.js';
+import { complianceAsOf, todayIso } from '../data/compliance.js';
+import { dateForFixture, LAST_NIGHT } from '../data/history.js';
 import { Rich } from './Rich.jsx';
 
 export function ComplianceCard({ fixtureId }) {
   const { profile, openSheet } = useStore();
-  const p = complianceAsOf(dateForFixture(fixtureId), profile.answers);
+  // as of the night on show; on the newest one, counted up to today (the
+  // days since the card's last night are "pending", not missed)
+  const night = dateForFixture(fixtureId);
+  const p = complianceAsOf(night, profile.answers, night === LAST_NIGHT ? todayIso() : night);
   const edit = (
     <button type="button" className="pj-edit" onClick={() => openSheet('compliancePlan')}>
       {p.needsStart ? 'Set it up' : 'Your plan'}
@@ -71,6 +74,7 @@ export function ComplianceCard({ fixtureId }) {
         <span style={markerAt != null && markerAt > 70 ? { visibility: 'hidden' } : undefined}>{last}</span>
       </div>
       {p.unknownNote && <p className="pj-note">{p.unknownNote}</p>}
+      {p.pendingNote && <p className="pj-note">{p.pendingNote}</p>}
     </section>
   );
 }

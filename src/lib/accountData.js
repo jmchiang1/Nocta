@@ -5,7 +5,8 @@
 import { getProfile, clearProfile } from './profile.js';
 import { checkinDates, getCheckin, clearCheckin, isLateCheckin } from './checkins.js';
 import { equipmentStatus, logReplaced, PARTS } from './equipment.js';
-import { loadImport, clearImport } from './importStore.js';
+import { loadImport, clearImport, deleteRecords } from './importStore.js';
+import { getOwner } from './owner.js';
 import { allWearableNights, clearWearableCache } from './wearables.js';
 
 /* every key Nocta writes to localStorage (the dev panel's own is left) */
@@ -52,17 +53,52 @@ export async function exportMyData(authUser) {
 }
 
 /* erase everything Nocta keeps on this device */
-export async function wipeLocalData() {
+/* this device's own settings, kept through an erase: they say how this
+ * browser should behave, not anything about a person (an analytics opt-out
+ * in particular must survive) */
+const DEVICE_PREFS = new Set([
+  'nocta.analytics.v1',
+  'nocta.soundEffects.v1',
+  'nocta.layout.v1',
+  'nocta.demoControls.v1',
+]);
+
+/* `everyone`: a guest's "Erase this device's data" takes every space on the
+ * device (other accounts' local copies too; theirs come back from their
+ * account when they sign in). Otherwise only the current account's space,
+ * as when that account is deleted. Data is kept per space (lib/owner.js),
+ * under keys ending @<owner>, so those go key by key. */
+export async function wipeLocalData({ everyone = false } = {}) {
+  const owner = getOwner();
   await clearImport().catch(() => {});
   await clearWearableCache().catch(() => {});
   clearProfile();
   checkinDates().forEach(clearCheckin);
   PARTS.forEach((p) => logReplaced(p.id, null));
-  LOCAL_KEYS.forEach((k) => {
-    try {
-      localStorage.removeItem(k);
-    } catch {
-      /* ignore */
-    }
-  });
+  await deleteRecords(everyone ? null : owner);
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('nocta.') && !DEVICE_PREFS.has(k))
+      .filter((k) => everyone || LOCAL_KEYS.includes(k) || k.endsWith(`@${owner}`))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* ignore */
+  }
+}
+
+/* signing out of an account: forget its local copy, now that it's saved to
+ * the account (cloudSync.flushForSignOut said so), so the next person on a
+ * shared computer can't dig it out of the browser. Removes the keys and
+ * records directly: going through the stores would note each removal as a
+ * change and push an empty copy over the account's. Device prefs stay. */
+export async function forgetAccountOnDevice(owner) {
+  if (!owner?.startsWith('acct:')) return;
+  await deleteRecords(owner);
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('nocta.') && k.endsWith(`@${owner}`))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* ignore */
+  }
 }

@@ -14,6 +14,7 @@
  * Without Supabase (the mock sign-in), the sheet runs a mock OAuth flow:
  * authorize → syncing → done. Each step replaces the sheet body until the
  * device flips to connected, then the normal detail view returns. */
+import { track } from '../lib/analytics.js';
 import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { deviceByKey, DEVICE_PHOTO } from '../data/account.js';
@@ -261,6 +262,7 @@ function LiveDeviceDetail() {
   async function connect() {
     setError(null);
     setBusy('connect');
+    track('wearable_connect_started', { provider: key });
     try {
       // 'tab': the approve screen is open in a new tab, wait for it here
       // 'redirect': the tab was blocked, so this page is leaving instead
@@ -284,6 +286,7 @@ function LiveDeviceDetail() {
   async function disconnect(close) {
     setError(null);
     setBusy('disconnect');
+    track('wearable_disconnected', { provider: key });
     try {
       await setDeviceConnected(key, false);
       close();

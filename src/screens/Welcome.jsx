@@ -19,7 +19,7 @@ const EXIT_MS = 720;
 /* `returning`: a signed-in existing account, so the copy greets them back and
  * the pills say only what's really set up on this device */
 export function Welcome({ data, onDone, returning = false }) {
-  const { authUser } = useStore();
+  const { authUser, hasData } = useStore();
   const [leaving, setLeaving] = useState(false);
   // only the name their sign-in shared; an email signup has none to greet
   const first = firstName(authUser);
@@ -51,7 +51,7 @@ export function Welcome({ data, onDone, returning = false }) {
         <div className="wl-mark" aria-hidden="true">
           <span className="wl-ring" />
           <span className="wl-ring r2" />
-          <img src="/Nocta-constellation.svg" alt="" />
+          <img src="/nocta-mark.svg" alt="" />
         </div>
 
         <h1 className="wl-title">
@@ -85,7 +85,8 @@ export function Welcome({ data, onDone, returning = false }) {
 
       <div className="wl-foot">
         <button className="btn primary" onClick={go} disabled={leaving}>
-          See last night
+          {/* no card yet (setup skipped it): there's no night to see */}
+          {hasData ? 'See last night' : 'Open Nocta'}
         </button>
       </div>
     </div>

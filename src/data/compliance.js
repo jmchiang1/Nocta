@@ -80,11 +80,17 @@ export function tracksCompliance(authUser, answers = getAnswers()) {
 }
 
 const byDate = () => new Map(NIGHTS.map((x) => [x.date, x]));
-const dayDiff = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
+export const dayDiff = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
 
 /* where they stand as of a night: { needsStart } when there's no start date
  * yet, else the card's headline, body, the 30-day bar and its labels */
-export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
+/* `anchor`: the night it's shown as of (the card's newest, or an older one
+ * being looked back on). `today`: the real day, when that's later than the
+ * anchor: days after the card's newest night are still counted as days of
+ * the period, but as "pending" (not on the card yet, so neither met nor
+ * missed, and still able to count). */
+export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers(), today = anchor) {
+  if (today < anchor) today = anchor;
   const start = answers.complianceStart;
   if (!start) return { needsStart: true };
   const rule = ruleFor(answers);
@@ -94,7 +100,8 @@ export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
   // each day of the deadline period: met / missed / unknown (before the
   // card) / future (not yet happened, as of the anchor)
   const statusOf = (date) => {
-    if (date > anchor) return 'future';
+    if (date > today) return 'future';
+    if (date > anchor) return 'pending';
     if (THERAPY_START && date < THERAPY_START) return 'unknown';
     const x = rows.get(date);
     return x && (x.rawHours ?? x.hours) >= h ? 'met' : 'missed';
@@ -103,9 +110,10 @@ export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
     const date = addDays(start, i);
     return { date, status: statusOf(date) };
   });
-  const dayNo = Math.min(rule.within, Math.max(0, dayDiff(start, anchor) + 1)); // today, as day N
-  const before = dayDiff(start, anchor) < 0;
-  const after = dayDiff(start, anchor) + 1 > rule.within;
+  const dayNo = Math.min(rule.within, Math.max(0, dayDiff(start, today) + 1)); // today, as day N
+  const before = dayDiff(start, today) < 0;
+  const after = dayDiff(start, today) + 1 > rule.within;
+  const open = (d) => d.status === 'future' || d.status === 'pending'; // can still be met
 
   // every consecutive window inside the period: met so far, and whether it
   // can still reach the bar if every night from here is a full one
@@ -116,7 +124,7 @@ export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
   for (let s = 0; s + rule.window <= rule.within; s += 1) {
     const w = days.slice(s, s + rule.window);
     const met = w.filter((d) => d.status === 'met').length;
-    const future = w.filter((d) => d.status === 'future').length;
+    const future = w.filter(open).length;
     if (!best || met > best.met) best = { s, met };
     if (met >= rule.nights && cleared == null) {
       // the day the bar was reached inside this window
@@ -126,7 +134,7 @@ export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
     }
     if (met + future >= rule.nights && met < rule.nights) {
       // the first future day in the window, then one more met night a day
-      const firstFuture = w.findIndex((d) => d.status === 'future');
+      const firstFuture = w.findIndex(open);
       const day = s + firstFuture + (rule.nights - met);
       if (earliest == null || day < earliest) {
         earliest = day;
@@ -135,6 +143,7 @@ export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
     }
   }
   const unknown = days.slice(0, dayNo).some((d) => d.status === 'unknown');
+  const pending = days.slice(0, dayNo).some((d) => d.status === 'pending');
 
   // the bar: the first window while it's still being filled, then the
   // latest 30 days up to today
@@ -157,6 +166,9 @@ export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
     ],
     unknownNote: unknown
       ? `Nocta can’t see nights before your card’s first, ${fmtShort(THERAPY_START)}, so those days don’t count here.`
+      : null,
+    pendingNote: pending
+      ? `Nights after ${fmtShort(anchor)} aren’t on your card yet. Bring in your SD card to count them.`
       : null,
   };
 
@@ -200,6 +212,8 @@ export function complianceAsOf(anchor = LAST_NIGHT, answers = getAnswers()) {
     ...base,
     eyebrow: `Compliance · day ${dayNo} of ${rule.within}`,
     headline: `You’re on track to clear compliance by *day ${earliest}*, ${dateOfDay(earliest)}.`,
-    body: `Your plan asks for ${ruleText(rule)}. ${need} more ${need === 1 ? 'night' : 'nights'} of ${h}+ hours in a row gets you there.`,
+    body: `Your plan asks for ${ruleText(rule)}. ${need} more ${need === 1 ? 'night' : 'nights'} of ${h}+ hours in a row gets you there${
+      pending ? `, counting the nights since ${fmtShort(anchor)} that aren’t on your card yet` : ''
+    }.`,
   };
 }

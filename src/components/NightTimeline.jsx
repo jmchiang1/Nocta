@@ -148,8 +148,9 @@ function hourAxes(bins, stageAt) {
  * totals from history, placed around its episodes) so they match the horizon
  * and the episode list. sleepStages: the watch's stages, for the readout.
  * detailed: the full-night page's version, with real axes and a tooltip in
- * place of the scrubber and the hour row. */
-export function NightTimeline({ timeline, session, ahi, escalated = false, onOpen, fixtureId, sleepStages, detailed = false }) {
+ * place of the scrubber and the hour row. title: a heading inside the card
+ * (the full night's "Events summary"). */
+export function NightTimeline({ timeline, session, ahi, escalated = false, onOpen, fixtureId, sleepStages, detailed = false, title }) {
   // a real night: one bar per clock hour, labelled underneath. The older
   // fixture shape (no night id) keeps its proportional buckets.
   const hourly = Boolean(fixtureId);
@@ -177,6 +178,11 @@ export function NightTimeline({ timeline, session, ahi, escalated = false, onOpe
 
   return (
     <section className="night-card card-enter" aria-label="Overnight timeline">
+      {title && (
+        <div className="panel-head">
+          <h3>{title}</h3>
+        </div>
+      )}
       <div className="night-meta">
         <span className="time-pill tnum">{session.start}</span>
         <span className="mid tnum">

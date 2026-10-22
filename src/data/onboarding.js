@@ -10,7 +10,10 @@ export const GOALS = [
 ];
 
 /* about you — every field is a dropdown */
-export const BIRTH_YEARS = Array.from({ length: 2007 - 1935 + 1 }, (_, i) => 2007 - i);
+/* adults only (Terms: 18 and over), counted from this year so it never goes
+ * stale; back far enough for anyone on CPAP */
+const LATEST_BIRTH_YEAR = new Date().getFullYear() - 18;
+export const BIRTH_YEARS = Array.from({ length: LATEST_BIRTH_YEAR - 1920 + 1 }, (_, i) => LATEST_BIRTH_YEAR - i);
 
 export const SEX_OPTIONS = [
   { id: 'female', label: 'Female' },

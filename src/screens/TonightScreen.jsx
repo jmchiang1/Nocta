@@ -1,4 +1,5 @@
 /* Nocta — Tonight tab. The hero why-card + last night's metrics + the night timeline. */
+import { StaleDataBanner, SampleDataBanner } from '../components/NoNights.jsx';
 import { firstName } from '../data/account.js';
 import { LAST_NIGHT } from '../data/history.js';
 import { Fragment } from 'react';
@@ -11,6 +12,7 @@ import { WeekStrip } from '../components/WeekStrip.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { CheckinPrompt, LateCheckin } from '../components/CheckinPrompt.jsx';
 import { ProfileReminder } from '../components/ProfileReminder.jsx';
+import { FeedbackPrompt } from '../components/FeedbackPrompt.jsx';
 import { WhyHorizon } from '../components/WhyHorizon.jsx';
 import { NightSwiper } from '../components/NightSwiper.jsx';
 import { MetricSecondary } from '../components/MetricSecondary.jsx';
@@ -66,6 +68,10 @@ export function TonightScreen() {
         </div>
       </header>
 
+      {/* the card's newest night is days old: say so before showing it */}
+      <StaleDataBanner />
+      <SampleDataBanner />
+
       <WeekStrip />
 
       {syncing ? (
@@ -98,6 +104,8 @@ export function TonightScreen() {
 
           {/* a skipped onboarding question, now and then (lib/profile.js) */}
           <ProfileReminder />
+          {/* how it's going, now and then (lib/feedback.js) */}
+          <FeedbackPrompt />
 
           {/* below the open hero, each section sits in its own soft module
            * (like Weather): grouping without heavy boxes */}

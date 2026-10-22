@@ -93,6 +93,29 @@ export async function moveRecords(from, to) {
   }
 }
 
+/* delete one space's records (a deleted account), or every space's
+ * (`owner` null: erasing the device). Local only: it must never call
+ * cloudChanged, or the wipe would push an empty copy to the account */
+export async function deleteRecords(owner) {
+  try {
+    const db = await open();
+    await new Promise((resolve, reject) => {
+      const t = db.transaction(STORE, 'readwrite');
+      const req = t.objectStore(STORE).openCursor();
+      req.onsuccess = () => {
+        const c = req.result;
+        if (!c) return;
+        if (owner == null || String(c.key).endsWith(`@${owner}`)) c.delete();
+        c.continue();
+      };
+      t.oncomplete = resolve;
+      t.onerror = () => reject(t.error);
+    });
+  } catch {
+    /* storage blocked: nothing kept */
+  }
+}
+
 /* store a card exactly as given, no merge (a copy pulled from the account,
  * lib/cloudSync.js) */
 export async function putImport(card) {

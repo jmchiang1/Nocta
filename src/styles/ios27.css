@@ -36,9 +36,7 @@
   border-radius: var(--ios-sheet-top-r) var(--ios-sheet-top-r) var(--ios-sheet-bottom-r) var(--ios-sheet-bottom-r);
   /* the fill stays each sheet's own (the check-in keeps its sky) */
   border: 0;
-  box-shadow:
-    0 8px 48px rgba(0, 0, 0, 0.45),
-    0 0 0 0.5px var(--ios-glass-edge);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.45); /* no edge line: modals have no border */
   overflow: hidden;
 }
 /* the all-nights sheet keeps its 1rem top (its month is the heading) */

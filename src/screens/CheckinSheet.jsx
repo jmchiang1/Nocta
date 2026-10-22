@@ -18,7 +18,7 @@ import { useStore } from '../lib/store.jsx';
 import { CHECKIN_SCREENS, EMPTY_CHECKIN_TAGS, TAG_LABELS, allCheckinTags } from '../data/journal.js';
 import { FIXTURES } from '../data/fixtures.js';
 import { LAST_NIGHT, toDate } from '../data/history.js';
-import { getCheckin } from '../lib/checkins.js';
+import { getCheckin, toggleCheckinPick } from '../lib/checkins.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Mascot } from '../components/Mascot.jsx';
@@ -51,19 +51,7 @@ export function CheckinSheet() {
   const question = (sc) => (late && PAST_QUESTION[sc.id]) || sc.question;
 
   function toggle(opt) {
-    const key = screen.id;
-    setPicks((prev) => {
-      const cur = prev[key];
-      let next;
-      if (cur.includes(opt.id)) {
-        next = cur.filter((x) => x !== opt.id);
-      } else if (opt.exclusive) {
-        next = [opt.id];
-      } else {
-        next = [...cur.filter((x) => !screen.options.find((o) => o.id === x)?.exclusive), opt.id];
-      }
-      return { ...prev, [key]: next };
-    });
+    setPicks((prev) => toggleCheckinPick(prev, screen, opt));
   }
 
   function advance() {

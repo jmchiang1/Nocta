@@ -17,16 +17,11 @@ import { nightPanels, NightEvents } from '../NightCharts.jsx';
 const CHART_H = 200; // room for the axes
 
 /* a chart panel: a button through to its metric page when it has one */
-function ChartPanel({ title, meta, onOpen, wide, children }) {
+function ChartPanel({ title, onOpen, wide, children }) {
   const head = (
     <span className="panel-head">
       <h3>{title}</h3>
-      {(meta || onOpen) && (
-        <span className="panel-meta">
-          {meta}
-          {onOpen && <Icon name="chevronRight" size={14} />}
-        </span>
-      )}
+      {onOpen && <Icon name="chevronRight" size={16} />}
     </span>
   );
   return onOpen ? (
@@ -89,10 +84,8 @@ export function DesktopFullNight() {
 
       {/* the night's events at a glance, by hour and type; the full list,
        * each with its breathing, is "Events by type" at the bottom */}
-      <div className="section-head">
-        <h3>Events summary</h3>
-      </div>
       <NightTimeline
+        title="Events summary"
         timeline={fx.timeline}
         session={s}
         ahi={fx.ahi.value}
@@ -104,15 +97,13 @@ export function DesktopFullNight() {
 
       {/* only with a connected wearable: the machine can't see sleep stages */}
       {stages && (
-        <>
-          <div className="section-head">
+        <div className="chart-card">
+          <div className="panel-head">
             <h3>Sleep stages</h3>
-            <span className="meta">{body.source}</span>
+            <span className="panel-source">{body.source}</span>
           </div>
-          <div className="chart-card">
-            <SleepStages stages={stages} session={s} detailed />
-          </div>
-        </>
+          <SleepStages stages={stages} session={s} detailed />
+        </div>
       )}
 
       <div className="section-head">
@@ -120,7 +111,7 @@ export function DesktopFullNight() {
       </div>
       <div className="dfn-charts">
         {panels.map((p) => (
-          <ChartPanel key={p.key} title={p.title} meta={p.meta} onOpen={p.onOpen} wide={p.wide}>
+          <ChartPanel key={p.key} title={p.title} onOpen={p.onOpen} wide={p.wide}>
             {p.body}
           </ChartPanel>
         ))}

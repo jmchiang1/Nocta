@@ -6,6 +6,7 @@
  *              the app returns to the splash
  * If the server can't delete it, nothing is wiped and it says so.
  * A guest has no account: the same flow clears this device instead. */
+import { track } from '../lib/analytics.js';
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { Sheet } from '../components/Sheet.jsx';
@@ -32,7 +33,8 @@ export function DeleteAccountSheet() {
         return;
       }
     }
-    await wipeLocalData();
+    track(guest ? 'device_erased' : 'account_deleted');
+    await wipeLocalData({ everyone: guest }); // a guest erases the whole device
     await removeCardImport();
     close();
     setTimeout(() => {

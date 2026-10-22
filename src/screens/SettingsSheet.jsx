@@ -2,6 +2,7 @@
  * Profile photo, sign-in & security, reminders, export and delete, and the
  * medical disclaimer. */
 import { soundEffectsOn, setSoundEffects, noxHop } from '../lib/sound.js';
+import { analyticsConfigured, analyticsOn, setAnalytics, track } from '../lib/analytics.js';
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { PRIVACY_NOTE, MEDICAL_NOTE } from '../data/account.js';
@@ -36,6 +37,7 @@ export function SettingsContent({ children }) {
   const missing = missingQuestions(profile).length;
   const [exporting, setExporting] = useState(false);
   const [sounds, setSounds] = useState(soundEffectsOn);
+  const [sharing, setSharing] = useState(analyticsOn);
   const guest = !authUser || authUser.kind === 'guest';
 
   return (
@@ -83,7 +85,11 @@ export function SettingsContent({ children }) {
           <div className="lr-main">
             <div className="lr-title">Morning check-in reminder</div>
           </div>
-          <Switch on={Boolean(profile.checkinReminder)} onChange={setCheckinReminder} label="Morning check-in reminder" />
+          <Switch
+            on={Boolean(profile.checkinReminder)}
+            onChange={setCheckinReminder}
+            label="Morning check-in reminder"
+          />
         </div>
         {!guest && (
           <div className="list-row">
@@ -126,42 +132,85 @@ export function SettingsContent({ children }) {
         </div>
       </div>
 
-      {/* ---- your data ---- */}
+      {/* ---- feedback to the people making Nocta (FeedbackSheet) ---- */}
       <div className="section-head">
-        <h3>Your data</h3>
+        <h3>Help improve Nocta</h3>
       </div>
-      {/* <p className="settings-note">{PRIVACY_NOTE}</p> */}
       <div className="list">
-        <button
-          className="list-row"
-          disabled={exporting}
-          onClick={async () => {
-            setExporting(true);
-            try {
-              const r = await exportMyData(authUser);
-              showToast(`Downloaded: ${r.nights} nights, ${r.checkins} check-ins`, 'download');
-            } finally {
-              setExporting(false);
-            }
-          }}
-        >
-          <div className="lr-icon bare accent">
-            <Icon name="download" size={17} />
-          </div>
-          <div className="lr-main">
-            <div className="lr-title">Export my data</div>
-          </div>
-        </button>
-        <button className="list-row" onClick={() => openSheet('deleteAccount')}>
+        <button className="list-row" onClick={() => openSheet('feedback', { source: 'settings' })}>
           <div className="lr-icon bare">
-            <Icon name="x" size={17} />
+            <Icon name="send" size={17} />
           </div>
           <div className="lr-main">
-            <div className="lr-title destructive">{guest ? 'Erase this device’s data' : 'Delete account'}</div>
+            <div className="lr-title">Send feedback</div>
           </div>
           <Icon name="chevronRight" size={17} />
         </button>
+        {/* usage analytics (lib/analytics.js): only where they're set up */}
+        {analyticsConfigured && (
+          <div className="list-row">
+            <div className="lr-icon bare">
+              <Icon name="trends" size={17} />
+            </div>
+            <div className="lr-main">
+              <div className="lr-title">Share usage data</div>
+            </div>
+            <Switch
+              on={sharing}
+              onChange={(on) => {
+                // turning it off sends nothing, not even that it was turned off
+                setAnalytics(on);
+                setSharing(on);
+                if (on) track('analytics_on');
+              }}
+              label="Share usage data"
+            />
+          </div>
+        )}
       </div>
+
+      {/* ---- your data: an account's only. A guest is looking at sample
+       * nights, so there's nothing of theirs to export or delete ---- */}
+      {!guest && (
+        <>
+          <div className="section-head">
+            <h3>Your data</h3>
+          </div>
+          {/* <p className="settings-note">{PRIVACY_NOTE}</p> */}
+          <div className="list">
+            <button
+              className="list-row"
+              disabled={exporting}
+              onClick={async () => {
+                setExporting(true);
+                try {
+                  const r = await exportMyData(authUser);
+                  track('data_exported');
+                  showToast(`Downloaded: ${r.nights} nights, ${r.checkins} check-ins`, 'download');
+                } finally {
+                  setExporting(false);
+                }
+              }}
+            >
+              <div className="lr-icon bare accent">
+                <Icon name="download" size={17} />
+              </div>
+              <div className="lr-main">
+                <div className="lr-title">Export my data</div>
+              </div>
+            </button>
+            <button className="list-row" onClick={() => openSheet('deleteAccount')}>
+              <div className="lr-icon bare">
+                <Icon name="x" size={17} />
+              </div>
+              <div className="lr-main">
+                <div className="lr-title destructive">Delete account</div>
+              </div>
+              <Icon name="chevronRight" size={17} />
+            </button>
+          </div>
+        </>
+      )}
 
       {children}
 

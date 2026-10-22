@@ -21,7 +21,7 @@ const INPUTS = {
   goals: { empty: [], render: (v, set) => <ChipGroup multi options={GOALS} value={v} onChange={set} /> },
   birthYear: {
     empty: null,
-    render: (v, set) => <SelectInput placeholder="Select year" value={v} onChange={set} options={BIRTH_YEARS} />,
+    render: (v, set) => <SelectInput placeholder="Select year" label="Birth year" value={v} onChange={set} options={BIRTH_YEARS} />,
   },
 };
 const filled = (v) => (Array.isArray(v) ? v.length > 0 : Boolean(v));

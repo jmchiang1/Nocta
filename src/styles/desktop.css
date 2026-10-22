@@ -9,9 +9,10 @@
 /* ===== stage + floating dev control ===== */
 .desktop-stage {
   min-height: 100vh;
-  background:
-    radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 60%),
-    linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 40%, var(--bg-grad-bottom) 100%);
+  /* the dark blue behind every page, with a faint dusk glow across the top
+   * (above the cards, so they still stand off it); Tonight lays its night
+   * sky over it */
+  background: var(--bg-base); /* each page brings its own header glow */
 
   /* the desktop dashboard runs a tighter, flatter radius than mobile — every
    * card, panel, button, and dialog collapses to --r-sm. Pills (--r-pill) keep
@@ -280,7 +281,7 @@
   flex: 1;
   min-width: 0;
   /* generous bottom padding so the floating dev panel never sits on content */
-  padding: 30px 40px 130px;
+  padding: 3rem;
 }
 
 /* one row: page title block on the left, that page's control (night strip,
@@ -556,10 +557,14 @@
   grid-column: 1 / -1;
 }
 
-/* the desktop check-in: every answer full width, as tall as last night's
- * card beside it (Nox fills the corner) */
+/* the desktop check-in, done right in the card (CheckinPrompt's
+ * InlineCheckin): a question and its answers, then a footer pinned to the
+ * bottom (back on the left, Skip / Next on the right), so the card can sit
+ * as tall as last night's beside it without the button jumping per question */
 .dash-tonight-pair > .ck-card.wide {
-  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 22px 18px;
 }
 .ck-card.wide .ck-card-head {
   align-items: center;
@@ -568,13 +573,71 @@
 .ck-card.wide .ck-card-q {
   font-size: 24px;
 }
+/* room for three rows of answers (the most any question needs from laptop
+ * widths up), so the card holds one height from question to question */
 .ck-card.wide .ck-card-quick {
+  align-content: flex-start;
+  min-height: 160px;
   margin-top: 16px;
 }
-/* desktop: a bigger Nox; the answers run over him like on the phone */
-.ck-card.wide .ck-card-nox {
-  right: -40px;
-  bottom: -60px;
+/* a touch less side padding, so the longest question's answers ("Yesterday
+ * I…") keep to three rows at laptop widths */
+.ck-card.wide .ob-pill {
+  padding: 0 14px;
+}
+.ck-inline-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+/* where you are in the check-in: a dot per question, the current one a
+ * longer pill */
+.ck-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ck-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+  transition:
+    width var(--dur-fast) ease,
+    background var(--dur-fast) ease;
+}
+.ck-dots i.done {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.ck-dots i.on {
+  width: 18px;
+  background: var(--accent);
+}
+.ck-inline-back {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-sm);
+  background: var(--glass-fill);
+  color: var(--text-secondary);
+}
+.ck-inline-back:hover {
+  color: var(--text-primary);
+}
+.ck-card.wide .ck-inline-next {
+  width: auto;
+  min-width: 128px;
+  min-height: 48px;
+  justify-self: end;
+  padding: 0 22px;
+}
+/* each question slides in as the last one goes */
+.ck-inline-enter {
+  animation: riseIn 0.32s var(--ease-out) backwards;
 }
 
 /* once checked in, the card folds to one line — it becomes a slim bar
@@ -667,16 +730,79 @@
 }
 
 .dash .trend-tile {
+  position: relative;
   min-height: 76px;
 }
 
-.dash .trend-tile:hover:not(.on) {
-  background: var(--surface-2);
+/* the tiles are tabs for the chart under them, and read as one unit with
+ * it: an unselected tile is a plain, flat card; the selected one is lit and
+ * joined to the chart like a browser tab, one gradient running down the tab
+ * and on through the chart, so the chart plainly belongs to it. */
+.dash .trend-grid {
+  /* 10px between the tiles and the chart, which the selected tab spans; the
+   * column's own 18px gap is taken back first */
+  margin-bottom: calc(10px - 18px);
 }
-
+.dash .trend-tile:not(.on) {
+  background: var(--surface-1); /* flat: only the selected tab is lit */
+}
+.dash .trend-tile:hover:not(.on) {
+  background: color-mix(in srgb, var(--surface-1) 60%, var(--surface-2));
+}
+/* the selected tab and its chart share one gradient: lit at the top of the
+ * tab, reaching plain surface-2 where the tab meets the chart, then settling
+ * through the chart */
+.dash .trend-tile.on {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--data-1) 14%, var(--surface-2)) 0%,
+    var(--surface-2) 100%
+  );
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  /* reaches down across the gap into the chart (the row's height doesn't
+   * change: a negative margin takes back what the padding adds) */
+  margin-bottom: -10px;
+  padding-bottom: calc(12px + 10px);
+}
+/* like a browser tab: at the foot of the selected tile the chart's edge
+ * curves up into it on both sides — an outward (concave) corner, a square
+ * of the tab's colour with a quarter circle cut from it */
+.dash .trend-tile.on::before,
+.dash .trend-tile.on::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+.dash .trend-tile.on::before {
+  left: -12px;
+  background: radial-gradient(circle at 0 0, transparent 11.5px, var(--surface-2) 12px);
+}
+.dash .trend-tile.on::after {
+  right: -12px;
+  background: radial-gradient(circle at 100% 0, transparent 11.5px, var(--surface-2) 12px);
+}
+/* at either end of the row the tab runs straight into the chart's side
+ * instead (the chart's corner is squared there, below) */
+.dash .trend-tile.on:first-child::before,
+.dash .trend-tile.on:last-child::after {
+  display: none;
+}
 .dash-trend-chart {
   margin: 0;
   padding: 20px 20px 16px;
+  /* flat at the top where the selected tab joins it, settling downward */
+  background: linear-gradient(180deg, var(--surface-2) 0px, var(--surface-1) 320px);
+}
+/* a tab at either end joins the chart at its corner: square it there */
+.dash-trends-main:has(.trend-tile.on:first-child) .dash-trend-chart {
+  border-top-left-radius: 0;
+}
+.dash-trends-main:has(.trend-tile.on:last-child) .dash-trend-chart {
+  border-top-right-radius: 0;
 }
 
 
@@ -851,7 +977,7 @@
 }
 
 .dash-profile {
-  background: var(--surface-1);
+  background: var(--card-bg);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -906,33 +1032,15 @@
 
 /* ===== panel (surface card — used for raw charts) ===== */
 .panel {
-  background: linear-gradient(180deg, var(--surface-1) 0%, color-mix(in srgb, var(--surface-1) 70%, var(--bg-base)) 100%);
+  background: var(--card-bg);
   border-radius: var(--r-lg);
   padding: 20px 20px 16px;
   height: 100%;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
-.panel-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.panel-head h3 {
-  font-family: var(--font-display);
-  font-weight: 500;
+.desktop-stage .panel-head h3 {
   font-size: 16px;
-}
-
-.panel-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-tertiary);
-  font-weight: 600;
 }
 
 /* ===== sheets as desktop dialogs ===== */
@@ -952,7 +1060,7 @@ html:has(.desktop-modal-wrap) {
   z-index: 700;
   display: grid;
   place-items: center;
-  background: rgba(5, 7, 14, 0.62);
+  background: rgba(3, 5, 10, 0.72);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
   animation: fade 0.25s ease both;
@@ -975,13 +1083,21 @@ html:has(.desktop-modal-wrap) {
   max-height: 86vh;
   margin: 0;
   padding-top: 0;
-  border: 1px solid var(--hairline-strong);
   border-radius: var(--r-xl);
-  /* flat on desktop: no blue gradient wash, no check-in sky */
-  background: var(--bg-base);
+  /* lifted off the dimmed page (the page itself is --bg-base): one step up,
+   * like the phone's sheets, lit softly from the top. No border: modals
+   * never have one (the user's call) — the fill and the shadow separate it */
+  background:
+    radial-gradient(90% 320px at 50% 0%, color-mix(in srgb, var(--data-1) 9%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-1) 62%, var(--bg-base));
   box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
   transform: none;
   animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* a dialog's footer is part of its surface, not a band of the page colour */
+.desktop-modal-wrap .sheet-foot {
+  background: transparent;
 }
 
 .desktop-modal-wrap > .sheet.ck-sheet::before {
@@ -1023,7 +1139,7 @@ html:has(.desktop-modal-wrap) {
 /* a desktop dialog's buttons sit on one line at their own width: the main
  * action (primary or destructive) at the right edge, the other at the left
  * edge — whatever order the shared markup puts them in. A third, quieter
- * one (a text button, e.g. "Remove imported data") gets its own line below
+ * one (a text button) gets its own line below
  * the two. On the phone the same groups stay stacked, full width. A note
  * inside the group (the guest's sign-up block) takes its own line above. */
 .desktop-modal-wrap :has(> .btn ~ .btn) {
@@ -1109,9 +1225,13 @@ html:has(.desktop-modal-wrap) {
   max-height: 88vh;
   overflow-y: auto;
   scrollbar-width: none;
-  background: var(--bg-base);
-  border: 1px solid var(--hairline-strong);
   border-radius: var(--r-xl);
+  /* lifted off the dimmed page (the page itself is --bg-base): one step up,
+   * like the phone's sheets, lit softly from the top. No border: modals
+   * never have one (the user's call) — the fill and the shadow separate it */
+  background:
+    radial-gradient(90% 320px at 50% 0%, color-mix(in srgb, var(--data-1) 9%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-1) 62%, var(--bg-base));
   box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.85);
   animation: dfn-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
@@ -1182,7 +1302,7 @@ html:has(.desktop-modal-wrap) {
 }
 
 .dfn .fn-summary-card {
-  margin: 0 0 4px;
+  margin: 0 0 16px; /* the grid's gap, now there's no heading between */
 }
 
 .dfn .night-card {
@@ -1191,7 +1311,9 @@ html:has(.desktop-modal-wrap) {
 
 .dfn-charts {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* each machine graph the full width, one under another: a night read
+   * across its hours wants the room */
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -1210,7 +1332,7 @@ html:has(.desktop-modal-wrap) {
   transform: translateY(-1px);
 }
 
-.dfn-metric:hover .panel-meta {
+.dfn-metric:hover .panel-head > svg {
   color: var(--text-secondary);
 }
 
@@ -1306,21 +1428,25 @@ html:has(.desktop-modal-wrap) {
   appearance: none;
   -webkit-appearance: none;
   padding: 0 34px 0 14px;
+  border: 0;
   border-radius: var(--r-md);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline-strong);
+  background: var(--surface-2); /* a step above the dialog */
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.15s ease;
+  transition: background 0.15s ease;
 }
 
-.cmp2-select:hover,
+/* no outline at rest (cards and dialogs carry none): hover lifts the fill,
+ * keyboard focus still gets its ring */
+.cmp2-select:hover {
+  background: var(--surface-2);
+}
 .cmp2-select:focus-visible {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
 }
 
 .cmp2-select-caret {
@@ -1422,7 +1548,7 @@ html:has(.desktop-modal-wrap) {
 .cmp2-verdict {
   padding: 16px 18px;
   border-radius: var(--r-md);
-  background: var(--surface-1);
+  background: var(--card-bg);
 }
 
 /* the verdict cards flank the same center gutter as the rows above */
@@ -1562,31 +1688,50 @@ html:has(.desktop-modal-wrap) {
   font-size: 18px;
 }
 
-/* the two ways in, side by side and centred */
+/* the two ways in, stacked and centred like the phone's: Get started on
+ * top, "I already have an account" under it */
 .desktop-onboarding .ob-intro-foot {
-  flex-direction: row;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding-top: 32px;
 }
 
 .desktop-onboarding .ob-intro-foot .btn {
-  width: auto;
+  width: 280px;
   padding: 0 28px;
 }
 
-/* the splash's "Look around first": a quiet way in, at the very bottom of
- * the page, centred under everything else (the phone keeps it top right).
- * Centred with margins, not a transform, so the splash's leave lift still
- * applies to it. */
+/* the whole group (logo, name, headline, copy, the three ways in) centred
+ * in the window at any height. The group runs from 98px above the lockup
+ * line to ~476px below it, so the line sits at 50% − 189px; max() keeps it
+ * clear of the top on a very short window. */
+.desktop-onboarding .ob-intro.dawn .ob-intro-logo {
+  top: max(24px, calc(50% - 287px));
+}
+.desktop-onboarding .ob-intro.dawn .ob-intro-wordmark {
+  top: max(146px, calc(50% - 165px));
+}
+.desktop-onboarding .ob-intro-main {
+  margin-top: max(242px, calc(50vh - 93px));
+}
+/* and the dawn glow rises to sit behind Get started, not the empty floor */
+.desktop-onboarding .ob-intro-dawn {
+  bottom: -30%;
+}
+
+/* "Look around first": on desktop, a quiet link under the other two ways
+ * in (Onboarding.jsx › .ob-intro-peek-link), in place of the phone's pill */
 .desktop-onboarding .ob-intro-peek {
-  top: auto;
-  bottom: 28px;
-  left: 0;
-  right: 0;
-  width: max-content;
-  margin-inline: auto;
+  display: none;
+}
+.desktop-onboarding .ob-intro-foot .ob-intro-peek-link {
+  display: inline-flex;
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--text-primary) 80%, var(--text-secondary));
 }
 
 /* ----- every other screen: one centred column, one fixed frame -----
@@ -1744,7 +1889,6 @@ html:has(.desktop-modal-wrap) {
   max-height: calc(100% - 48px);
   margin-block: auto;
   border-radius: var(--r-xl);
-  border: 1px solid var(--hairline-strong);
   background: var(--bg-base);
 }
 
@@ -1772,6 +1916,22 @@ html:has(.desktop-modal-wrap) {
 
   .dash .trend-grid {
     grid-template-columns: 1fr 1fr;
+  }
+  /* two rows of tiles: only the bottom row could join the chart, so none
+   * do; the selected one is just lit */
+  .dash .trend-tile.on {
+    border-bottom-left-radius: var(--r-md);
+    border-bottom-right-radius: var(--r-md);
+    margin-bottom: 0;
+    padding-bottom: 12px;
+  }
+  .dash .trend-tile.on::before,
+  .dash .trend-tile.on::after {
+    display: none;
+  }
+  .dash-trends-main .dash-trend-chart {
+    border-top-left-radius: var(--r-lg) !important;
+    border-top-right-radius: var(--r-lg) !important;
   }
 }
 
@@ -2007,15 +2167,9 @@ html:has(.desktop-modal-wrap) {
   border-radius: var(--r-sm);
 }
 
-/* the import screen's "Remove imported data": centred under the pair (as
- * specific as the dialog's own row rules above, so it wins) */
-.desktop-modal-wrap .ci-actions:has(> .btn ~ .btn ~ .btn) > .btn.subtle {
-  justify-content: center;
-}
-/* …and its "Remove all … nights?" confirmation takes that same place, below
- * the pair (not the top, where the dialog's row puts other notes) */
-.desktop-modal-wrap .ci-actions:has(> .btn ~ .btn) > .confirm-row {
-  order: 3;
+/* Tonight's "newest night is days old" row: its × goes square too */
+.desktop-stage .stale-note-x {
+  border-radius: var(--r-sm);
 }
 
 /* the guest card on desktop: the text on the left, its one button inline
@@ -2041,4 +2195,13 @@ html:has(.desktop-modal-wrap) {
 }
 .desktop-stage .info-tip-note {
   border-radius: var(--r-md);
+}
+
+/* Send feedback: rectangular scale, and the Done button at its own width */
+.desktop-stage .fb-step {
+  border-radius: var(--r-sm);
+}
+.desktop-stage .fb-done .btn {
+  align-self: center;
+  min-width: 160px;
 }

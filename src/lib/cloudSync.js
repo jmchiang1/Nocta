@@ -246,3 +246,24 @@ export function syncNow() {
     return changedHere;
   });
 }
+
+/* ---- signing out ----
+ * Sends anything not yet saved to the account, now (rather than "a moment
+ * later"), then says whether this device still holds anything the account
+ * doesn't. Only when it doesn't can sign-out forget the local copy
+ * (accountData.forgetAccountOnDevice): it comes back from the account at the
+ * next sign-in. Offline, or a save that failed: keep it. */
+export async function flushForSignOut() {
+  if (!authConfigured || !getOwner().startsWith('acct:')) return false;
+  Object.values(timers).forEach(clearTimeout);
+  await syncNow().catch(() => {});
+  const uid = await account();
+  if (!uid) return false;
+  const m = meta();
+  for (const doc of DOC_NAMES) {
+    const local = doc === 'card' ? await loadImport() : await DOCS[doc].read();
+    const synced = m.synced[doc] ?? 0;
+    if (local != null && ((m.changed[doc] ?? 0) > synced || synced === 0)) return false;
+  }
+  return true;
+}

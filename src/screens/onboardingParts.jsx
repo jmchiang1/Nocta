@@ -25,7 +25,7 @@ export function PairVisual({ logo, state }) {
   return (
     <div className={`ob-pair ${state}`} aria-hidden="true">
       <span className="ob-pair-tile nocta">
-        <img src="/Nocta-constellation-sm.svg" alt="" />
+        <img src="/nocta-mark-sm.svg" alt="" />
       </span>
       <span className="ob-pair-link">
         <i />

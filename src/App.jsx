@@ -4,7 +4,6 @@ import { prefersReducedMotion } from './lib/motion.jsx';
 import { StoreProvider, useStore } from './lib/store.jsx';
 import { LiquidGlassFilters } from './components/LiquidGlass.jsx';
 import { TabBar } from './components/TabBar.jsx';
-import { DevPanel } from './components/DevPanel.jsx';
 import { TonightScreen } from './screens/TonightScreen.jsx';
 import { TonightProposedScreen } from './screens/TonightProposedScreen.jsx';
 import { TrendsScreen } from './screens/TrendsScreen.jsx';
@@ -20,6 +19,7 @@ import { DeviceDetailSheet } from './screens/DeviceDetailSheet.jsx';
 import { AddDeviceSheet } from './screens/AddDeviceSheet.jsx';
 import { MaskPickerSheet } from './screens/MaskPickerSheet.jsx';
 import { EquipmentSheet } from './screens/EquipmentSheet.jsx';
+import { EventFilterSheet } from './screens/EventFilterSheet.jsx';
 import { MachinePickerSheet } from './screens/MachinePickerSheet.jsx';
 import { JournalSheet } from './screens/JournalSheet.jsx';
 import { DoctorSummarySheet } from './screens/DoctorSummarySheet.jsx';
@@ -32,9 +32,13 @@ import { ImportSheet } from './screens/CardImport.jsx';
 import { ProfileQuestionsSheet } from './screens/ProfileQuestionsSheet.jsx';
 import { ChangePasswordSheet } from './screens/ChangePasswordSheet.jsx';
 import { DeleteAccountSheet } from './screens/DeleteAccountSheet.jsx';
+import { FeedbackSheet } from './screens/FeedbackSheet.jsx';
+import { track } from './lib/analytics.js';
+import { noteVisit } from './lib/feedback.js';
 import { DesktopApp } from './components/desktop/DesktopApp.jsx';
 import { StatusPill } from './components/StatusPill.jsx';
 import { ErrorBoundary } from './components/ErrorBoundary.jsx';
+import { Inert, useScrollLock } from './components/Inert.jsx';
 import { NoNightsScreen } from './components/NoNights.jsx';
 import { DesktopCompare } from './components/desktop/DesktopCompare.jsx';
 import { DesktopCalendar } from './components/desktop/DesktopCalendar.jsx';
@@ -57,6 +61,7 @@ const SHEETS = {
   addDevice: AddDeviceSheet,
   maskPicker: MaskPickerSheet,
   equipment: EquipmentSheet,
+  eventFilter: EventFilterSheet,
   machinePicker: MachinePickerSheet,
   journal: JournalSheet,
   doctor: DoctorSummarySheet,
@@ -68,6 +73,7 @@ const SHEETS = {
   metricDetail: MetricDetailSheet,
   compliancePlan: CompliancePlanSheet,
   calendar: CalendarSheet,
+  feedback: FeedbackSheet,
 };
 
 /* drill-down subpages push in from the right; everything else is a modal */
@@ -81,6 +87,7 @@ const PAGE_SHEETS = new Set([
   'addDevice',
   'fullnight',
   'journal',
+  'cardImport',
   'metricDetail',
   'compliancePlan',
 ]);
@@ -121,8 +128,21 @@ function Shell() {
   // development only: lets the QA walkthrough open any sheet directly
   if (import.meta.env.DEV) window.__nocta = store;
 
+  // once per visit: analytics, and the count of days used (lib/feedback.js)
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current) return;
+    opened.current = true;
+    track('app_opened', { layout: viewMode === 'desktop' ? 'desktop' : 'mobile' });
+    noteVisit();
+  }, [viewMode]);
+
   // the desktop-only dialogs aren't built on Sheet, so they need their own Escape
   const desktopDialog = viewMode === 'desktop' && DESKTOP_DIALOGS.has(sheet?.kind);
+  // a desktop dialog is open (the full night is a page there, not a dialog):
+  // the dashboard behind it is inert and doesn't scroll
+  const desktopModal = viewMode === 'desktop' && onboarded && Boolean(sheet) && sheet.kind !== 'fullnight';
+  useScrollLock(desktopModal);
   useEffect(() => {
     if (!desktopDialog) return undefined;
     const onKey = (e) => {
@@ -137,7 +157,6 @@ function Shell() {
     // each step sits in a centred column (desktop.css › desktop onboarding)
     return (
       <div className="desktop-stage desktop-onboarding">
-        <DevPanel />
         <ErrorBoundary key={`ob-${onboardingNonce}`}>
           <Onboarding key={onboardingNonce} />
         </ErrorBoundary>
@@ -149,7 +168,6 @@ function Shell() {
   if (!onboarded) {
     return (
       <div className="stage">
-        <DevPanel />
         <div className="phone">
           <ErrorBoundary key={`ob-${onboardingNonce}`}>
             <Onboarding key={onboardingNonce} />
@@ -165,10 +183,11 @@ function Shell() {
   if (viewMode === 'desktop') {
     return (
       <div className="desktop-stage" data-arrive={arrive}>
-        <DevPanel />
-        <ErrorBoundary key={`app-${tabNonce}`}>
-          <DesktopApp />
-        </ErrorBoundary>
+        <Inert when={desktopModal}>
+          <ErrorBoundary key={`app-${tabNonce}`}>
+            <DesktopApp />
+          </ErrorBoundary>
+        </Inert>
         {/* the full night is a page of the dashboard (DesktopApp), not a
          * dialog; whatever opens over it (a metric page) is. Every other sheet
          * renders as a centered desktop card (CSS in desktop.css re-styles the
@@ -216,29 +235,33 @@ function Shell() {
 
   return (
     <div className="stage" data-arrive={arrive}>
-      <DevPanel />
       <div className="phone">
+        <Inert when={sheetUp}>
         <div className={`app-layer${layerState}`} aria-hidden={sheetUp || undefined}>
           {/* keying on tabNonce (bumped on every setTab call) remounts the
            * screen on every tab tap — including re-tapping the current tab —
            * so chart and card entrance animations replay each time the user
            * "lands" on a page. dir-* slides it in from the direction of travel. */}
-          <div className={`screen-host dir-${tabDir}`} key={tabNonce}>
+          <div className={`screen-host dir-${tabDir}`} key={tabNonce} data-page={noNights ? 'empty' : tab}>
             <ErrorBoundary>
               <Screen tab={tab} />
             </ErrorBoundary>
           </div>
           <TabBar />
         </div>
+        </Inert>
         {/* sheets stack: one opened from another (the check-in from the
          * full-night page) layers over it, so its own backdrop stays put */}
         {/* (a desktop-only dialog, e.g. compare, isn't a phone sheet: skipped) */}
         {sheets.map((s, i) => {
           const SheetView = SHEETS[s.kind];
+          // only the top sheet is live; the ones under it are inert
           return SheetView ? (
-            <ErrorBoundary key={`${i}-${s.kind}`} onReset={closeSheet}>
-              <SheetView />
-            </ErrorBoundary>
+            <Inert key={`${i}-${s.kind}`} when={i < sheets.length - 1}>
+              <ErrorBoundary onReset={closeSheet}>
+                <SheetView />
+              </ErrorBoundary>
+            </Inert>
           ) : null;
         })}
         <StatusPill />

@@ -14,6 +14,8 @@ import { TonightSky, SKY_FOR_STATE } from '../NightSky.jsx';
 import { WhyHorizon } from '../WhyHorizon.jsx';
 import { CheckinPrompt, LateCheckin } from '../CheckinPrompt.jsx';
 import { ProfileReminder } from '../ProfileReminder.jsx';
+import { FeedbackPrompt } from '../FeedbackPrompt.jsx';
+import { StaleDataBanner, SampleDataBanner } from '../NoNights.jsx';
 import { MetricSecondary } from '../MetricSecondary.jsx';
 import { BodyResponse } from '../BodyResponse.jsx';
 import { TonightSkeleton } from '../Skeleton.jsx';
@@ -177,6 +179,9 @@ export function DesktopTonight() {
         </div>
         <span className="dash-week-range tnum">{rangeLabel(nightsEnding(strip.end, STRIP_DAYS))}</span>
       </header>
+      {/* the card's newest night is days old: say so before showing it */}
+      <StaleDataBanner />
+      <SampleDataBanner />
       <Fortnight strip={strip} />
 
       {syncing ? (
@@ -203,7 +208,8 @@ export function DesktopTonight() {
 
             <div className="dash-tonight-pair">
               {/* the check-in is half of what Nox learns from, so it leads
-               * the row right under the night's suggestion */}
+               * the row right under the night's suggestion, and is done
+               * right there in the card */}
               {/* last night only, as on the phone */}
               {fixtureId === LAST_NIGHT && (
                 <CheckinPrompt
@@ -241,6 +247,8 @@ export function DesktopTonight() {
 
             {/* a skipped onboarding question, now and then (lib/profile.js) */}
             <ProfileReminder />
+            {/* how it's going, now and then (lib/feedback.js) */}
+            <FeedbackPrompt />
           </div>
 
           {bodyCards.length > 0 && (

@@ -396,7 +396,6 @@
 
 /* ---- mask picker results ---- */
 .ob-mask-results {
-  border: 1px solid var(--hairline-strong);
   border-radius: var(--r-lg);
   background: var(--glass-fill);
   max-height: 312px;
@@ -698,7 +697,6 @@
   padding: 22px 18px 16px;
   border-radius: var(--r-xl);
   background: rgba(255, 255, 255, 0.035);
-  border: 1px solid var(--hairline-strong);
   animation: whyRise 0.8s var(--ease-out) 0.25s backwards;
 }
 .ob-screen .ob-why-stage .why-card .why-eyebrow {
@@ -802,7 +800,6 @@
   border-radius: 20px;
   text-align: left;
   background: color-mix(in srgb, var(--surface-3) 72%, transparent);
-  border: 1px solid var(--hairline-strong);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   animation: notifIn 0.7s var(--ease-spring) 0.9s backwards;
@@ -880,9 +877,9 @@
   animation: obIn 0.4s ease-out both;
 }
 .ob-disc-logo {
-  /* the breath constellation is wide (~2.4:1) */
-  width: 112px;
-  height: 48px;
+  /* the logo: Nox and his stars, square */
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   margin-bottom: 22px;
 }
@@ -903,10 +900,10 @@
   width: 100%;
 }
 
-/* ---- intro: a swirl that forms the logo, then settles into the welcome ----
- * .swirl → palette lines fill the screen and spiral into the logo (see
- * components/SwirlLogo.jsx). .dawn → the logo glides up into the top-left
- * lockup, a warm glow rises from the bottom, and the headline + CTA come in. */
+/* ---- intro: the logo gathers out of the night sky, then settles into the welcome ----
+ * .swirl → stars drift together into Nox, who wakes with his three stars
+ * (components/NoxReveal.jsx). .dawn → the logo glides up into the lockup, a
+ * warm glow rises from the bottom, and the headline + CTA come in. */
 .ob-intro {
   position: absolute;
   inset: 0;
@@ -938,12 +935,13 @@
   pointer-events: none;
 }
 .ob-intro.dawn .ob-intro-dawn {
-  opacity: 1;
+  /* not full strength: the copy and links sit on it and need 4.5:1 */
+  opacity: 0.74;
   transform: translate(-50%, 0);
 }
 
 /* the logo: one box that moves from center stage to the lockup. It animates
- * layout (not transform) so the swirl canvas can track its size each frame. */
+ * layout (not transform), so the logo's SVG redraws crisply at every size. */
 .ob-intro-logo {
   position: absolute;
   z-index: 1;
@@ -960,40 +958,144 @@
 }
 .ob-intro.dawn .ob-intro-logo {
   /* …then rises into a stacked lockup about a third of the way down, so it
-   * anchors the top half as a brand moment rather than a nav header */
-  left: calc(50% - 88px);
-  top: calc(30% - 62px);
-  width: 176px;
-  height: 76px;
+   * anchors the top half as a brand moment rather than a nav header (the
+   * logo is square: Nox and his stars, ending 14px above the name) */
+  left: calc(50% - 56px);
+  top: calc(30% - 98px);
+  width: 112px;
+  height: 112px;
 }
 
-/* swirl → artwork handoff. The canvas is sized and offset in JS to cover the
- * whole screen; the artwork fades in over the drawn ribbon as the logo moves.
- * 700ms total matches HANDOFF in SwirlLogo.jsx. */
-.swirl-logo-canvas {
-  position: absolute;
-  pointer-events: none;
-  animation: swirlIn 300ms var(--ease-out) backwards;
-  transition: opacity 450ms var(--ease-in) 200ms;
-}
-.swirl-logo.handoff .swirl-logo-canvas {
-  opacity: 0;
-}
-.swirl-logo-img {
-  position: relative;
+/* ---- the reveal (components/NoxReveal.jsx): stars become Nox ----
+ * Timeline (s): 0–.5 the stars appear, scattered · ~.5–2.6 they spiral in
+ * round the moon and land on his outline, in order round the shape (three
+ * fly to the logo's star spots) · 2.25 a line traces through them · 2.7
+ * the moon lights up from its centre out to the outline · 3.05 the outline
+ * stars dissolve into its edge · 3.1 eyes appear, shut · 3.5 he blinks
+ * awake and his stars twinkle. NoxReveal resolves at 3.9. The SVG is one
+ * 100-unit box (×3 on the 300 px stage); the moon's centre is 48,56.4. */
+.nox-reveal svg {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  overflow: visible;
+}
+.nox-reveal .nr-dust {
+  fill: #ecf0fb;
   opacity: 0;
-  transition: opacity 450ms var(--ease-out);
+  transform-box: view-box;
+  transform-origin: 48px 56.4px;
+  animation:
+    nrGather 2.1s var(--d) both,
+    nrMelt 0.4s ease-in 3.05s forwards;
 }
-.swirl-logo.handoff .swirl-logo-img {
-  opacity: 1;
+/* the logo's three stars: hand over to the real ones (same spot, same size) */
+.nox-reveal .nr-dust.to-star {
+  animation:
+    nrGather 2.1s var(--d) both,
+    nrMelt 0.01s linear 3.1s forwards;
 }
-@keyframes swirlIn {
+@keyframes nrGather {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--rot)) translate(var(--sx), var(--sy));
+  }
+  22% {
+    opacity: 0.9;
+    transform: rotate(var(--rot)) translate(var(--sx), var(--sy));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.15, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes nrMelt {
+  to {
+    opacity: 0;
+  }
+}
+/* the constellation line through the outline stars */
+.nox-reveal .nr-trace {
+  fill: none;
+  stroke: #ecf0fb;
+  stroke-opacity: 0.55;
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation:
+    nrTrace 0.7s ease-in-out 2.25s forwards,
+    nrMelt 0.4s ease-in 3.05s forwards;
+}
+@keyframes nrTrace {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* the light: a circle in the moon's mask, grown from his centre */
+.nox-reveal .nl-grow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nrGrow 0.75s cubic-bezier(0.3, 0.7, 0.2, 1) 2.7s both;
+}
+@keyframes nrGrow {
+  from {
+    transform: scale(0);
+  }
+}
+/* once lit, one small breath */
+.nox-reveal:not(.still) .nl-moon {
+  transform-box: view-box;
+  transform-origin: 48px 56.4px;
+  animation: nrSettle 0.6s ease-in-out 3.35s;
+}
+@keyframes nrSettle {
+  45% {
+    transform: scale(1.04);
+  }
+}
+.nox-reveal:not(.still) .nl-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    nrShow 0.25s ease-out 3.1s both,
+    nrWake 0.55s ease-out 3.5s both;
+}
+@keyframes nrShow {
   from {
     opacity: 0;
+  }
+}
+@keyframes nrWake {
+  0% {
+    transform: scaleY(0.12);
+  }
+  55% {
+    transform: scaleY(1.12);
+  }
+  100% {
+    transform: none;
+  }
+}
+.nox-reveal:not(.still) .nl-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    nrShow 0.01s linear 3.1s both,
+    nrPulse 0.8s ease-out calc(3.45s + var(--i) * 140ms);
+}
+@keyframes nrPulse {
+  40% {
+    transform: scale(1.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nox-reveal :is(.nr-dust, .nr-trace) {
+    display: none;
+  }
+  .nox-reveal :is(.nl-moon, .nl-grow, .nl-eyes, .nl-star) {
+    animation: none;
   }
 }
 
@@ -1007,8 +1109,8 @@
   width: max-content;
   margin-inline: auto;
   padding-inline: 0.15em; /* room for the loose spacing it starts with */
-  /* waits under the constellation at centre stage (.ob-intro-logo's 42%)… */
-  top: calc(42% + 74px);
+  /* waits under the moon at centre stage (.ob-intro-logo's 42%)… */
+  top: calc(42% + 128px);
   text-align: center;
   line-height: 1.2;
   font-family: var(--font-display);
@@ -1027,7 +1129,7 @@
   -webkit-mask-position: 100% 0;
   mask-position: 100% 0;
 }
-/* …then rides up with the mark as one lockup (same 0.8s, same easing as
+/* …then rides up with the logo as one lockup (same 0.8s, same easing as
  * .ob-intro-logo), writing itself in left to right as it goes, the way the
  * stars lit, and tightening into its spacing as it lands */
 .ob-intro.dawn .ob-intro-wordmark {
@@ -1043,32 +1145,6 @@
     opacity 0.18s linear 0.08s,
     -webkit-mask-position 0.75s cubic-bezier(0.45, 0, 0.3, 1) 0.08s,
     mask-position 0.75s cubic-bezier(0.45, 0, 0.3, 1) 0.08s;
-}
-
-/* Nox, the coach: a small moon that rises into the sky beside the settled
- * constellation (up and to the right of the lockup), then idles — a glance
- * and a blink now and then. Positioned off the lockup, so it holds on every
- * screen height. */
-.ob-intro-nox {
-  position: absolute;
-  z-index: 1;
-  left: calc(50% + 96px);
-  top: calc(30% - 92px);
-  pointer-events: none;
-  /* backwards, not both: once risen, the animation lets go, so the splash's
-   * leave transition can fade him out with everything else */
-  animation: obNoxRise 0.9s var(--ease-ios) backwards;
-}
-@keyframes obNoxRise {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ob-intro-nox {
-    animation: none;
-  }
 }
 
 .ob-intro-main {
@@ -1102,7 +1178,9 @@
   max-width: 320px;
   font-size: 17px;
   line-height: 1.5;
-  color: var(--text-secondary);
+  /* lighter than --text-secondary: it sits over the warm dawn glow, where
+   * the usual grey drops under 4.5:1 */
+  color: color-mix(in srgb, var(--text-primary) 88%, var(--text-secondary));
 }
 .ob-intro-foot {
   position: relative;
@@ -1174,15 +1252,15 @@
 .wl-mark {
   position: relative;
   width: 140px;
-  height: 72px;
+  height: 96px;
   margin-bottom: 28px;
   display: grid;
   place-items: center;
 }
 .wl-mark img {
   position: relative;
-  width: 140px;
-  height: 60px;
+  width: 88px;
+  height: 88px;
   animation: wlMarkIn 1s 0.3s var(--ease-spring) backwards;
 }
 @keyframes wlMarkIn {
@@ -1474,6 +1552,11 @@
 }
 .ob-intro-foot .ob-intro-signin {
   font-size: 16px;
+  color: color-mix(in srgb, var(--text-primary) 88%, var(--text-secondary)); /* over the glow, as .ob-intro-copy */
+}
+/* the guest door as a link: desktop only (the phone has the pill up top) */
+.ob-intro-foot .ob-intro-peek-link {
+  display: none;
 }
 
 /* keyed wrapper stands in for the step's own flex column */
@@ -1507,7 +1590,6 @@
   padding: 6px 4px 6px 14px;
   border-radius: var(--r-md);
   background: var(--glass-fill);
-  border: 1px solid var(--hairline);
   font-size: 15px;
   color: var(--text-secondary);
 }
@@ -1544,7 +1626,6 @@
   padding: 12px 14px;
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--alert) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--alert) 30%, transparent);
   font-size: 15px;
   line-height: 1.5;
   color: var(--alert-hi);
@@ -1600,8 +1681,8 @@
 /* the choice page is one centred group: mark, title, the two ways in, then
  * the switch + guest links directly beneath (no gap to a bottom footer) */
 .au-mark {
-  width: 64px;
-  height: auto;
+  width: 72px;
+  height: 72px;
   margin-bottom: 22px;
 }
 .ob-content.center .ob-copy {
@@ -1731,7 +1812,7 @@
  *   dawn     bottom -52%, height 125%, peak 62%   (.ob-intro-dawn)
  *   ambient  bottom -62%, height 100%, peak 26%   (.ob-ambient) → opacity ≈ .42 */
 .ob-intro.dawn.leaving
-  :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo, .ob-intro-nox) {
+  :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo) {
   opacity: 0;
   transform: translateY(-12px);
   transition:
@@ -1752,7 +1833,7 @@
 /* coming back (from sign-in, or out of setup): the settled splash fades in
  * rather than snapping, and its glow rises back up from the ambient's place */
 .ob-intro.settled:not(.leaving)
-  :is(.ob-intro-wordmark, .ob-intro-title, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo, .ob-intro-nox) {
+  :is(.ob-intro-wordmark, .ob-intro-title, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo) {
   animation: obFadeUp 0.5s var(--ease-out) both;
 }
 .ob-intro.settled:not(.leaving) .ob-intro-dawn {
@@ -1977,4 +2058,18 @@
 }
 .ob-rule-grid .ob-select {
   padding-inline: 10px;
+}
+
+/* sign-up: agreeing to the Terms and Privacy Policy (AuthScreen LegalNote) */
+.au-legal {
+  margin: 14px 4px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+.au-legal a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

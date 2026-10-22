@@ -27,7 +27,7 @@ export function openSignInPopup() {
   try {
     win.document.title = 'Continue with Google';
     win.document.body.style.cssText =
-      'margin:0;background:#090d1a;color:#9aa3c0;font:15px/1.5 Inter,system-ui,sans-serif;display:grid;place-items:center;height:100vh';
+      'margin:0;background:#05080f;color:#9aa3c0;font:15px/1.5 Inter,system-ui,sans-serif;display:grid;place-items:center;height:100vh';
     win.document.body.textContent = 'Opening Google…';
   } catch {
     /* a window left over from an earlier attempt may already be elsewhere */
@@ -46,7 +46,7 @@ export function listenForPopup(onResult) {
 /* the popup's side (main.jsx): finish, report, close */
 export async function finishPopupSignIn() {
   document.body.style.cssText =
-    'margin:0;background:#090d1a;color:#9aa3c0;font:15px/1.5 Inter,system-ui,sans-serif;display:grid;place-items:center;height:100vh';
+    'margin:0;background:#05080f;color:#9aa3c0;font:15px/1.5 Inter,system-ui,sans-serif;display:grid;place-items:center;height:100vh';
   document.getElementById('root').textContent = 'Signing you in…';
   const params = new URLSearchParams(window.location.search + window.location.hash.replace(/^#/, '&'));
   let result;

@@ -3,6 +3,7 @@
  * person saves it as a PDF or prints it. Numbers only: no insights, no AI
  * commentary (FEATURES › Doctor PDF export). Everything on it is read from the
  * card; a value the card doesn't have is shown as "—", never estimated. */
+import { track } from './analytics.js';
 import { NIGHTS, LAST_NIGHT, ahiTotal, averages, metCompliance, fmtShort, addDays, cardNight } from '../data/history.js';
 import { cardDevice, pressureRange, rangeLabel } from '../data/therapy.js';
 import { getCard } from './dataset.js';
@@ -90,6 +91,7 @@ export function openDoctorReport(opts) {
   const html = buildReportHtml(opts);
   const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
   const win = window.open(url, '_blank');
+  track('doctor_report_opened');
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return Boolean(win);
 }

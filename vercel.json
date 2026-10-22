@@ -1,3 +1,18 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://us-assets.i.posthog.com 'sha256-1jLQjA6oBECNsfb+S2QBlNTLnSL0ME58aRbRjkrNw3c='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://hhkeuxpmcbfkifvhvdxp.supabase.co wss://hhkeuxpmcbfkifvhvdxp.supabase.co https://us.i.posthog.com https://us-assets.i.posthog.com; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()" }
+      ]
+    }
+  ]
 }

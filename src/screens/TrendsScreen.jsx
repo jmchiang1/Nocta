@@ -235,11 +235,11 @@ export function TrendsScreen() {
       {t.bestWorst && (
         <>
           <div className="section-head">
-            <h3>Best &amp; worst night</h3>
+            <h3>Lowest &amp; highest AHI</h3>
           </div>
           <div className="compare">
             <div className="cmp-card best">
-              <div className="cmp-tag">Best</div>
+              <div className="cmp-tag">Lowest</div>
               <div className="cmp-date">{t.bestWorst.best.date}</div>
               <div className="cmp-ahi tnum">
                 <CountUp value={t.bestWorst.best.ahi} duration={900} />
@@ -247,7 +247,7 @@ export function TrendsScreen() {
               <div className="cmp-sub">{t.bestWorst.best.note}</div>
             </div>
             <div className="cmp-card worst">
-              <div className="cmp-tag">Worst</div>
+              <div className="cmp-tag">Highest</div>
               <div className="cmp-date">{t.bestWorst.worst.date}</div>
               <div className="cmp-ahi tnum">
                 <CountUp value={t.bestWorst.worst.ahi} duration={900} />

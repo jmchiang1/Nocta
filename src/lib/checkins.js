@@ -100,6 +100,18 @@ export function clearCheckin(date) {
   saveLate();
 }
 
+/* pick or unpick one answer to a check-in question: an "exclusive" answer
+ * ("Nothing unusual") clears the others, and any other answer clears it.
+ * Shared by the check-in sheet and the desktop card. */
+export function toggleCheckinPick(picks, screen, opt) {
+  const cur = picks[screen.id] ?? [];
+  let next;
+  if (cur.includes(opt.id)) next = cur.filter((x) => x !== opt.id);
+  else if (opt.exclusive) next = [opt.id];
+  else next = [...cur.filter((x) => !screen.options.find((o) => o.id === x)?.exclusive), opt.id];
+  return { ...picks, [screen.id]: next };
+}
+
 /* was this night's check-in added later rather than that morning? */
 export const isLateCheckin = (date) => late.has(date);
 

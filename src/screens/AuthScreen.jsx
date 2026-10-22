@@ -12,6 +12,7 @@
  * account (→ sign in, email kept), wrong password, unconfirmed email, resend
  * cooldown, offline, rate limits, a link opened in another browser, an
  * expired link, Supabase's mailer refusing outside addresses. */
+import { track } from '../lib/analytics.js';
 import { useState, useEffect } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
@@ -221,6 +222,24 @@ function Forgot({ initialEmail, onSent, onBack }) {
 }
 
 /* back from a reset link: signed in, owes a new password */
+/* making an account means agreeing to the Terms and the Privacy Policy, so
+ * say so where it happens (the public pages, in a new tab: setup isn't left) */
+function LegalNote() {
+  return (
+    <p className="au-legal">
+      By continuing, you agree to Nocta’s{' '}
+      <a href="/terms" target="_blank" rel="noopener noreferrer">
+        Terms of Service
+      </a>{' '}
+      and{' '}
+      <a href="/privacy" target="_blank" rel="noopener noreferrer">
+        Privacy Policy
+      </a>
+      .
+    </p>
+  );
+}
+
 export function NewPassword({ onCancel }) {
   const { updatePassword } = useStore();
   const [password, setPassword] = useState('');
@@ -294,7 +313,10 @@ export function AuthScreen({ mode, onMode, onBack, onGuest, note, title, copy, e
     const addr = email.trim();
     const r = signup ? await signUpWithEmail(addr, password) : await signInWithEmail(addr, password);
     setBusy(false);
-    if (r.status === 'confirm') setScreen({ kind: 'check', email: addr });
+    if (r.status === 'confirm') {
+      track('signed_up', { method: 'email' });
+      setScreen({ kind: 'check', email: addr });
+    }
     else if (r.status === 'unconfirmed')
       setScreen({ kind: 'check', email: addr, note: 'Confirm your email first.' });
     else if (r.status === 'exists') setError({ exists: true });
@@ -335,7 +357,7 @@ export function AuthScreen({ mode, onMode, onBack, onGuest, note, title, copy, e
     return (
       <Frame onBack={onBack} screenKey={`choose-${mode}`} enter={enter}>
         <Step center>
-          <img className="au-mark" src="/Nocta-constellation.svg" alt="" />
+          <img className="au-mark" src="/nocta-mark.svg" alt="" />
           <h1 className="ob-title">{signup ? (title ?? 'Create your account') : 'Welcome back'}</h1>
           <p className="ob-copy">
             {signup
@@ -360,6 +382,7 @@ export function AuthScreen({ mode, onMode, onBack, onGuest, note, title, copy, e
             <Icon name="mail" size={19} />
             Continue with email
           </button>
+          {signup && <LegalNote />}
           <div className="au-after">
             {modeSwitch}
             {signup && onGuest && (
@@ -408,6 +431,7 @@ export function AuthScreen({ mode, onMode, onBack, onGuest, note, title, copy, e
           <button type="submit" className="btn primary au-submit" disabled={busy} aria-busy={busy || undefined}>
             {busy ? (signup ? 'Creating account…' : 'Signing in…') : signup ? 'Create account' : 'Sign in'}
           </button>
+          {signup && <LegalNote />}
           {/* right under the button, not pinned to the bottom of the screen */}
           <div className="au-after">{modeSwitch}</div>
         </Step>

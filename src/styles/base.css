@@ -36,143 +36,13 @@ button {
 }
 
 /* ---- the mobile app's stage: the app fills the screen (a real web app,
- * not a phone mockup). On a wide window with the mobile layout forced from
- * the DevPanel, it sits in a centred column. ---- */
+ * not a phone mockup). ---- */
 .stage {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
   background: var(--bg-grad-bottom);
 }
-.dev-panel {
-  /* floats over the app, bottom centre, clear of the mobile tab bar */
-  position: fixed;
-  left: 50%;
-  bottom: calc(16px + var(--dp-lift, 0px));
-  transform: translateX(-50%);
-  z-index: 600;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 6px 10px;
-  width: max-content;
-  max-width: calc(100vw - 16px);
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bg-base) 92%, transparent);
-  border: 1px dashed rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: fade var(--dur-fast) ease both;
-}
-/* the mobile app's tab bar floats at the bottom, so the demo control sits
- * above it there; collapsed, it's a small tab on the right edge, clear of
- * full-width buttons */
-.stage {
-  --dp-lift: calc(84px + env(safe-area-inset-bottom));
-}
-.stage .dev-handle {
-  right: 0;
-  bottom: auto;
-  top: 38%;
-  padding: 10px 6px;
-  border-right: 0;
-  border-radius: 10px 0 0 10px;
-  writing-mode: vertical-rl;
-}
-.stage .dev-handle kbd {
-  margin: 4px 0 0;
-}
-.dev-panel .dp-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2px;
-}
-.dev-panel .dp-top .dp-label {
-  padding: 0;
-}
-.dev-panel .dp-close {
-  white-space: nowrap;
-  padding: 3px 6px;
-  font-size: 10px;
-  border: 0;
-  background: none;
-  color: var(--text-tertiary);
-}
-.dev-panel .dp-refresh {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.dev-panel button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.dev-panel kbd,
-.dev-handle kbd {
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 5px;
-  margin-left: 4px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: var(--text-tertiary);
-}
-/* collapsed state — a quiet tab so the phone reads as the whole product */
-.dev-handle {
-  position: fixed;
-  right: 12px;
-  bottom: calc(16px + var(--dp-lift, 0px));
-  white-space: nowrap;
-  z-index: 100;
-  padding: 8px 12px;
-  border-radius: var(--r-pill);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  background: rgba(123, 149, 216, 0.06);
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  opacity: 0.5;
-  transition: opacity var(--dur-fast) ease;
-}
-.dev-handle:hover,
-.dev-handle:focus-visible {
-  opacity: 1;
-}
-.dev-panel .dp-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  padding: 2px 2px 0;
-}
-.dev-panel button {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 8px 11px;
-  border-radius: 9px;
-  text-align: left;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--hairline);
-}
-.dev-panel button.on {
-  background: var(--data-1);
-  color: #0b1020;
-  border-color: transparent;
-}
-.dev-panel .dp-sep {
-  width: 1px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 2px;
-}
-
 /* the mobile app's container (the class name is from its phone-mockup days;
  * every mobile style is scoped to it). Fills the screen on a phone; on a
  * wider window, with the mobile layout forced, a centred column. */
@@ -183,9 +53,9 @@ button {
   position: sticky;
   top: 0;
   overflow: hidden;
-  background:
-    radial-gradient(120% 55% at 50% 0%, rgba(240, 164, 122, 0.1) 0%, rgba(240, 164, 122, 0) 52%),
-    linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 38%, var(--bg-grad-bottom) 100%);
+  /* the dark blue behind every tab, with a faint dusk glow across the top
+   * (Tonight adds its sky over it) */
+  background: var(--bg-base); /* each page brings its own header glow */
 }
 
 .phone::after {
@@ -347,10 +217,3 @@ button {
   border: 0;
 }
 
-/* demo panel fine print (e.g. the mock sign-in codes) */
-.dev-panel .dp-hint {
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--text-tertiary);
-  padding: 0 2px;
-}

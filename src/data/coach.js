@@ -545,7 +545,7 @@ const REPLIES = [
   {
     match: ['pressure', 'cmh2o', 'turn up', 'turn down', 'raise', 'increase my'],
     text:
-      "I can't suggest a pressure setting. That one is genuinely your sleep doctor's call, and changing it on your own can mask what the data is telling them. What I *can* do is prepare a clean summary of your recent nights so the conversation with them is quick. Want me to start that?",
+      "I can't suggest a pressure setting. That one is genuinely your sleep doctor's call, and changing it on your own can mask what the data is telling them. What helps is bringing them a clean summary of your recent nights: it's in Therapy, under *Summary for your doctor*, ready to print or save.",
   },
   {
     match: ['diagnos', 'do i have', 'is this csa', 'central sleep apnea', 'complex apnea'],
@@ -553,7 +553,7 @@ const REPLIES = [
       () => {
         const c = centralNights(365);
         const shows = c
-          ? `central-type events ran at ${c.joined}, against a usual **${c.usual}**. That's worth showing your sleep doctor, and I can package it for you.`
+          ? `central-type events ran at ${c.joined}, against a usual **${c.usual}**. That's worth showing your sleep doctor. Therapy › *Summary for your doctor* puts your recent nights on one page.`
           : 'your numbers, night by night, and how they compare with your usual. If something is worth a doctor’s look, I’ll say so plainly.';
         return `I won't put a name to it. That's a clinical call, and I'm a companion, not a doctor. What I can tell you is *what the data shows*: ${shows}`;
       },

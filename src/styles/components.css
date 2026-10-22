@@ -37,6 +37,64 @@
   display: block;
 }
 
+/* ============ CARDS ============ */
+/* three kinds of card surface (after Oura), each a faint gradient in one
+ * tint, never a grade: the tint says what a card is about (the metric blue
+ * by default, REM lavender for sleep and the body; a card sets --card-tint
+ * to change it). Every card's background reads var(--card-bg).
+ *
+ * 1. stat cards — a number with its little chart or bar: the glow sits
+ *    where the chart is, bottom right, fading to the plain surface at the
+ *    top left (light → dark). */
+:where(.metric, .mg-tile, .cmp-card, .fn-stat, .ahi-card, .projection) {
+  --card-bg:
+    radial-gradient(
+      140% 160% at 100% 100%,
+      color-mix(in srgb, var(--card-tint, var(--data-1)) 16%, transparent) 0%,
+      color-mix(in srgb, var(--card-tint, var(--data-1)) 6%, transparent) 45%,
+      transparent 75%
+    ),
+    var(--surface-1);
+}
+/* 2. everything else (lists, settings, equipment, the machine…) — top
+ *    centre to bottom centre, a touch lighter and tinted at the top, the
+ *    plain surface by the bottom. Sized in px so a short card and a tall
+ *    one shade the same way. */
+:where(
+    .journal-month-summary, .cal-detail, .card, .equip, .list, .fn-checkin, .episode, .md-about,
+    .cmp2-verdict, .dash-profile, .ci-device, .profile-card, .device-card, .sd-card
+  ) {
+  --card-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card-tint, var(--data-1)) 8%, var(--surface-1)) 0px,
+    var(--surface-1) 220px
+  );
+}
+/* 3. full-width charts (Trends, the full night, a metric's page, events) —
+ *    lit softly from the top centre, a step lighter than other cards up
+ *    there, settling to the card surface by the bottom: never darker than
+ *    a card, so the chart still stands off the page. */
+/* (the full night's summary sits with its charts, so it shares their surface) */
+:where(.chart-card, .panel, .night-card, .body-card, .fn-summary-card) {
+  --card-bg:
+    radial-gradient(
+      90% 260px at 50% 0%,
+      color-mix(in srgb, var(--card-tint, var(--data-1)) 10%, transparent) 0%,
+      transparent 100%
+    ),
+    linear-gradient(180deg, var(--surface-2) 0px, var(--surface-1) 320px);
+}
+:where(.body-card, .fn-checkin) {
+  --card-tint: var(--stage-rem);
+}
+/* a card inside a card (the three numbers in Tonight's "Last night", a
+ * chart panel's stats) is a flat, darker well set into its card: one
+ * gradient per surface, never one on top of another */
+:where(.tn-module, .card, .panel, .chart-card, .night-card, .body-card, .fn-summary-card)
+  :where(.metric, .mg-tile, .fn-stat, .trend-tile, .cmp-card) {
+  --card-bg: color-mix(in srgb, var(--bg-base) 55%, transparent);
+}
+
 /* ============ BUTTONS ============ */
 /* No button carries a border (the user's call, 2026-10-16): fills, tints
  * and type mark them, and a selected state is a stronger fill, never an
@@ -377,7 +435,6 @@ button,
   padding: 14px;
   border-radius: var(--r-md);
   background: rgba(224, 122, 106, 0.08);
-  border: 1px solid rgba(224, 122, 106, 0.22);
 }
 .confirm-text {
   margin: 0 0 12px;
@@ -478,7 +535,6 @@ button,
 .empty-note {
   padding: 18px;
   border-radius: var(--r-md);
-  border: 1px dashed var(--hairline-strong);
   font-size: 13px;
   color: var(--text-tertiary);
   text-align: center;
@@ -487,7 +543,7 @@ button,
 /* ============ GENERIC CARD ============ */
 .card {
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+  background: var(--card-bg);
   box-shadow: var(--shadow-card);
 }
 
@@ -717,7 +773,6 @@ button,
   padding: 16px 18px;
   border-radius: 16px;
   background: rgba(240, 164, 122, 0.1);
-  border: 1px solid rgba(240, 164, 122, 0.22);
   margin-bottom: 18px;
 }
 .why-card .action .action-text {
@@ -872,7 +927,7 @@ button,
 .ahi-card {
   border-radius: var(--r-lg);
   padding: 22px 22px 20px;
-  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+  background: var(--card-bg);
   margin-bottom: 22px;
   box-shadow: var(--shadow-card);
 }
@@ -941,7 +996,7 @@ button,
  * HealthKit integration; mock data in v1). See data/fixtures.js. */
 .body-card {
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+  background: var(--card-bg);
   padding: 18px 18px 14px;
   margin-bottom: 14px;
   /* lets the section content transition to/from height:auto on modern browsers */
@@ -1207,7 +1262,7 @@ button,
 .metric {
   flex: 0 0 152px;
   scroll-snap-align: start;
-  background: var(--surface-1);
+  background: var(--card-bg);
   border-radius: var(--r-md);
   padding: 14px 13px 12px;
   text-align: left;
@@ -1240,12 +1295,43 @@ button,
 /* ============ NIGHT TIMELINE ============ */
 .night-card {
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-1) 0%, #11162a 100%);
+  background: var(--card-bg);
   padding: 20px 20px 16px;
   box-shadow: var(--shadow-card);
 }
 .night-card .chart {
   margin-top: 12px;
+}
+/* titled, it's one of the full night's cards: the same gap below as the rest */
+.night-card:has(> .panel-head) {
+  margin-bottom: 14px;
+}
+/* a card's own title, inside it (the full night's charts, events summary
+ * and sleep stages): the name on the left; on the right a chevron when the
+ * card opens a page, or where the data came from */
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.panel-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
+}
+.panel-head > svg {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+.panel-source {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
 }
 .night-meta {
   display: flex;
@@ -1458,7 +1544,6 @@ button,
   width: 100%;
 }
 .checkin.todo {
-  border: 1px dashed rgba(240, 164, 122, 0.35);
   background: rgba(240, 164, 122, 0.04);
 }
 .checkin.done {
@@ -1636,7 +1721,11 @@ button,
   display: flex;
   flex-direction: column;
   border-radius: var(--r-xl) var(--r-xl) 0 0;
-  background: linear-gradient(180deg, var(--surface-3) 0%, var(--bg-base) 22%);
+  /* a step up from the page, with the cards' soft glow from the top centre
+   * (no hard band): the cards inside still stand off it */
+  background:
+    radial-gradient(90% 260px at 50% 0%, color-mix(in srgb, var(--data-1) 9%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-1) 55%, var(--bg-base));
   border-top: 1px solid var(--hairline-strong);
   box-shadow: var(--shadow-sheet);
   animation: slideUp 0.34s cubic-bezier(0.32, 0.72, 0, 1) both;
@@ -1755,8 +1844,12 @@ html:has(.phone .sheet) body {
 .sheet-foot {
   padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--hairline);
-  background: var(--bg-base);
+  background: color-mix(in srgb, var(--surface-1) 55%, var(--bg-base)); /* the sheet's own fill */
   flex-shrink: 0;
+}
+/* a pushed page is the plain page colour, and so is its footer */
+.sheet.page .sheet-foot {
+  background: var(--bg-base);
 }
 /* more than one button: stacked with a little air between (desktop puts
  * them side by side — desktop.css) */
@@ -1779,7 +1872,7 @@ html:has(.phone .sheet) body {
   gap: 10px;
   padding: 14px 16px;
   border-radius: var(--r-md);
-  background: var(--surface-1);
+  background: var(--card-bg);
   cursor: pointer;
   list-style: none;
 }
@@ -2016,7 +2109,7 @@ html:has(.phone .sheet) body {
   min-height: 48px;
   padding: 14px 14px 12px;
   border-radius: var(--r-md);
-  background: var(--surface-1);
+  background: var(--card-bg);
   text-align: left;
   font-family: inherit;
   color: inherit;
@@ -2347,7 +2440,6 @@ html:has(.phone .sheet) body {
   font-family: inherit;
   color: var(--text-primary);
   background: color-mix(in srgb, var(--alert) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--alert) 36%, transparent);
   animation: riseIn 0.5s var(--ease-out) 1.6s backwards;
 }
 .wh-doctor-title {
@@ -2398,7 +2490,10 @@ html:has(.phone .sheet) body {
   margin-top: 14px;
   padding: 2px 16px 14px;
   border-radius: var(--r-xl);
-  background: color-mix(in srgb, var(--surface-1) 56%, transparent);
+  /* see-through over Tonight's sky, with the cards' corner wash */
+  background:
+    radial-gradient(130% 340px at 50% -90px, color-mix(in srgb, var(--data-1) 17%, transparent) 0%, transparent 100%),
+    color-mix(in srgb, var(--surface-1) 56%, transparent);
   backdrop-filter: blur(22px) saturate(140%);
   -webkit-backdrop-filter: blur(22px) saturate(140%);
 }
@@ -2492,7 +2587,6 @@ html:has(.phone .sheet) body {
   min-height: 52px;
   padding: 12px 14px;
   border-radius: var(--r-md);
-  border: 1px solid color-mix(in srgb, var(--good) 28%, transparent);
   background: color-mix(in srgb, var(--good) 8%, transparent);
   font-family: inherit;
   font-size: 15px;
@@ -2740,7 +2834,7 @@ button.cal-day:hover {
 .cal-detail {
   padding: 20px;
   border-radius: var(--r-lg);
-  background: var(--surface-1);
+  background: var(--card-bg);
 }
 
 .cal-detail.empty p {
@@ -3326,7 +3420,6 @@ button.nl-row:focus-visible {
   margin: 15vh auto;
   padding: 28px 24px;
   border-radius: var(--r-lg);
-  border: 1px solid var(--hairline-strong);
   background: var(--surface-1);
   text-align: center;
 }
@@ -3633,4 +3726,211 @@ button.nl-row:focus-visible {
     opacity: 0;
     transform: scale(1.7);
   }
+}
+
+/* =================================================================
+ * Send feedback (screens/FeedbackSheet.jsx) and its now-and-then card
+ * on Tonight (components/FeedbackPrompt.jsx)
+ * ================================================================= */
+.fb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.fb-field {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  border: 0; /* the fieldset's default frame */
+}
+.fb-field legend {
+  padding: 0;
+}
+/* 1–5: five equal cells across the sheet */
+.fb-scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.fb-step {
+  min-height: 52px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition:
+    background var(--dur-fast) ease,
+    transform var(--dur-fast) ease;
+}
+.fb-step:active {
+  transform: scale(0.96);
+}
+.fb-step.selected {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.fb-scale-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+.ob-input.fb-note {
+  height: auto;
+  min-height: 132px;
+  padding: 14px 16px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.45;
+}
+.fb-count {
+  color: var(--text-secondary);
+}
+.fb-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 4px;
+  text-align: center;
+}
+.fb-done h2 {
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.fb-done p {
+  margin: 0 0 14px;
+  max-width: 30ch;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.fb-done .btn {
+  align-self: stretch;
+}
+.fb-prompt-never {
+  min-height: 44px;
+  margin: -6px 0 2px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+/* the sheet takes focus itself when it opens (Sheet.jsx); no ring around
+ * the whole sheet, its controls keep theirs */
+.sheet:focus {
+  outline: none;
+}
+
+/* the phone's event controls: one button (which events · their order) that
+ * opens EventFilterSheet, and how many are showing */
+.ev-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.ev-filter-v {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ev-filter-n {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+.ev-filter-sheet {
+  padding-bottom: 8px;
+}
+.ev-filter-sheet .section-head:first-child {
+  margin-top: 4px;
+}
+.ev-pick-n {
+  font-size: 15px;
+  color: var(--text-tertiary);
+}
+.ev-pick-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  color: var(--accent);
+}
+
+/* Tonight's "Last night" card: the same surface as a Trends chart (lit at
+ * the top, settling to the card colour), solid rather than see-through */
+.tn-module:has(.metrics-row) {
+  background:
+    radial-gradient(90% 260px at 50% 0%, color-mix(in srgb, var(--data-1) 10%, transparent) 0%, transparent 100%),
+    linear-gradient(180deg, var(--surface-2) 0px, var(--surface-1) 320px);
+}
+
+/* ---- page header glows (after Oura's section headers): each page is lit
+ * softly behind its title in its own colour, fading into the background
+ * before the first card. A colour for the page, never a grade. Tonight has
+ * its night sky instead. ---- */
+[data-page='trends'],
+[data-page='empty'] {
+  --page-glow: var(--data-1);
+}
+[data-page='therapy'] {
+  --page-glow: var(--page-teal);
+}
+[data-page='you'] {
+  --page-glow: var(--stage-rem);
+}
+[data-page='fullnight'],
+.sheet.fn-sheet,
+.sheet.md-sheet {
+  --page-glow: var(--data-deep); /* a metric's own page: the night it's from */
+}
+/* phone: on the page's scroll, so the glow scrolls away with the title;
+ * centred over the page, reaching about halfway down the screen */
+.screen-host[data-page]:not([data-page='tonight']) .screen > .scroll {
+  background: radial-gradient(150% 520px at 50% -80px, color-mix(in srgb, var(--page-glow) 46%, transparent), transparent 78%)
+    no-repeat;
+  background-attachment: local;
+}
+/* the full night and a metric's page (phone): an ordinary header in the
+ * flow, not the floating blurred bar other pushed pages have, so nothing
+ * covers the glow; the glow is on the page itself, behind the header */
+.phone .sheet.page:is(.fn-sheet, .md-sheet) {
+  background:
+    radial-gradient(150% 520px at 50% -80px, color-mix(in srgb, var(--page-glow) 46%, transparent), transparent 78%) no-repeat,
+    var(--bg-base);
+}
+.phone .sheet.page:is(.fn-sheet, .md-sheet) .sheet-drag {
+  position: relative;
+}
+.phone .sheet.page:is(.fn-sheet, .md-sheet) .sheet-drag::before {
+  display: none;
+}
+.phone .sheet.page:is(.fn-sheet, .md-sheet) .sheet-body {
+  padding-top: 4px;
+}
+
+/* desktop: behind the top of the main column */
+.dash-main[data-page]:not([data-page='tonight'])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 720px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(80% 100% at 50% 0%, color-mix(in srgb, var(--page-glow) 36%, transparent), transparent 74%);
 }

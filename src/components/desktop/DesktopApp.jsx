@@ -219,7 +219,7 @@ export function DesktopApp() {
       <aside className="dash-sidebar">
         <div className="dash-brand">
           <span className="dash-logo" aria-hidden="true">
-            <img src="/Nocta-constellation-sm.svg" alt="" />
+            <img src="/nocta-mark-sm.svg" alt="" />
           </span>
           <span className="dash-wordmark">Nocta</span>
           <button
@@ -277,7 +277,7 @@ export function DesktopApp() {
 
       </aside>
 
-      <main className="dash-main">
+      <main className="dash-main" data-page={nightOpen ? 'fullnight' : !hasData && (tab === 'tonight' || tab === 'trends') ? 'empty' : tab}>
         <div hidden={nightOpen}>
           <View key={tabNonce} tab={tab} />
         </div>

@@ -2,7 +2,7 @@
  * Standalone pages outside the app, so the token values are mirrored from
  * src/styles/tokens.css; keep them in sync. */
 :root {
-  --bg-base: #090d1a;
+  --bg-base: #05080f;
   --surface-1: #141a2e;
   --hairline: rgba(255, 255, 255, 0.06);
   --hairline-strong: rgba(255, 255, 255, 0.1);

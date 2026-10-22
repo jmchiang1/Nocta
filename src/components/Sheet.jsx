@@ -63,6 +63,42 @@ export function Sheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [close]);
 
+  /* ---- keyboard focus ----
+   * Into the sheet when it opens (the sheet itself, so the phone's keyboard
+   * doesn't jump up for a text field), kept inside it while it's the top one,
+   * and back to whatever opened it once it's gone. */
+  useEffect(() => {
+    const opener = document.activeElement;
+    const el = sheetRef.current;
+    if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const onKey = (e) => {
+      if (e.key !== 'Tab' || !el) return;
+      const dialogs = document.querySelectorAll('.sheet[role="dialog"]');
+      if (dialogs[dialogs.length - 1] !== el) return; // a sheet stacked on top handles it
+      const items = [...el.querySelectorAll(FOCUSABLE)].filter((n) => n.getClientRects().length);
+      if (!items.length) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const at = document.activeElement;
+      if (e.shiftKey && (at === first || at === el || !el.contains(at))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (at === last || !el.contains(at))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (opener?.isConnected && typeof opener.focus === 'function') opener.focus({ preventScroll: true });
+    };
+  }, []);
+
   /* ---- drag-to-dismiss ----
    * Moves are tracked on window from pointerdown on, so a fast swipe that
    * leaves the small grab zone (the 22px page edge especially) still counts.
@@ -148,6 +184,7 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        tabIndex={-1}
         onAnimationEnd={(e) => {
           if (e.target === e.currentTarget && !closing) setEntered(true);
         }}

@@ -9,13 +9,14 @@
  * Setup progress is kept on the device as it goes (DRAFT_KEY): Google sign-in
  * leaves the page and an email confirmation link may open in a new tab, and
  * neither should cost the person eleven steps. Pairing/health are mocked. */
+import { track } from '../lib/analytics.js';
 import { useState, useRef, useEffect, useLayoutEffect, useId } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { StatusBar } from '../components/StatusBar.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { Rich } from '../components/Rich.jsx';
 import { Sheet } from '../components/Sheet.jsx';
-import { ConstellationReveal } from '../components/ConstellationReveal.jsx';
+import { NoxReveal } from '../components/NoxReveal.jsx';
 import { NightSky } from '../components/NightSky.jsx';
 import { WhyHorizon } from '../components/WhyHorizon.jsx';
 import { FIXTURES, EXAMPLE_FIXTURE } from '../data/fixtures.js';
@@ -36,7 +37,6 @@ import {
 import { AUTH_LANDING } from '../lib/auth.jsx';
 import { PROVIDERS, accountName } from '../data/auth.js';
 import { MeetCoach } from './MeetCoach.jsx';
-import { Mascot } from '../components/Mascot.jsx';
 import {
   GOALS,
   BIRTH_YEARS,
@@ -60,17 +60,15 @@ import {
 const BRAND_LABEL = Object.fromEntries(MASK_BRANDS.map((b) => [b.id, b.label]));
 const TYPE_LABEL = Object.fromEntries(MASK_TYPES.map((t) => [t.id, t.label]));
 
-/* ---- intro: a swirl that forms the logo, then settles into the welcome ----
- * 'swirl': the logo's constellation is found in the night sky — its stars
- *          light up one by one and join (ConstellationReveal).
+/* ---- intro: the logo gathers out of the night sky, then settles into the welcome ----
+ * 'swirl': stars scattered across the sky drift together into Nox, who
+ *          blinks awake with his three stars (NoxReveal: the logo).
  * 'dawn':  the logo glides up into a small lockup, a warm glow rises from the
  *          bottom, and the headline + CTA come in.
  * `settled` skips straight to dawn — coming back to the splash (signed out,
  * a cancelled sign-in) shouldn't replay the reveal. */
 
-const HOLD_MS = 900; // a beat on the joined constellation before it rises to the top
-// Nox rises in once the constellation has glided up into the lockup
-const NOX_AFTER_DAWN_MS = 700;
+const HOLD_MS = 900; // a beat on the finished logo before it rises to the top
 
 // the splash lifts away (and its dawn glow sinks to the next screen's) before
 // the next screen rises in — keep in step with .ob-intro.leaving in onboarding.css
@@ -79,16 +77,7 @@ const LEAVE_MS = 600;
 function Intro({ settled, onStart, onGuest }) {
   const [phase, setPhase] = useState(() => (settled || prefersReducedMotion() ? 'dawn' : 'swirl'));
   const [leaving, setLeaving] = useState(false);
-  const stageRef = useRef(null);
   const dawn = phase === 'dawn';
-  // Nox, the coach: a small moon in the same sky, beside the constellation.
-  // Already there when the splash is revisited (or motion is reduced).
-  const [noxIn, setNoxIn] = useState(() => settled || prefersReducedMotion());
-  useEffect(() => {
-    if (!dawn || noxIn) return undefined;
-    const t = setTimeout(() => setNoxIn(true), NOX_AFTER_DAWN_MS);
-    return () => clearTimeout(t);
-  }, [dawn, noxIn]);
 
   // the sky stays; the splash's words and glow lift away, then hand off
   const leave = (fn) => {
@@ -107,7 +96,6 @@ function Intro({ settled, onStart, onGuest }) {
 
   return (
     <div
-      ref={stageRef}
       className={`ob-intro ${phase}${settled ? ' settled' : ''}${leaving ? ' leaving' : ''}`}
     >
       <StatusBar />
@@ -117,21 +105,10 @@ function Intro({ settled, onStart, onGuest }) {
         <span>Look around first</span>
       </button>
       <div className="ob-intro-dawn" aria-hidden="true" />
-      <ConstellationReveal
-        className="ob-intro-logo"
-        stageRef={stageRef}
-        onResolve={onResolve}
-        handoff={dawn}
-        settled={settled}
-      />
+      <NoxReveal className="ob-intro-logo" onResolve={onResolve} settled={settled} />
       <span className="ob-intro-wordmark" aria-hidden="true">
         Nocta
       </span>
-      {noxIn && (
-        <div className="ob-intro-nox" aria-hidden="true">
-          <Mascot size={48} state="idle" pop={!settled && !prefersReducedMotion()} />
-        </div>
-      )}
       <div className="ob-intro-main">
         <h1 className="ob-intro-title">
           <span>Sleep better,</span>
@@ -154,6 +131,11 @@ function Intro({ settled, onStart, onGuest }) {
           tabIndex={dawn ? 0 : -1}
         >
           I already have an account
+        </button>
+        {/* desktop: the quiet third way in, under the other two (the phone
+         * has it as the pill up top instead; onboarding.css / desktop.css) */}
+        <button className="btn subtle ob-intro-peek-link" onClick={() => leave(onGuest)} tabIndex={dawn ? 0 : -1}>
+          Or look around first
         </button>
       </div>
     </div>
@@ -320,10 +302,11 @@ function TextInput({ value, onChange, placeholder, type = 'text', maxLength = 60
 }
 
 /* `filter` makes the placeholder selectable (acts as an "All" reset) */
-export function SelectInput({ value, onChange, options, placeholder, filter }) {
+export function SelectInput({ value, onChange, options, placeholder, filter, label }) {
   return (
     <select
       className={`ob-select${value ? '' : ' empty'}`}
+      aria-label={label ?? placeholder}
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -393,6 +376,7 @@ function AboutYou({ data, update, next }) {
       <Field label="Birth year">
         <SelectInput
           placeholder="Select year"
+            label="Birth year"
           value={data.birthYear}
           onChange={(v) => update({ birthYear: v })}
           options={BIRTH_YEARS}
@@ -401,6 +385,7 @@ function AboutYou({ data, update, next }) {
       <Field label="Sex">
         <SelectInput
           placeholder="Select sex"
+            label="Sex"
           value={data.sex}
           onChange={(v) => update({ sex: v })}
           options={SEX_OPTIONS}
@@ -409,6 +394,7 @@ function AboutYou({ data, update, next }) {
       <Field label="Weight" optional>
         <SelectInput
           placeholder="Select weight"
+            label="Weight"
           value={data.weightLb}
           onChange={(v) => update({ weightLb: v })}
           options={WEIGHTS}
@@ -418,12 +404,14 @@ function AboutYou({ data, update, next }) {
         <div className="ob-row">
           <SelectInput
             placeholder="Feet"
+            label="Height, feet"
             value={data.heightFt}
             onChange={(v) => update({ heightFt: v })}
             options={HEIGHT_FT}
           />
           <SelectInput
             placeholder="Inches"
+            label="Height, inches"
             value={data.heightIn}
             onChange={(v) => update({ heightIn: v })}
             options={HEIGHT_IN}
@@ -512,6 +500,7 @@ function Health({ data, update, next }) {
 /* the CPAP data: the SD card is the only real way in today. (SleepHQ and
  * wearable connections come later; nothing here pretends to connect.) */
 function Pairing({ data, update, next }) {
+  const { cardData } = useStore();
   const [importing, setImporting] = useState(false);
   const done = Boolean(data.cardNights);
 
@@ -528,8 +517,10 @@ function Pairing({ data, update, next }) {
               <button className="btn primary" onClick={() => setImporting(true)}>
                 Import from SD card
               </button>
+              {/* an account starts with no nights (the sample is only for
+               * looking around), so this skips rather than promising one */}
               <button className="btn subtle" onClick={next}>
-                Use sample data for now
+                Skip for now
               </button>
             </>
           )
@@ -546,7 +537,16 @@ function Pairing({ data, update, next }) {
         </p>
       </Step>
       {importing && (
-        <Sheet title="Import from SD card" onClose={() => setImporting(false)} full>
+        <Sheet
+          title="Import from SD card"
+          onClose={() => {
+            setImporting(false);
+            // closed with the × (a partial read stays on its summary, and a
+            // card can be removed there): the step follows what's in now
+            update({ cardNights: cardData?.nights.length ?? 0 });
+          }}
+          full
+        >
           {(close) => (
             <CardImport
               onCancel={close}
@@ -758,19 +758,20 @@ export function CompliancePlanFields({ value, onChange }) {
           <div className="ob-rule-grid">
             <label>
               <span>Hours</span>
-              <SelectInput value={String(rule.minHours)} onChange={(v) => setRule('minHours', v)} options={pick(1, 8).map(String)} />
+              <SelectInput label="Hours a night" value={String(rule.minHours)} onChange={(v) => setRule('minHours', v)} options={pick(1, 8).map(String)} />
             </label>
             <label>
               <span>Nights</span>
-              <SelectInput value={String(rule.nights)} onChange={(v) => setRule('nights', v)} options={pick(1, rule.window).map(String)} />
+              <SelectInput label="Nights needed" value={String(rule.nights)} onChange={(v) => setRule('nights', v)} options={pick(1, rule.window).map(String)} />
             </label>
             <label>
               <span>Of days</span>
-              <SelectInput value={String(rule.window)} onChange={(v) => setRule('window', v)} options={pick(7, 90).map(String)} />
+              <SelectInput label="Out of how many days" value={String(rule.window)} onChange={(v) => setRule('window', v)} options={pick(7, 90).map(String)} />
             </label>
             <label>
               <span>Within</span>
               <SelectInput
+                label="Within the first how many days"
                 value={String(rule.within)}
                 onChange={(v) => setRule('within', v)}
                 options={[30, 60, 90, 120, 180, 365].filter((d) => d >= rule.window).map(String)}
@@ -843,6 +844,7 @@ function Compliance({ data, update, next }) {
         <Field label="Insurance provider" optional>
           <SelectInput
             placeholder="Select your insurer"
+            label="Insurer"
             value={data.insuranceProvider}
             onChange={(v) => update({ insuranceProvider: v })}
             options={INSURERS}
@@ -860,6 +862,7 @@ function Compliance({ data, update, next }) {
         <Field label="Equipment / DME provider" optional>
           <SelectInput
             placeholder="Select your DME provider"
+            label="Equipment supplier (DME)"
             value={data.equipmentProvider}
             onChange={(v) => update({ equipmentProvider: v })}
             options={DME_PROVIDERS}
@@ -990,7 +993,7 @@ function Notifications({ update, next }) {
         <div className="ob-lock-time tnum">7:02</div>
         <div className="ob-notif">
           <span className="ob-notif-icon">
-            <img src="/Nocta-constellation-sm.svg" alt="" />
+            <img src="/nocta-mark-sm.svg" alt="" />
           </span>
           <span className="ob-notif-body">
             <span className="ob-notif-head">
@@ -1022,11 +1025,15 @@ const STEPS = [
   MeetCoach,
   Notifications,
 ];
+/* each step's name for analytics (function names don't survive the build) */
+const STEP_NAMES = new Map(
+  STEPS.map((S, i) => [S, ['goals', 'about', 'position', 'conditions', 'health', 'pairing', 'equipment', 'compliance', 'compliancePlan', 'expectations', 'meetNox', 'notifications'][i]])
+);
 function Disclaimer({ onAccept }) {
   return (
     <div className="ob-disclaimer">
       <div className="ob-disc-card">
-        <img className="ob-disc-logo" src="/Nocta-constellation.svg" alt="" />
+        <img className="ob-disc-logo" src="/nocta-mark.svg" alt="" />
         <h2>One important thing</h2>
         <p>{MEDICAL_NOTE}</p>
         <button className="btn primary" onClick={onAccept}>
@@ -1180,6 +1187,25 @@ export function Onboarding() {
       setDisclaimer(true);
     }
   }, [atAccount, authUser]);
+
+  // analytics: which screens people reach, so the drop-off shows: the splash
+  // (or its sign-in / sign-up screen), each setup step, the account step and
+  // the disclaimer. A guest's disclaimer counts too.
+  const stepName =
+    route === 'intro'
+      ? (authMode ?? 'splash')
+      : route === 'setup'
+        ? atAccount
+          ? 'account'
+          : disclaimer
+            ? 'disclaimer'
+            : STEP_NAMES.get(flow[step])
+        : route === 'guest'
+          ? 'disclaimer'
+          : null;
+  useEffect(() => {
+    if (stepName) track('onboarding_step_viewed', { step: stepName });
+  }, [stepName]);
 
   const update = (patch) => setData((d) => ({ ...d, ...patch }));
   const next = () => {

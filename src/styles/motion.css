@@ -41,7 +41,7 @@
  * The island is also the system feedback surface: sync live activity and
  * toasts both expand out of it.
  * ================================================================= */
-.phone:has(> .app-layer) {
+.phone:has(.app-layer) {
   /* what shows around the app when it shrinks behind a sheet */
   background: var(--hw-black);
 }
@@ -164,9 +164,9 @@
   border-radius: inherit;
   /* the phone's own background moves onto the layer, so the hardware black
    * only shows when the layer shrinks */
-  background:
-    radial-gradient(120% 55% at 50% 0%, rgba(240, 164, 122, 0.1) 0%, rgba(240, 164, 122, 0) 52%),
-    linear-gradient(180deg, var(--bg-grad-top) 0%, var(--bg-base) 38%, var(--bg-grad-bottom) 100%);
+  /* behind every tab: the dark blue with a faint dusk glow across the top
+   * (Tonight adds its sky over it) */
+  background: var(--bg-base); /* each page brings its own header glow */
   transform-origin: 50% 0%;
   transition:
     transform 0.46s var(--ease-ios),
@@ -1238,7 +1238,7 @@
  * ================================================================= */
 .profile-card {
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-1) 0%, var(--bg-base) 140%);
+  background: var(--card-bg);
   padding: 18px 18px 16px;
 }
 .profile-card .profile-head {
@@ -1335,6 +1335,13 @@
 /* glows: wide and faint, each fading on an eased curve (not a straight line
  * to a hard edge) and heavily blurred, so none reads as a circle — just
  * light in the air. Lower strength than before; they colour, not spotlight. */
+/* and the sky itself deepens toward the top, like being outside at night */
+.sky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--data-deep) 24%, transparent) 0%, transparent 70%);
+}
 .sky-glow {
   position: absolute;
   border-radius: 50%;

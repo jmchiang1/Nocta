@@ -15,28 +15,28 @@ import { nightPanels, NightEvents } from '../components/NightCharts.jsx';
 
 const CHART_H = 180; // room for the axes
 
-/* a chart section: tappable through to its metric page when it has one */
-function Panel({ title, meta, onOpen, children }) {
+/* a chart card, its title inside it (as on desktop): tappable through to
+ * its metric page when it has one, which the chevron says */
+function Panel({ title, onOpen, children }) {
   const head = (
-    <span className="section-head">
+    <span className="panel-head">
       <h3>{title}</h3>
-      {(meta || onOpen) && (
-        <span className="meta">
-          {meta}
-          {onOpen && <Icon name="chevronRight" size={14} />}
-        </span>
-      )}
+      {onOpen && <Icon name="chevronRight" size={16} />}
     </span>
   );
   return onOpen ? (
     <button className="fn-metric" type="button" onClick={onOpen}>
-      {head}
-      <span className="chart-card">{children}</span>
+      <span className="chart-card">
+        {head}
+        {children}
+      </span>
     </button>
   ) : (
     <section className="fn-metric">
-      {head}
-      <div className="chart-card">{children}</div>
+      <div className="chart-card">
+        {head}
+        {children}
+      </div>
     </section>
   );
 }
@@ -60,6 +60,7 @@ export function FullNightSheet() {
   return (
     <Sheet
       variant="page"
+      className="fn-sheet"
       eyebrow={`${fx.dayName} · ${fx.session.start} – ${fx.session.end}`}
       title="The full night"
       onClose={closeSheet}
@@ -84,10 +85,8 @@ export function FullNightSheet() {
 
           {/* the night's events at a glance, by hour and type; the full list,
            * each with its breathing, is "Events by type" at the bottom */}
-          <div className="section-head">
-            <h3>Events summary</h3>
-          </div>
           <NightTimeline
+            title="Events summary"
             timeline={fx.timeline}
             session={fx.session}
             ahi={fx.ahi.value}
@@ -99,19 +98,17 @@ export function FullNightSheet() {
 
           {/* only with a connected wearable: the machine can't see sleep stages */}
           {body?.stages && (
-            <>
-              <div className="section-head">
+            <div className="chart-card">
+              <div className="panel-head">
                 <h3>Sleep stages</h3>
-                <span className="meta">{body.source}</span>
+                <span className="panel-source">{body.source}</span>
               </div>
-              <div className="chart-card">
-                <SleepStages stages={body.stages} session={fx.session} detailed />
-              </div>
-            </>
+              <SleepStages stages={body.stages} session={fx.session} detailed />
+            </div>
           )}
 
           {panels.map((p) => (
-            <Panel key={p.key} title={p.title} meta={p.meta} onOpen={p.onOpen}>
+            <Panel key={p.key} title={p.title} onOpen={p.onOpen}>
               {p.body}
             </Panel>
           ))}

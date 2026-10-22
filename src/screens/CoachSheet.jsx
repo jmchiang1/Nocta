@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { SUGGESTED_PROMPTS, contextOpener, coachReply } from '../data/coach.js';
 import { noxLiveFor, askNox, NOX_SMART_ON } from '../lib/nox.js';
+import { track } from '../lib/analytics.js';
 import { FIXTURES } from '../data/fixtures.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -167,6 +168,7 @@ export function CoachSheet() {
   function send(text) {
     const q = text.trim();
     if (!q || typing) return;
+    track('nox_asked'); // never the question
     if (live) {
       sendLive(q);
       return;

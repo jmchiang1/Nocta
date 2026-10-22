@@ -1,10 +1,14 @@
 /* Nocta — import CPAP data from a ResMed SD card. Used as a sheet from Therapy
  * (ImportSheet) and inside onboarding's "Bring in your CPAP data" step.
  *
- *   pick ── reading ─┬─ done (what was found, every night browsable;
- *                    │        a visible note if some files couldn't be read)
+ *   pick ── reading ─┬─ read: straight back out (`onFinish`), every night
+ *                    │        browsable — or, if some files couldn't be read,
+ *                    │        the summary, with that note in plain sight
  *                    └─ error (not a card / Philips / empty / unreadable):
  *                             what happened, what to try ── pick again
+ *
+ * Reopened with a card in, it opens on that summary: import a newer card,
+ * or remove what's there. The sheet's own × is the way out.
  *
  * Parsing runs here, in the browser (lib/resmed); the result is kept on this
  * device (lib/importStore). Numbers are shown plainly — no good/bad colouring
@@ -17,6 +21,7 @@ import { Icon } from '../components/Icons.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { NoxThinking } from '../components/NoxThinking.jsx';
 import { parseCard, CardError } from '../lib/resmed/card.js';
+import { track } from '../lib/analytics.js';
 import { entriesFromFileList, entriesFromDrop, canPickFolder, mergeEntries, cardContents } from '../lib/cardFiles.js';
 
 /* the card couldn't be read: say what probably happened and what to try.
@@ -56,10 +61,14 @@ const ERRORS = {
 const dayLabel = (d, opts = { weekday: 'short', month: 'short', day: 'numeric' }) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { ...opts, timeZone: 'UTC' });
 
-function CardSummary({ card, result }) {
-  // with an account, the card is saved to it too (lib/cloudSync.js)
+/* with an account, the card is saved to it too (lib/cloudSync.js) */
+function useSynced() {
   const { authUser, authConfigured } = useStore();
-  const synced = authConfigured && authUser && authUser.kind !== 'guest';
+  return Boolean(authConfigured && authUser && authUser.kind !== 'guest');
+}
+
+function CardSummary({ card, result }) {
+  const synced = useSynced();
   const detailed = card.nights.filter((n) => n.source === 'datalog').length;
   const s = card.settings;
   const range =
@@ -125,6 +134,28 @@ function CardSummary({ card, result }) {
       )}
 
     </>
+  );
+}
+
+/* "Remove data", asked once more before it goes */
+function RemoveConfirm({ nights, onCancel, onRemove }) {
+  const synced = useSynced();
+  return (
+    <section className="ci-confirm" aria-labelledby="ci-confirm-title">
+      <h4 id="ci-confirm-title">Remove all {nights} nights?</h4>
+      <p>
+        They come off this device{synced ? ' and your account' : ''}. You can import your card again any
+        time.
+      </p>
+      <div className="ci-confirm-actions">
+        <button className="btn ghost" onClick={onCancel}>
+          Cancel
+        </button>
+        <button className="btn destructive" onClick={onRemove}>
+          Remove
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -318,7 +349,8 @@ function Picker({ onEntries }) {
   );
 }
 
-/* the flow itself, without a frame — `onFinish(card)` when they're done */
+/* the flow itself, without a frame — `onFinish(card, result)` once a card
+ * has been read cleanly */
 /* reading a card takes at least this long on screen, so Nox's thinking
  * plays through and a small card doesn't flash past */
 const MIN_READ_MS = 3000;
@@ -349,21 +381,30 @@ export function CardImport({ onFinish, onCancel }) {
     const t0 = performance.now();
     setStartedAt(t0);
     setNow(t0);
+    track('card_import_started', { files: entries.length });
     try {
       const card = await parseCard(entries, { onProgress: setProgress });
       const saved = await saveCardImport(card);
       const left = MIN_READ_MS - (performance.now() - t0);
       if (left > 0) await new Promise((r) => setTimeout(r, left));
       setResult(saved);
+      track('card_imported', { nights: saved.card.nights.length });
       // a beat for Nox to be pleased about it, then the result rises in
       setPhase('celebrate');
       noxHappy();
       await new Promise((r) => setTimeout(r, prefersReducedMotion() ? 0 : CELEBRATE_MS));
+      // read cleanly: nothing more to confirm, straight back out. A partial
+      // read stays on the summary, so the files it missed are said plainly.
+      if (onFinish && !card.warnings?.length) {
+        onFinish(saved.card, saved);
+        return;
+      }
       setJustRead(true);
       setPhase('done');
     } catch (err) {
       console.warn('[import]', err);
       setError(err instanceof CardError ? err.code : 'unreadable');
+      track('card_import_failed', { reason: err instanceof CardError ? err.code : 'unreadable' });
       setPhase('error');
     }
   }
@@ -401,49 +442,33 @@ export function CardImport({ onFinish, onCancel }) {
     return (
       <div className={justRead ? 'ci-done-enter' : undefined}>
         <CardSummary card={cardData} result={result} />
-        <div className="ci-actions">
-          {onFinish && (
-            <button className="btn primary" onClick={() => onFinish(cardData)}>
-              Done
-            </button>
-          )}
-          <button
-            className="btn ghost"
-            onClick={() => {
+        {confirmRemove ? (
+          <RemoveConfirm
+            nights={cardData.nights.length}
+            onCancel={() => setConfirmRemove(false)}
+            onRemove={async () => {
+              await removeCardImport();
+              setConfirmRemove(false);
               setResult(null);
               setPhase('pick');
             }}
-          >
-            Import a newer card
-          </button>
-          {!confirmRemove ? (
+          />
+        ) : (
+          <div className="ci-actions ci-done-actions">
             <button className="btn subtle" onClick={() => setConfirmRemove(true)}>
-              Remove imported data
+              Remove data
             </button>
-          ) : (
-            <div className="confirm-row">
-              <p className="confirm-text">
-                Remove all {cardData.nights.length} imported nights from this device?
-              </p>
-              <div className="confirm-actions">
-                <button className="btn ghost" onClick={() => setConfirmRemove(false)}>
-                  Cancel
-                </button>
-                <button
-                  className="btn destructive"
-                  onClick={async () => {
-                    await removeCardImport();
-                    setConfirmRemove(false);
-                    setResult(null);
-                    setPhase('pick');
-                  }}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+            <button
+              className="btn primary"
+              onClick={() => {
+                setResult(null);
+                setPhase('pick');
+              }}
+            >
+              Import a newer card
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -455,12 +480,31 @@ export function CardImport({ onFinish, onCancel }) {
   return <Picker onEntries={run} />;
 }
 
-/* Therapy › Import from SD card */
+/* what a clean import brought in, said on the way back to Tonight */
+function importedNote({ card, added }) {
+  if (added === card.nights.length) return `${added} ${added === 1 ? 'night' : 'nights'} imported`;
+  if (added) return `${added} new ${added === 1 ? 'night' : 'nights'} added`;
+  return 'No new nights on this card';
+}
+
+/* Therapy › Import from SD card (and Tonight's import prompts). A clean
+ * read closes the sheet and lands on Tonight, on the newest night. */
 export function ImportSheet() {
-  const { closeSheet } = useStore();
+  const { closeSheet, setTab, showToast } = useStore();
   return (
-    <Sheet title="Import from SD card" onClose={closeSheet} full>
-      {(close) => <CardImport onFinish={close} onCancel={close} />}
+    /* a page of its own on the phone (pushed in, Back to return), like the
+     * sleep journal; a dialog on the desktop */
+    <Sheet title="Import from SD card" onClose={closeSheet} variant="page">
+      {(close) => (
+        <CardImport
+          onCancel={close}
+          onFinish={(card, result) => {
+            close();
+            setTab('tonight');
+            if (result) showToast(importedNote(result));
+          }}
+        />
+      )}
     </Sheet>
   );
 }

@@ -46,7 +46,7 @@ if (typeof window !== 'undefined') {
 export const isWearableTab = () => pendingReturn?.tab === true;
 
 const TAB_STYLE =
-  'margin:0;background:#090d1a;color:#9aa3c0;font:15px/1.5 Inter,system-ui,sans-serif;display:grid;place-items:center;height:100vh;text-align:center;padding:0 24px';
+  'margin:0;background:#05080f;color:#9aa3c0;font:15px/1.5 Inter,system-ui,sans-serif;display:grid;place-items:center;height:100vh;text-align:center;padding:0 24px';
 
 export function finishWearableTab() {
   const back = takeWearableReturn();

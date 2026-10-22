@@ -1,10 +1,10 @@
 /* Nocta — which CPAP card the app is showing. One parsed card (lib/resmed
  * card.js shape) drives every screen:
  *   - the card imported on this device (importStore, IndexedDB), else
- *   - the bundled sample year (data/demoCard.json, built by
+ *   - the bundled sample week (data/demoCard.json, built by
  *     scripts/build-demo-card.mjs) — only for someone just looking around
- *     (no account: a guest, or not signed in yet), and only on a device
- *     that has never held their own data, else
+ *     (no account: a guest, or not signed in yet), and only while that
+ *     space has never held a card of its own, else
  *   - nothing: an empty card, and the screens say so (import your card).
  * Once someone brings in their own card, the sample never comes back on this
  * device, even if they remove it.
@@ -32,6 +32,10 @@ const loadDemo = async () => {
   return demo;
 };
 
+/* once this space has held its own card, the sample never comes back to it,
+ * even after the card is removed. Only the current space counts: an account
+ * that imported on this browser doesn't take the sample away from someone
+ * looking around without one (accounts never get the sample anyway). */
 function hadOwnData() {
   try {
     return localStorage.getItem(OWN_DATA_KEY()) === '1';
@@ -121,7 +125,7 @@ export function onDataset(fn) {
 export const getCard = () => card;
 /* the card imported on this device, or null (the sample, or nothing) */
 export const importedCard = () => (imported ? card : null);
-/* the sample year is on screen */
+/* the sample week is on screen */
 export const isDemoData = () => !imported && card === demo && demo != null;
 /* any nights at all (false: an account with no card yet, or a removed one) */
 export const hasNights = () => (card?.nights?.length ?? 0) > 0;

@@ -2,9 +2,10 @@
 
 :root {
   /* surfaces */
-  --bg-base: #090d1a;
-  --bg-grad-top: #0f1429;
-  --bg-grad-bottom: #060a16;
+  /* the page: a deep night blue, a clear step below the cards (surface-1) */
+  --bg-base: #05080f;
+  --bg-grad-top: #0b1022;
+  --bg-grad-bottom: #03050b;
   --surface-1: #141a2e;
   --surface-2: #1c233e;
   --surface-3: #242c4d;
@@ -55,6 +56,8 @@
    * is the "out of expected" state, matching the 2-state attention model. */
   --stage-awake: #e07a6a;
   --stage-rem: #a3b7df;
+  /* page header glows: each page's own soft light behind its title */
+  --page-teal: #6db7b2;
   --stage-light: #7c95c8;
   --stage-deep: #2e4180;
 

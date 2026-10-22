@@ -8,9 +8,11 @@ import { refreshInsights } from '../data/fixtures.js';
 import { getCheckin, setCheckin as saveCheckinFor, clearCheckin, migrateOldCheckin } from './checkins.js';
 import { getProfile, onProfile } from './profile.js';
 import { setCard, importedCard, hasNights, switchOwner } from './dataset.js';
-import { cloudChanged, syncNow } from './cloudSync.js';
+import { cloudChanged, syncNow, flushForSignOut } from './cloudSync.js';
+import { forgetAccountOnDevice } from './accountData.js';
 import { reloadOwner } from './owner.js';
-import { ownerOf } from './owner.js';
+import { ownerOf, getOwner } from './owner.js';
+import { track, identify } from './analytics.js';
 import { DEFAULT_MACHINE_ID } from '../data/therapy.js';
 import {
   DEFAULT_DEVICE_CONNECTIONS,
@@ -78,6 +80,7 @@ export function StoreProvider({ children }) {
   const [tabDir, setTabDir] = useState(0);
   const tabRef = useRef('tonight');
   const setTab = useCallback((next) => {
+    if (next !== tabRef.current) track('tab_viewed', { tab: next });
     setTabDir(Math.sign(TAB_ORDER.indexOf(next) - TAB_ORDER.indexOf(tabRef.current)));
     tabRef.current = next;
     setTabState(next);
@@ -209,16 +212,24 @@ export function StoreProvider({ children }) {
   /* onboarding answers + reminder prefs (lib/profile.js), mirrored here so
    * screens re-render when they change; the insights read them too */
   const [profile, setProfileState] = useState(getProfile);
+  // the mask they picked or told us in onboarding — none until then
+  const [maskId, setMaskId] = useState(() => getProfile().answers.maskModel ?? null);
+  // a mask answered in setup (or changed in the answers) shows right away,
+  // not only after a reload
+  const answeredMask = useRef(getProfile().answers.maskModel ?? null);
   useEffect(
     () =>
       onProfile((p) => {
         refreshInsights();
         setProfileState(p);
+        const m = p.answers.maskModel ?? null;
+        if (m !== answeredMask.current) {
+          answeredMask.current = m;
+          if (m) setMaskId(m);
+        }
       }),
     []
   );
-  // the mask they picked or told us in onboarding — none until then
-  const [maskId, setMaskId] = useState(() => getProfile().answers.maskModel ?? null);
   const [machineId, setMachineId] = useState(DEFAULT_MACHINE_ID);
   const [deviceConnections, setDeviceConnections] = useState(DEFAULT_DEVICE_CONNECTIONS);
   const [deviceEnabled, setDeviceEnabledState] = useState(DEFAULT_DEVICE_ENABLED);
@@ -247,10 +258,12 @@ export function StoreProvider({ children }) {
   }, [onboardedFlag]);
 
   const openSheet = useCallback((kind, params = {}) => {
+    track('sheet_opened', { sheet: kind });
     setSheetLeaving(false);
     setSheets([{ kind, ...params }]);
   }, []);
   const pushSheet = useCallback((kind, params = {}) => {
+    track('sheet_opened', { sheet: kind });
     setSheetLeaving(false);
     setSheets((st) => [...st, { kind, ...params }]);
   }, []);
@@ -441,6 +454,7 @@ export function StoreProvider({ children }) {
     refreshInsights(); // what was logged can change what Nox says
     if (isLast) setCheckin({ done: true, tags });
     setCheckinVersion((v) => v + 1);
+    track('checkin_logged', { late: !isLast }); // never the answers
   }, []);
   const resetCheckin = useCallback(() => {
     clearCheckin(LAST_NIGHT);
@@ -449,13 +463,18 @@ export function StoreProvider({ children }) {
   }, []);
 
   const completeOnboarding = useCallback(() => {
+    track('onboarding_completed');
     setOnboarded(true);
   }, []);
   /* sign out: back to the splash (a guest's setup is gone with it) */
   const { signOutAuth } = auth;
   /* bumped on every reset so onboarding remounts clean (App keys on it) */
   const [onboardingNonce, setOnboardingNonce] = useState(0);
-  const resetOnboarding = useCallback(() => {
+  const resetOnboarding = useCallback(async () => {
+    // an account: anything not yet saved goes to it first, so this device's
+    // copy can be forgotten once signed out (below)
+    const leaving = getOwner();
+    const saved = await flushForSignOut();
     setTab('tonight');
     setSheets([]);
     setOnboarded(false);
@@ -465,10 +484,15 @@ export function StoreProvider({ children }) {
       /* ignore */
     }
     setOnboardingNonce((n) => n + 1);
-    // the account's synced wearable nights stay in its own space on this device
-    // (lib/owner.js), like its card: the next person to sign in can't see them
-    signOutAuth();
-  }, [signOutAuth]);
+    track('signed_out');
+    await signOutAuth();
+    // a shared computer: the account's nights, answers and check-ins leave
+    // this browser with it (they come back from the account at the next
+    // sign-in). If they couldn't all be saved (offline), they stay, and say so.
+    if (saved) await forgetAccountOnDevice(leaving);
+    else if (leaving.startsWith('acct:') && auth.authConfigured)
+      showToast('Couldn’t reach your account, so this device keeps a copy of your data', 'info');
+  }, [signOutAuth, showToast, auth.authConfigured]);
 
   /* a guest choosing an account (You › Account): leave guest mode and land on
    * the sign up screen (Onboarding reads authEntry once) */
@@ -483,7 +507,7 @@ export function StoreProvider({ children }) {
 
   /* CPAP data imported from an SD card (lib/resmed, kept in IndexedDB).
    * main.jsx loaded it before the first render (lib/dataset.js); with
-   * nothing imported the app shows the sample year or no nights, and
+   * nothing imported the app shows the sample week or no nights, and
    * cardData stays null. */
   const [cardData, setCardData] = useState(importedCard);
   /* a card that read cleanly: keep it, switch every screen onto it (open on
@@ -504,9 +528,10 @@ export function StoreProvider({ children }) {
     },
     [startSync, setFixtureId]
   );
-  /* removing the import leaves no nights — the sample year doesn't come
+  /* removing the import leaves no nights — the sample week doesn't come
    * back once someone has brought in their own (lib/dataset.js) */
   const removeCardImport = useCallback(async () => {
+    track('card_removed');
     await clearImport();
     cloudChanged('card');
     await setCard(null);
@@ -515,7 +540,7 @@ export function StoreProvider({ children }) {
     setCheckin(loadCheckin()); // "last night" may be a different night now
   }, [setFixtureId]);
 
-  /* the sample year is only for someone looking around without an account
+  /* the sample week is only for someone looking around without an account
    * (a guest, or not signed in yet). When that changes, the data layer swaps
    * the sample in or out (never over an imported card) and the screens
    * re-read. Waits for sign-in to resolve, so a stored session doesn't flash
@@ -525,6 +550,18 @@ export function StoreProvider({ children }) {
    * check-ins — a new account starts with none; no account sees the sample */
   const { authUser, authStatus } = auth;
   const owner = ownerOf(authUser);
+  /* analytics: who it is (an account's id, or anonymous) and how they came in */
+  const lastKind = useRef(undefined);
+  useEffect(() => {
+    if (authStatus === 'loading') return;
+    const kind = authUser?.kind ?? null;
+    identify(authUser); // first, so the sign-in below is theirs
+    if (lastKind.current !== undefined && kind !== lastKind.current) {
+      if (kind === 'guest') track('guest_started');
+      else if (kind) track('signed_in', { method: kind });
+    }
+    lastKind.current = kind;
+  }, [authUser, authStatus]);
   const [, setDataVersion] = useState(0);
   // the account sync's pull (set below), run once the owner switch lands
   const pullRef = useRef(null);

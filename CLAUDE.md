@@ -30,8 +30,8 @@ re-rendering are materially cleaner as components. Everything else in the handof
   (EDF reader + card reader), stored on the device in IndexedDB. Not yet wired into
   Tonight / Trends, which still read the fixtures.
 - **Data (v1)**: a parsed ResMed SD card drives every screen (`src/lib/dataset.js`): the
-  card imported on the device; else the bundled sample year `src/data/demoCard.json`
-  (rebuild it with `node scripts/build-demo-card.mjs "CPAP Data 1 Year"`), but only for
+  card imported on the device; else the bundled sample week `src/data/demoCard.json`
+  (rebuild it with `node scripts/build-demo-card.mjs "CPAP Data 7 Days"`), but only for
   someone looking around without an account, on a device that has never held their own
   data; else no nights at all (Tonight and Trends show the SD import card). Once someone
   imports, the sample never shows again on that device, even after they remove the card. `history.js`
@@ -54,6 +54,18 @@ re-rendering are materially cleaner as components. Everything else in the handof
   is built but switched off by `VITE_NOX_SMART`; turning it on is in
   `docs/NOX_SETUP.md`, privacy-policy update included. The why-card insights are the
   rule engine (`src/lib/insights.js`), not an LLM.
+- **Analytics**: PostHog (`posthog-js`, version pinned) via `src/lib/analytics.js`:
+  named events only (`track()`), properties from an allowlist, never CPAP data,
+  check-in answers or anything typed. Off without `VITE_POSTHOG_KEY`; people can opt
+  out in Settings. Adding an event means updating `docs/ANALYTICS_SETUP.md` too.
+- **Feedback**: Settings › Send feedback and a now-and-then card on Tonight write to
+  Supabase `nocta_feedback` (insert-only from the app). See `docs/ANALYTICS_SETUP.md`.
+- **Demo controls**: removed (2026-10-22). Test states from the browser console in dev via
+  `window.__nocta` (the app store: `setTab`, `openSheet`, …).
+- **Security headers**: `vercel.json` sets a strict Content-Security-Policy. Anything new
+  the browser loads or calls from another host (a script, font, API, image CDN) must be
+  added there, or it's blocked on the live site. Inline `<script>` is blocked too (the
+  doctor report's print script is allowed by its hash; change the script, update the hash).
 - **Data source (future)**: SleepHQ API (OAuth2 password grant).
 - **Hosting target**: static site host (Vercel / Netlify / GitHub Pages). A serverless
   function layer is added only when real APIs come online (BUILD_PLAN Phases 3–4).
@@ -71,7 +83,7 @@ If a request would pull in a UI framework or CSS framework, push back and ask fi
   in `index.html`.
 - **Mobile-first**, 390px design width. A real responsive web app, no phone mockup: under
   768px the mobile app fills the screen; from 768px up, the desktop dashboard
-  (`src/components/desktop/`). The DevPanel can force either layout (Auto follows the width).
+  (`src/components/desktop/`). The layout follows the window width.
 - **Accessibility floors**: 17pt body minimum, 48pt touch targets minimum (56pt for primary
   CTAs), WCAG AA contrast everywhere, AAA on critical numbers like AHI.
 - **No emoji in UI** except inside the sleep journal context badges (food, drink, etc.).
