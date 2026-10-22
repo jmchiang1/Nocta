@@ -443,7 +443,7 @@ function LiveDeviceDetail() {
               </div>
               <p className="settings-note">
                 Disconnecting removes Nocta’s access to your {device.title}. Nights already pulled in
-                stay on this device; nothing new comes in until you connect again.
+                stay in Nocta; nothing new comes in until you connect again.
               </p>
               {!confirming ? (
                 <button className="btn destructive" onClick={() => setConfirming(true)}>

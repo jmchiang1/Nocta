@@ -49,15 +49,16 @@ export function DeleteAccountSheet() {
             <p className="settings-note del-lede">
               {guest
                 ? 'You’re using Nocta without an account, so there’s nothing on a server. This erases what Nocta keeps on this device.'
-                : 'This permanently deletes your Nocta account and everything Nocta keeps about you. It can’t be undone.'}
+                : 'This permanently deletes your Nocta account and everything Nocta keeps about you, on its servers and on this device. It can’t be undone. Other devices you’ve used keep their own copy until you sign out or clear them.'}
             </p>
             <h4 className="del-h">Deleted</h4>
             <ul className="del-list">
               {!guest && <li>Your Nocta account and sign-in ({authUser.email ?? authUser.kind})</li>}
-              <li>CPAP nights imported on this device</li>
+              <li>{guest ? 'CPAP nights imported on this device' : 'Your CPAP nights, from your account and this device'}</li>
               <li>Your morning check-ins</li>
               <li>Your setup answers and profile photo</li>
               <li>Equipment replacement dates</li>
+              {!guest && <li>Nights synced from a connected wearable</li>}
             </ul>
             <h4 className="del-h">Not touched</h4>
             <ul className="del-list keep">

@@ -1002,15 +1002,73 @@
   z-index: 1;
   left: 0;
   right: 0;
-  top: calc(30% + 24px);
+  /* the word's own width (centred), so the wipe below crosses the letters
+   * rather than the whole screen */
+  width: max-content;
+  margin-inline: auto;
+  padding-inline: 0.15em; /* room for the loose spacing it starts with */
+  /* waits under the constellation at centre stage (.ob-intro-logo's 42%)… */
+  top: calc(42% + 74px);
   text-align: center;
   line-height: 1.2;
   font-family: var(--font-display);
   /* medium weight so the name doesn't outweigh the line-drawn mark */
   font-size: 30px;
   font-weight: 500;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.06em;
   color: var(--text-primary);
+  opacity: 0;
+  /* hidden behind a soft-edged wipe: the mask is three widths wide (opaque,
+   * soft edge, clear) and slides from its clear end to its opaque end */
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+}
+/* …then rides up with the mark as one lockup (same 0.8s, same easing as
+ * .ob-intro-logo), writing itself in left to right as it goes, the way the
+ * stars lit, and tightening into its spacing as it lands */
+.ob-intro.dawn .ob-intro-wordmark {
+  top: calc(30% + 24px);
+  letter-spacing: -0.03em;
+  opacity: 1;
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
+  transition:
+    top 0.8s var(--ease-ios),
+    letter-spacing 0.8s var(--ease-ios),
+    /* a quick fade, then the wipe carries the entrance at an even pace */
+    opacity 0.18s linear 0.08s,
+    -webkit-mask-position 0.75s cubic-bezier(0.45, 0, 0.3, 1) 0.08s,
+    mask-position 0.75s cubic-bezier(0.45, 0, 0.3, 1) 0.08s;
+}
+
+/* Nox, the coach: a small moon that rises into the sky beside the settled
+ * constellation (up and to the right of the lockup), then idles — a glance
+ * and a blink now and then. Positioned off the lockup, so it holds on every
+ * screen height. */
+.ob-intro-nox {
+  position: absolute;
+  z-index: 1;
+  left: calc(50% + 96px);
+  top: calc(30% - 92px);
+  pointer-events: none;
+  /* backwards, not both: once risen, the animation lets go, so the splash's
+   * leave transition can fade him out with everything else */
+  animation: obNoxRise 0.9s var(--ease-ios) backwards;
+}
+@keyframes obNoxRise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-intro-nox {
+    animation: none;
+  }
 }
 
 .ob-intro-main {
@@ -1052,23 +1110,21 @@
   padding: 28px 22px calc(20px + env(safe-area-inset-bottom));
 }
 
-/* welcome copy waits for dawn, then rises in a short stagger after the logo moves */
-.ob-intro :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot) {
+/* welcome copy waits for dawn, then rises in a short stagger after the logo
+ * moves (the wordmark travels with the logo instead, above) */
+.ob-intro :is(.ob-intro-title span, .ob-intro-copy, .ob-intro-foot) {
   opacity: 0;
   transform: translateY(14px);
   transition:
     opacity var(--dur-slow) var(--ease-out),
     transform var(--dur-slow) var(--ease-out);
 }
-.ob-intro.dawn :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot) {
+.ob-intro.dawn :is(.ob-intro-title span, .ob-intro-copy, .ob-intro-foot) {
   opacity: 1;
   transform: none;
 }
 .ob-intro:not(.dawn) .ob-intro-foot {
   pointer-events: none;
-}
-.ob-intro.dawn .ob-intro-wordmark {
-  transition-delay: 0.45s;
 }
 .ob-intro.dawn .ob-intro-title span:first-child {
   transition-delay: 0.3s;
@@ -1649,9 +1705,9 @@
   transition: opacity var(--dur-slow) var(--ease-out);
 }
 .ob-intro-peek span {
-  padding: 7px 13px;
+  padding: 11px 20px;
   border-radius: var(--r-pill);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.1);
@@ -1675,7 +1731,7 @@
  *   dawn     bottom -52%, height 125%, peak 62%   (.ob-intro-dawn)
  *   ambient  bottom -62%, height 100%, peak 26%   (.ob-ambient) → opacity ≈ .42 */
 .ob-intro.dawn.leaving
-  :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo) {
+  :is(.ob-intro-wordmark, .ob-intro-title span, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo, .ob-intro-nox) {
   opacity: 0;
   transform: translateY(-12px);
   transition:
@@ -1696,7 +1752,7 @@
 /* coming back (from sign-in, or out of setup): the settled splash fades in
  * rather than snapping, and its glow rises back up from the ambient's place */
 .ob-intro.settled:not(.leaving)
-  :is(.ob-intro-wordmark, .ob-intro-title, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo) {
+  :is(.ob-intro-wordmark, .ob-intro-title, .ob-intro-copy, .ob-intro-foot, .ob-intro-peek, .ob-intro-logo, .ob-intro-nox) {
   animation: obFadeUp 0.5s var(--ease-out) both;
 }
 .ob-intro.settled:not(.leaving) .ob-intro-dawn {

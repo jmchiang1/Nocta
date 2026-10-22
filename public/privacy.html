@@ -20,8 +20,7 @@
       <a class="legal-home" href="/"><img src="/favicon.svg" alt="" />Nocta</a>
 
       <h1>Privacy Policy</h1>
-      <p class="legal-date">Last updated October 16, 2026</p>
-
+      <p class="legal-date">Last updated October 22, 2026</p>
 
       <h2>What Nocta is</h2>
       <p>
@@ -31,11 +30,8 @@
       </p>
       <p>In this policy, "Nocta", "we" and "us" mean the people who make Nocta. "You" means you.</p>
 
-      <h2>What stays on your device</h2>
-      <p>
-        Most of what Nocta knows about you is stored only in your web browser, on the device you
-        use. It isn't sent to our servers. This includes:
-      </p>
+      <h2>What Nocta keeps about you</h2>
+      <p>Nocta keeps what it needs to explain your nights:</p>
       <ul>
         <li><strong>Your CPAP data.</strong> The nights read from your SD card: usage hours, AHI and other event counts, leak, pressure and the machine's settings.</li>
         <li><strong>Your morning check-ins</strong> and the answers you give during setup.</li>
@@ -44,10 +40,13 @@
         <li><strong>Nights from a connected wearable</strong>, once they've synced (see below).</li>
       </ul>
       <p>
-        Because this data lives in your browser, it stays on that device. Deleting your account
-        erases it, and so does clearing your browser's data for this site. If you use Nocta on
-        another device, that device keeps its own copy.
+        Your SD card is read in your browser; the card's files themselves are never sent anywhere.
+        What Nocta reads from them is kept in your browser on the device you're using, and:
       </p>
+      <ul>
+        <li><strong>With an account,</strong> a copy is also saved to your account, so the same nights, check-ins and settings are there on every device you sign in on. Only you can read it.</li>
+        <li><strong>Without an account</strong> ("Look around without an account"), everything stays in that browser and nothing is sent to our servers.</li>
+      </ul>
 
       <p>
         Nox, Nocta's coach, answers from replies written ahead of time, in your browser. Your data
@@ -61,6 +60,7 @@
         <li>Your password, if you sign up with email. It's stored in a scrambled (hashed) form we can't read.</li>
         <li>If you sign in with Google: your name, email address and profile picture link from your Google account.</li>
         <li>Whether you've finished setting up the app.</li>
+        <li>The saved copy of your data described above: your CPAP nights, check-ins, setup answers and photo, equipment log, and wearable nights.</li>
       </ul>
       <p>
         If you choose "Look around without an account", nothing about you is sent to our servers.
@@ -76,8 +76,8 @@
       </ul>
       <p>
         The access key never reaches your browser. When Nocta syncs, our server uses the key to ask
-        the company for your recent nights and passes them straight to your browser. Our server does
-        not keep the nights.
+        the company for your recent nights and passes them to your browser. Those nights are then
+        saved with the rest of your data, in your browser and to your account.
       </p>
 
       <h2>What Nocta reads from wearables</h2>
@@ -102,7 +102,7 @@
       <h2>Who else handles your data</h2>
       <p>Nocta uses a few service providers to run. Each only gets what it needs:</p>
       <ul>
-        <li><strong>Supabase</strong> stores your account and wearable access keys, on servers in the United States.</li>
+        <li><strong>Supabase</strong> stores your account, the saved copy of your data, and wearable access keys, on servers in the United States.</li>
         <li><strong>Vercel</strong> hosts the website. Like most web hosts, it records basic request details such as your IP address.</li>
         <li><strong>Google Fonts</strong> supplies Nocta's typefaces. Your browser downloads them from Google, which sees your IP address.</li>
         <li><strong>Google</strong>, if you sign in with Google or connect a Fitbit.</li>
@@ -117,7 +117,7 @@
       <ul>
         <li><strong>Export your data:</strong> Settings › Export my data downloads everything Nocta has about you as a file.</li>
         <li><strong>Disconnect a wearable:</strong> You › Wearables › the device › Disconnect. This deletes the access key from our server. You can also remove Nocta from that company's app or website.</li>
-        <li><strong>Delete your account:</strong> Settings › Delete account. This deletes your account and any wearable access keys from our servers, and erases Nocta's data from the device you're using.</li>
+        <li><strong>Delete your account:</strong> Settings › Delete account. This deletes your account, the saved copy of your data and any wearable access keys from our servers, and erases Nocta's data from the device you're using. Other devices you've signed in on keep their own copy until you sign out or clear them there.</li>
         <li><strong>Erase this device's data</strong> (using Nocta without an account): Settings › Erase this device's data removes everything Nocta keeps in this browser.</li>
       </ul>
       <p>
@@ -127,9 +127,10 @@
 
       <h2>Keeping it safe</h2>
       <p>
-        All connections to Nocta use HTTPS. Wearable access keys are stored where only our server can
-        read them, and they're never sent to your browser. No system is perfectly secure, but we only
-        keep what Nocta needs to work.
+        All connections to Nocta use HTTPS. Your saved data is locked to your account: the database
+        only lets you read or change your own. Wearable access keys are stored where only our server
+        can read them, and they're never sent to your browser. No system is perfectly secure, but we
+        only keep what Nocta needs to work.
       </p>
 
       <h2>Children</h2>

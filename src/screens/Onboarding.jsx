@@ -36,6 +36,7 @@ import {
 import { AUTH_LANDING } from '../lib/auth.jsx';
 import { PROVIDERS, accountName } from '../data/auth.js';
 import { MeetCoach } from './MeetCoach.jsx';
+import { Mascot } from '../components/Mascot.jsx';
 import {
   GOALS,
   BIRTH_YEARS,
@@ -68,6 +69,8 @@ const TYPE_LABEL = Object.fromEntries(MASK_TYPES.map((t) => [t.id, t.label]));
  * a cancelled sign-in) shouldn't replay the reveal. */
 
 const HOLD_MS = 900; // a beat on the joined constellation before it rises to the top
+// Nox rises in once the constellation has glided up into the lockup
+const NOX_AFTER_DAWN_MS = 700;
 
 // the splash lifts away (and its dawn glow sinks to the next screen's) before
 // the next screen rises in — keep in step with .ob-intro.leaving in onboarding.css
@@ -78,6 +81,14 @@ function Intro({ settled, onStart, onGuest }) {
   const [leaving, setLeaving] = useState(false);
   const stageRef = useRef(null);
   const dawn = phase === 'dawn';
+  // Nox, the coach: a small moon in the same sky, beside the constellation.
+  // Already there when the splash is revisited (or motion is reduced).
+  const [noxIn, setNoxIn] = useState(() => settled || prefersReducedMotion());
+  useEffect(() => {
+    if (!dawn || noxIn) return undefined;
+    const t = setTimeout(() => setNoxIn(true), NOX_AFTER_DAWN_MS);
+    return () => clearTimeout(t);
+  }, [dawn, noxIn]);
 
   // the sky stays; the splash's words and glow lift away, then hand off
   const leave = (fn) => {
@@ -116,6 +127,11 @@ function Intro({ settled, onStart, onGuest }) {
       <span className="ob-intro-wordmark" aria-hidden="true">
         Nocta
       </span>
+      {noxIn && (
+        <div className="ob-intro-nox" aria-hidden="true">
+          <Mascot size={48} state="idle" pop={!settled && !prefersReducedMotion()} />
+        </div>
+      )}
       <div className="ob-intro-main">
         <h1 className="ob-intro-title">
           <span>Sleep better,</span>
@@ -525,8 +541,8 @@ function Pairing({ data, update, next }) {
         <h1 className="ob-title">{done ? `${data.cardNights} nights imported` : 'Bring in your CPAP data'}</h1>
         <p className="ob-copy">
           {done
-            ? 'Read from your SD card, on this device. You can import a newer card any time from Therapy.'
-            : 'Import straight from your machine’s SD card. ResMed AirSense 10 and 11 cards work today. It’s read on this device; nothing is uploaded.'}
+            ? 'Read from your SD card. Once you have an account, it’s saved to it, so it’s on all your devices. You can import a newer card any time from Therapy.'
+            : 'Import straight from your machine’s SD card. ResMed AirSense 10 and 11 cards work today. It’s read right here in your browser, then saved to your account once you make one.'}
         </p>
       </Step>
       {importing && (

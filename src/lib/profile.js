@@ -12,6 +12,7 @@
  * setProfileAnswers / setReminderPrefs so screens re-render. */
 
 import { ownKey, onOwner } from './owner.js';
+import { cloudChanged } from './cloudSync.js';
 
 const BASE_KEY = 'nocta.profile.v1'; // per account: ownKey(BASE_KEY)
 
@@ -89,6 +90,7 @@ function save() {
   } catch {
     /* ignore */
   }
+  cloudChanged('profile'); // with an account, a copy follows it (lib/cloudSync.js)
   listeners.forEach((fn) => fn(profile));
 }
 

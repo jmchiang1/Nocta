@@ -8,6 +8,8 @@ import { refreshInsights } from '../data/fixtures.js';
 import { getCheckin, setCheckin as saveCheckinFor, clearCheckin, migrateOldCheckin } from './checkins.js';
 import { getProfile, onProfile } from './profile.js';
 import { setCard, importedCard, hasNights, switchOwner } from './dataset.js';
+import { cloudChanged, syncNow } from './cloudSync.js';
+import { reloadOwner } from './owner.js';
 import { ownerOf } from './owner.js';
 import { DEFAULT_MACHINE_ID } from '../data/therapy.js';
 import {
@@ -18,7 +20,7 @@ import {
 } from '../data/account.js';
 import { DEFAULT_SIGNIN_SCENARIO } from '../data/auth.js';
 import { useAuth } from './auth.jsx';
-import { saveImport, clearImport } from './importStore.js';
+import { saveImport, clearImport, loadImport } from './importStore.js';
 import {
   LIVE_WEARABLES,
   isLiveWearable,
@@ -307,6 +309,7 @@ export function StoreProvider({ children }) {
       try {
         const res = await syncWearable(provider);
         patchLink(provider, { syncing: false, needsReconnect: false, lastSyncAt: res.syncedAt });
+        if (!res.throttled) cloudChanged(`wearable:${provider}`); // the account's copy too
         setWearableNonce((n) => n + 1);
         return res;
       } catch (e) {
@@ -488,6 +491,7 @@ export function StoreProvider({ children }) {
   const saveCardImport = useCallback(
     async (card) => {
       const res = await saveImport(card);
+      cloudChanged('card'); // with an account, the card follows it (lib/cloudSync.js)
       await setCard(res.card);
       setCardData(res.card);
       setFixtureId(DEFAULT_FIXTURE);
@@ -504,6 +508,7 @@ export function StoreProvider({ children }) {
    * back once someone has brought in their own (lib/dataset.js) */
   const removeCardImport = useCallback(async () => {
     await clearImport();
+    cloudChanged('card');
     await setCard(null);
     setCardData(null);
     setFixtureId(DEFAULT_FIXTURE);
@@ -521,10 +526,14 @@ export function StoreProvider({ children }) {
   const { authUser, authStatus } = auth;
   const owner = ownerOf(authUser);
   const [, setDataVersion] = useState(0);
+  // the account sync's pull (set below), run once the owner switch lands
+  const pullRef = useRef(null);
   useEffect(() => {
     if (authStatus === 'loading') return undefined;
     let live = true;
     switchOwner(owner).then(async (changed) => {
+      // this account's space is loaded: now bring in its saved copy
+      if (live) pullRef.current?.();
       if (!live || !changed) return;
       await loadWearableCache().catch(() => {});
       setFixtureId(DEFAULT_FIXTURE);
@@ -536,6 +545,47 @@ export function StoreProvider({ children }) {
       live = false;
     };
   }, [owner, authStatus, setFixtureId]);
+  /* with an account, its data follows it (lib/cloudSync.js): pull the
+   * account's copy once sign-in settles, and again whenever Nocta comes back
+   * to the front (another device may have changed it), then re-read what
+   * changed */
+  useEffect(() => {
+    if (authStatus === 'loading' || !owner.startsWith('acct:')) {
+      pullRef.current = null;
+      return undefined;
+    }
+    let live = true;
+    let last = 0;
+    const pull = async () => {
+      if (Date.now() - last < 30_000) return; // not on every tab flick
+      last = Date.now();
+      const changed = await syncNow();
+      if (!live || !changed.size) return;
+      if (changed.has('card')) {
+        const card = await loadImport();
+        await setCard(card);
+        setCardData(card);
+        setFixtureId(DEFAULT_FIXTURE);
+      }
+      if (['profile', 'checkins', 'equipment'].some((d) => changed.has(d))) reloadOwner();
+      if ([...changed].some((d) => d.startsWith('wearable:'))) await loadWearableCache().catch(() => {});
+      refreshInsights(); // check-ins and answers shape what Nox says
+      setCheckin(loadCheckin());
+      setMaskId(getProfile().answers.maskModel ?? null);
+      setDataVersion((v) => v + 1);
+    };
+    // the first pull runs once the owner switch above has loaded this
+    // account's space (it calls pullRef)
+    pullRef.current = pull;
+    const onVisible = () => document.visibilityState === 'visible' && pull();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      live = false;
+      pullRef.current = null;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [owner, authStatus, setFixtureId]);
+
   // any nights to show: false for an account with no card (or a removed one)
   const hasData = hasNights();
 

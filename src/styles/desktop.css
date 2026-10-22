@@ -1576,11 +1576,17 @@ html:has(.desktop-modal-wrap) {
   padding: 0 28px;
 }
 
-/* the splash's "Look around first": in line with the back button on every
- * other screen, not the phone's below-the-status-bar offset */
+/* the splash's "Look around first": a quiet way in, at the very bottom of
+ * the page, centred under everything else (the phone keeps it top right).
+ * Centred with margins, not a transform, so the splash's leave lift still
+ * applies to it. */
 .desktop-onboarding .ob-intro-peek {
-  top: 24px;
-  right: 24px;
+  top: auto;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
 }
 
 /* ----- every other screen: one centred column, one fixed frame -----

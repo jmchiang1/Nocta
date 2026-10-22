@@ -8,6 +8,7 @@
  * (nocta.checkin.v1, which was always "this morning"). */
 
 import { ownKey, onOwner } from './owner.js';
+import { cloudChanged } from './cloudSync.js';
 
 // per account (lib/owner.js)
 const KEY = () => ownKey('nocta.checkins.v2');
@@ -39,6 +40,7 @@ function saveLate() {
   } catch {
     /* ignore */
   }
+  cloudChanged('checkins');
 }
 
 function load() {
@@ -57,6 +59,7 @@ function save() {
   } catch {
     /* ignore */
   }
+  cloudChanged('checkins'); // with an account, a copy follows it (lib/cloudSync.js)
 }
 
 /* the one-off move from the old single check-in: it belonged to whatever

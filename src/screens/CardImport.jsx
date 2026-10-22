@@ -57,6 +57,9 @@ const dayLabel = (d, opts = { weekday: 'short', month: 'short', day: 'numeric' }
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { ...opts, timeZone: 'UTC' });
 
 function CardSummary({ card, result }) {
+  // with an account, the card is saved to it too (lib/cloudSync.js)
+  const { authUser, authConfigured } = useStore();
+  const synced = authConfigured && authUser && authUser.kind !== 'guest';
   const detailed = card.nights.filter((n) => n.source === 'datalog').length;
   const s = card.settings;
   const range =
@@ -102,7 +105,7 @@ function CardSummary({ card, result }) {
         {dayLabel(card.range.first, { month: 'short', day: 'numeric', year: 'numeric' })} to{' '}
         {dayLabel(card.range.last, { month: 'short', day: 'numeric', year: 'numeric' })}
         {result && (result.added ? `. ${result.added} new ${result.added === 1 ? 'night' : 'nights'} added` : '. Nothing new since your last import')}
-        . Saved on this device only.
+        {synced ? '. Saved to your account, so it’s on all your devices.' : '. Saved on this device.'}
       </p>
 
       {/* a partial read is said plainly, with the files behind a tap */}

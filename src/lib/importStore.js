@@ -1,6 +1,7 @@
 /* Nocta — imported SD card data, kept on this device in IndexedDB (a year of
  * nights with per-minute series runs a few MB — too big for localStorage).
- * Nothing here leaves the device.
+ * With an account, lib/cloudSync.js also saves a copy to it, so the card
+ * follows them to other devices.
  *
  * Re-importing merges by night: a card only holds so much detail, so older
  * nights from an earlier import are kept; nights on the new card replace them. */
@@ -90,6 +91,12 @@ export async function moveRecords(from, to) {
   } catch {
     /* storage blocked: nothing to move */
   }
+}
+
+/* store a card exactly as given, no merge (a copy pulled from the account,
+ * lib/cloudSync.js) */
+export async function putImport(card) {
+  await tx('readwrite', (s) => s.put(card, KEY()));
 }
 
 export async function clearImport() {

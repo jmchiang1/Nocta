@@ -3,6 +3,7 @@
  * "not logged", never a guess. Kept on this device (localStorage). */
 
 import { ownKey, onOwner } from './owner.js';
+import { cloudChanged } from './cloudSync.js';
 
 const KEY = () => ownKey('nocta.equipment.v1'); // per account (lib/owner.js)
 
@@ -47,6 +48,7 @@ export function logReplaced(partId, date) {
   } catch {
     /* ignore */
   }
+  cloudChanged('equipment'); // with an account, a copy follows it (lib/cloudSync.js)
   listeners.forEach((fn) => fn(logged));
 }
 

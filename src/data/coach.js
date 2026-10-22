@@ -332,11 +332,11 @@ const PRESETS_FIRST = [
   /* ---- the app ---- */
   {
     match: ['sd card', /\bimport(ing|ed)?\b/, 'upload', 'sample data', 'demo data', 'is this my data', 'real data', 'fake data', 'my own data'],
-    text: "Right now you may be seeing Nocta's sample nights. To see your own, take the SD card out of your machine, put it in your computer, and open **Therapy › Import SD card** in Nocta. Your card is read in your browser and never uploaded.",
+    text: "Right now you may be seeing Nocta's sample nights. To see your own, take the SD card out of your machine, put it in your computer, and open **Therapy › Import SD card** in Nocta. Your card is read in your browser, and with an account it's saved to it so it's on all your devices.",
   },
   {
     match: ['privacy', 'private', 'who can see', 'sell my data', 'secure', 'safe is my', 'my data safe'],
-    text: "Your CPAP data stays on your device: Nocta reads your SD card in your browser and doesn't upload it. Nocta doesn't sell data, show ads, or share it with insurers or employers. The full details are in **Settings › Privacy Policy**.",
+    text: "With an account, your data is saved to it so it's on all your devices, and only you can read it. Without one, it stays in this browser. Nocta doesn't sell data, show ads, or share it with insurers or employers. The full details are in **Settings › Privacy Policy**.",
   },
   {
     match: ['delete my account', 'delete my data', 'erase', 'remove my data'],

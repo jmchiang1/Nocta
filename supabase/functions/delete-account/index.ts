@@ -30,6 +30,11 @@ Deno.serve(async (req) => {
   const { data, error } = await admin.auth.getUser(jwt);
   if (error || !data.user) return Response.json({ error: 'not signed in' }, { status: 401, headers: cors });
 
+  // their saved card file (lib/cloudSync.js) isn't tied to the user row, so
+  // it goes first; their nocta_user_data rows go with the user (on delete cascade)
+  const { error: fileError } = await admin.storage.from('nocta-cards').remove([`${data.user.id}/card.json.gz`]);
+  if (fileError) console.warn('[delete-account] card file', fileError.message);
+
   const { error: delError } = await admin.auth.admin.deleteUser(data.user.id);
   if (delError) return Response.json({ error: 'could not delete' }, { status: 500, headers: cors });
 

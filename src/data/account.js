@@ -29,7 +29,7 @@ export const initialsOf = (authUser) => {
 
 /* where the data lives, said plainly */
 export const PRIVACY_NOTE =
-  'Your CPAP nights, check-ins and answers are kept on this device, read from your SD card. Your sign-in is held by Nocta’s account service. Nothing is sold or shared with insurers or employers. You can export it all, or delete your account, below.';
+  'Your CPAP nights, check-ins and answers are saved to your account, so they’re on every device you sign in on, and only you can read them. Nothing is sold or shared with insurers or employers. You can export it all, or delete your account, below.';
 
 /* the one medical disclaimer — onboarding, the Tonight footer and Settings
  * all render this, so the three never drift apart */
