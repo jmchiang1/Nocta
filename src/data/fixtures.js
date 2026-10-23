@@ -14,7 +14,7 @@
  * The exports below are refreshed in place when the card changes (an
  * import), so importers stay current. */
 import { NIGHTS, LAST_NIGHT, cardNight, ahiTotal, round1, toDate, addDays } from './history.js';
-import { insightFor } from '../lib/insights.js';
+import { insightFor, clearInsights } from '../lib/insights.js';
 import { onDataset } from '../lib/dataset.js';
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -241,6 +241,7 @@ export let EXAMPLE_FIXTURE = null;
 /* what the person told us changed (a check-in, an onboarding answer): the
  * insights read it, so rebuild nights on next read */
 export function refreshInsights() {
+  clearInsights(); // each night's suggestion depends on the ones before it
   cache.clear();
 }
 

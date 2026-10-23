@@ -921,10 +921,36 @@ function useFitScale(innerRef, outerRef) {
  * the one action lands. Choreography lives in onboarding.css (.ob-why-stage). */
 function Expectations({ next }) {
   // the same sky-first insight Tonight leads with (WhyHorizon), on a real night
-  const example = FIXTURES[EXAMPLE_FIXTURE];
+  // the example is a night from the sample year, which only someone looking
+  // around gets; an account (or a device that has held real data) has no
+  // nights yet, so it reads what the card will hold instead
+  const example = EXAMPLE_FIXTURE ? FIXTURES[EXAMPLE_FIXTURE] : null;
   const outer = useRef(null);
   const inner = useRef(null);
   const fit = useFitScale(inner, outer);
+  if (!example?.insight) {
+    return (
+      <Step foot={<button className="btn primary" onClick={next}>Got it</button>}>
+        <StepTitle title="Tomorrow morning">
+          Each morning you'll wake up to this. Once Nocta knows your usual, it shows how last night compared. No 0–100 scores. No jargon.
+        </StepTitle>
+        <ul className="ob-expect-list">
+          <li>
+            <strong>How last night compared</strong>
+            <span>Against your own usual, not a score out of 100.</span>
+          </li>
+          <li>
+            <strong>What may have caused it</strong>
+            <span>In plain words, from your machine’s numbers and your check-in.</span>
+          </li>
+          <li>
+            <strong>One thing to try</strong>
+            <span>A single suggestion, or when it’s worth talking to your doctor.</span>
+          </li>
+        </ul>
+      </Step>
+    );
+  }
   return (
     <Step foot={<button className="btn primary" onClick={next}>Got it</button>}>
       <StepTitle title="Tomorrow morning">

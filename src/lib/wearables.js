@@ -155,7 +155,16 @@ export async function clearWearableCache() {
   await Promise.all(LIVE_WEARABLES.map((p) => deleteItem(storeKey(p)).catch(() => {})));
 }
 
-export const wearableNight = (provider, date) => nights[provider]?.get(date) ?? null;
+/* development only: made-up nights, to see the body cards and the insights
+ * without a real ring or watch. Kept apart from the real cache, so a sync
+ * never saves, uploads, exports or counts them; gone on reload. */
+const testNights = Object.fromEntries(LIVE_WEARABLES.map((p) => [p, new Map()]));
+export function injectWearableNights(provider, list) {
+  if (!import.meta.env.DEV) return;
+  list.forEach((n) => testNights[provider].set(n.date, n));
+}
+
+export const wearableNight = (provider, date) => testNights[provider]?.get(date) ?? nights[provider]?.get(date) ?? null;
 
 /* every synced night, per wearable that has any (Export my data) */
 export const allWearableNights = () =>
@@ -166,7 +175,8 @@ export const allWearableNights = () =>
 
 /* the nights before `date` (newest first), for "your usual" ranges */
 export function wearableNightsBefore(provider, date, n) {
-  return [...(nights[provider]?.values() ?? [])]
+  const merged = new Map([...(nights[provider] ?? []), ...(testNights[provider] ?? [])]);
+  return [...merged.values()]
     .filter((x) => x.date < date)
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, n);

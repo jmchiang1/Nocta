@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef } f
 import { DEFAULT_FIXTURE } from '../data/fixtures.js';
 import { NIGHTS, LAST_NIGHT } from '../data/history.js';
 import { refreshInsights } from '../data/fixtures.js';
+import { setInsightWearables } from './insights.js';
 import { getCheckin, setCheckin as saveCheckinFor, clearCheckin, migrateOldCheckin } from './checkins.js';
 import { getProfile, onProfile } from './profile.js';
 import { setCard, importedCard, hasNights, switchOwner } from './dataset.js';
@@ -563,6 +564,17 @@ export function StoreProvider({ children }) {
     lastKind.current = kind;
   }, [authUser, authStatus]);
   const [, setDataVersion] = useState(0);
+  /* the night's suggestion reads the connected wearables too (soft signals
+   * only, lib/insights.js): when one connects, is switched off, or syncs
+   * new nights, the suggestions are worked out again */
+  const insightWearables = LIVE_WEARABLES.filter((p) => effectiveConnections[p] && deviceEnabled[p] !== false);
+  const insightWearKey = insightWearables.join(',');
+  useEffect(() => {
+    setInsightWearables(insightWearables);
+    refreshInsights();
+    setDataVersion((v) => v + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insightWearKey, wearableNonce]);
   // the account sync's pull (set below), run once the owner switch lands
   const pullRef = useRef(null);
   useEffect(() => {

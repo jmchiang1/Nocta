@@ -46,8 +46,11 @@ re-rendering are materially cleaner as components. Everything else in the handof
   otherwise. See `docs/AUTH_SETUP.md`. Never put the secret/service_role key in the app.
 - **Wearables**: Oura, Fitbit (via the Google Health API), Whoop and Withings connect for real through the Supabase edge
   function `nocta-wearables` (`supabase/functions/`, tokens server-side only). Synced
-  nights are cached on the device by date (`src/lib/wearables.js`) and feed only the
-  "Your body overnight" cards (`src/lib/bodySource.js`), never insights or escalation.
+  nights are cached on the device by date (`src/lib/wearables.js`) and feed the
+  "Your body overnight" cards (`src/lib/bodySource.js`) and the insights as soft signals
+  (`src/lib/insights.js`: sleep vs. mask time, wake-ups, REM timing, HRV / resting heart
+  rate, and oxygen for people without an oximeter). A wearable never raises a hard
+  escalation; a run of low wearable SpO₂ nights still says "talk to your doctor".
   Needs a signed-in account; other devices are "coming soon". See `docs/WEARABLES_SETUP.md`.
 - **AI (Nox chat)**: Nox is the pre-written version for now (`src/data/coach.js`). A
   smart Nox on Claude (`claude-opus-5-5`, edge function `nocta-nox`, `src/lib/nox.js`)
