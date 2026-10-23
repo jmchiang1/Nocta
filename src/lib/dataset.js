@@ -1,7 +1,7 @@
 /* Nocta — which CPAP card the app is showing. One parsed card (lib/resmed
  * card.js shape) drives every screen:
  *   - the card imported on this device (importStore, IndexedDB), else
- *   - the bundled sample week (data/demoCard.json, built by
+ *   - the bundled sample month (data/demoCard.json, built by
  *     scripts/build-demo-card.mjs) — only for someone just looking around
  *     (no account: a guest, or not signed in yet), and only while that
  *     space has never held a card of its own, else

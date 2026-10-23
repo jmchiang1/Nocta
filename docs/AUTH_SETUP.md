@@ -42,8 +42,12 @@ the secret / `service_role` key in the app.
 
 Supabase › General › **Authentication › URL Configuration › Redirect URLs**, then add:
 
-- `http://localhost:5180` (dev; the port is set in `vite.config.js`)
-- the deployed URL later
+- `http://localhost:5180/app/` (dev; the port is set in `vite.config.js`)
+- the live app: `https://nocta-sleep.vercel.app/app/`
+
+The app lives at `/app/`; `/` is the marketing site (`index.html`, `src/site/`). Sign-in and
+email links come back to the address the app is on, so the `/app/` addresses are the ones
+to allow. An older link that still points at `/` is passed on to `/app/` by `src/site/site.js`.
 
 Don't change the **Site URL**, because it belongs to the other app. If a redirect isn't on
 this list, Supabase sends people to the Site URL instead, which means the other app.
@@ -55,7 +59,7 @@ this list, Supabase sends people to the Site URL instead, which means the other 
    Scopes: `openid`, `userinfo.email`, `userinfo.profile`. Ask for nothing more, because
    extra scopes trigger a long Google review.
 2. **Clients › Create client › Web application**
-   - Authorized JavaScript origins: `http://localhost:5180` (+ the deployed origin later)
+   - Authorized JavaScript origins: `http://localhost:5180` and `https://nocta-sleep.vercel.app`
    - Authorized redirect URI: `https://hhkeuxpmcbfkifvhvdxp.supabase.co/auth/v1/callback`
 3. Supabase › General › **Authentication › Sign In / Providers › Google**: paste the Client
    ID and Client Secret, then enable it.

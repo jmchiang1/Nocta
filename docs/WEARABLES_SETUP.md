@@ -115,11 +115,12 @@ supabase secrets set --project-ref hhkeuxpmcbfkifvhvdxp \
   FITBIT_CLIENT_ID=… FITBIT_CLIENT_SECRET=… \
   WHOOP_CLIENT_ID=… WHOOP_CLIENT_SECRET=… \
   WITHINGS_CLIENT_ID=… WITHINGS_CLIENT_SECRET=… \
-  NOCTA_APP_ORIGINS=http://localhost:5180
+  NOCTA_APP_ORIGINS=http://localhost:5180,https://nocta-sleep.vercel.app
 ```
 
 - `NOCTA_APP_ORIGINS`: the addresses the function may send people back to after
-  they approve (comma-separated). Add the deployed site's origin when there is one.
+  they approve (comma-separated): local dev and the live site, `https://nocta-sleep.vercel.app`.
+  If the site moves to another address, add it here too.
   Anything not on this list is refused, so the callback can't be used to redirect
   people to some other site.
 - A company you haven't registered yet can be left out. The app shows it as not

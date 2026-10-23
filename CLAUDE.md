@@ -30,8 +30,8 @@ re-rendering are materially cleaner as components. Everything else in the handof
   (EDF reader + card reader), stored on the device in IndexedDB. Not yet wired into
   Tonight / Trends, which still read the fixtures.
 - **Data (v1)**: a parsed ResMed SD card drives every screen (`src/lib/dataset.js`): the
-  card imported on the device; else the bundled sample week `src/data/demoCard.json`
-  (rebuild it with `node scripts/build-demo-card.mjs "CPAP Data 7 Days"`), but only for
+  card imported on the device; else the bundled sample month `src/data/demoCard.json`
+  (rebuild it with `node scripts/build-demo-card.mjs "CPAP Data 30 Days"`), but only for
   someone looking around without an account, on a device that has never held their own
   data; else no nights at all (Tonight and Trends show the SD import card). Once someone
   imports, the sample never shows again on that device, even after they remove the card. `history.js`
@@ -69,6 +69,10 @@ re-rendering are materially cleaner as components. Everything else in the handof
 - **Data source (future)**: SleepHQ API (OAuth2 password grant).
 - **Hosting target**: static site host (Vercel / Netlify / GitHub Pages). A serverless
   function layer is added only when real APIs come online (BUILD_PLAN Phases 3–4).
+- **Two pages**: the marketing site at `/` (`index.html`, `src/site/`: plain HTML + CSS on
+  the app's tokens, no React; screenshots in `public/site/`) and the app at `/app/`
+  (`app/index.html`). Its copy follows the same voice and safety rules as the app. Old
+  sign-in / wearable links that land on `/` are forwarded to `/app/` by `src/site/site.js`.
 
 If a request would pull in a UI framework or CSS framework, push back and ask first.
 
@@ -80,7 +84,7 @@ If a request would pull in a UI framework or CSS framework, push back and ask fi
   `docs/DESIGN_SYSTEM.md`). Never hardcode hex values in component CSS — pull from `:root`.
 - **No CSS frameworks.** Custom CSS only, in plain stylesheets.
 - **Fonts**: DM Sans (display + numerals) and Inter (body + UI). Loaded from Google Fonts
-  in `index.html`.
+  in `app/index.html` (and the marketing site's `index.html`).
 - **Mobile-first**, 390px design width. A real responsive web app, no phone mockup: under
   768px the mobile app fills the screen; from 768px up, the desktop dashboard
   (`src/components/desktop/`). The layout follows the window width.

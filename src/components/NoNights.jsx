@@ -39,7 +39,7 @@ export function NoDataBanner() {
  * then): say so on Tonight, so an old night isn't read as last night, and
  * offer the import. One short row: tap it to import, or put it away for this
  * card (it comes back if a later import is still behind). Not for the
- * sample, which is a fixed year. */
+ * sample, which is a fixed stretch of nights. */
 const STALE_KEY = 'nocta.staleDismissed.v1'; // the newest night it was put away for
 
 function staleDismissedFor() {
@@ -51,9 +51,10 @@ function staleDismissedFor() {
 }
 
 export function StaleDataBanner() {
-  const { openSheet, cardData } = useStore();
+  const { openSheet, cardData, authUser } = useStore();
   const [dismissed, setDismissed] = useState(staleDismissedFor);
-  if (!cardData || !LAST_NIGHT) return null;
+  // a guest gets the looking-around row instead (SampleDataBanner)
+  if (!cardData || !LAST_NIGHT || authUser?.kind === 'guest') return null;
   const days = dayDiff(LAST_NIGHT, todayIso());
   if (days < 2) return null; // last night, or the night before (not read yet this morning)
   if (dismissed === LAST_NIGHT) return null;
@@ -116,22 +117,29 @@ export function DesktopNoNights({ tab }) {
   );
 }
 
-/* someone looking around without an account sees a sample week (the 7-day
- * card, lib/dataset.js). Tonight says so, every visit, with the way to their
- * own: back to the welcome screen to make an account or sign in (the same
- * door as You's GuestAccountCard). */
+/* someone looking around without an account: Tonight says so, every visit,
+ * with the way to an account: back to the welcome screen to make one or sign
+ * in (the same door as You's GuestAccountCard). On the sample month (lib/
+ * dataset.js) it says these nights aren't theirs; with a card they read in
+ * as a guest, that an account is how it's kept. A guest never gets the
+ * newest-night row (StaleDataBanner) — this takes its place. Shown before
+ * sign-in resolves too (no account yet), but only over the sample. */
 export function SampleDataBanner() {
   const { authUser, resetOnboarding } = useStore();
-  if (!isDemoData() || (authUser && authUser.kind !== 'guest')) return null;
+  const guest = authUser?.kind === 'guest';
+  const sample = isDemoData();
+  if (!guest && !(sample && !authUser)) return null;
   return (
-    <section className="stale-note sample-note" aria-label="These are sample nights">
+    <section className="stale-note sample-note" aria-label="You’re looking around">
       <button type="button" className="stale-note-main" onClick={resetOnboarding}>
         <span className="stale-note-icon" aria-hidden="true">
           <Icon name="you" size={18} />
         </span>
         <span className="stale-note-text">
-          <span className="stale-note-title">These are sample nights</span>
-          <span className="stale-note-sub">Create an account or sign in to see your own.</span>
+          <span className="stale-note-title">You’re looking around</span>
+          <span className="stale-note-sub">
+            {sample ? 'These are sample nights. Make an account to see your own.' : 'Make an account to keep your nights.'}
+          </span>
         </span>
         <Icon name="chevronRight" size={18} className="sample-note-chev" />
       </button>

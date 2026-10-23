@@ -3,7 +3,7 @@
  * own parser (src/lib/resmed/card.js), so the demo is exactly what an import
  * of that card would produce.
  *
- *   node scripts/build-demo-card.mjs "CPAP Data 1 Year"  [out]
+ *   node scripts/build-demo-card.mjs "CPAP Data 30 Days"  [out]
  *
  * Writes src/data/demoCard.json by default. The app loads it at startup when
  * nothing has been imported on the device (src/lib/dataset.js).

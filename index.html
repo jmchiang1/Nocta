@@ -2,22 +2,492 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#05080f" />
-    <!-- Nox, the mascot (public/favicon.svg); PNG for browsers and home screens without SVG icons -->
+    <title>Nocta · Understand every night on CPAP</title>
+    <meta
+      name="description"
+      content="Nocta reads the SD card from your ResMed CPAP and turns each night into a plain-language story, with the numbers behind it and one thing to try tonight."
+    />
+    <meta property="og:title" content="Nocta · Understand every night on CPAP" />
+    <meta
+      property="og:description"
+      content="Each night from your CPAP's SD card, explained in plain words, with one thing to try tonight."
+    />
+    <meta property="og:image" content="/site/tonight-desktop.webp" />
+    <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>Nocta · Sleep Better, Knowingly</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400;1,9..40,500&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/src/site/site.css" />
+    <script type="module" src="/src/site/site.js"></script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <!-- a floating glass bar -->
+    <header class="nav" data-nav>
+      <div class="nav-bar">
+        <a class="brand" href="/" aria-label="Nocta, home">
+          <img src="/nocta-mark.svg" alt="" width="30" height="30" />
+          <span>Nocta</span>
+        </a>
+        <nav class="nav-links" aria-label="On this page">
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#questions">Questions</a>
+        </nav>
+        <a class="btn btn-small" href="/app/">Open Nocta</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ======== hero ======== -->
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="aurora" aria-hidden="true"></div>
+        <div class="wrap hero-head">
+          <p class="chip"><span class="chip-dot" aria-hidden="true"></span>Works with ResMed AirSense 10 and 11</p>
+          <h1 id="hero-title" class="hero-title">Understand every night on CPAP.</h1>
+          <p class="hero-lede">
+            Nocta reads your machine’s SD card and turns each night into a plain-language story, with the
+            numbers behind it and one thing to try tonight.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="/app/">Open Nocta</a>
+            <a class="btn btn-quiet" href="#how">See how it works</a>
+          </div>
+          <p class="hero-note">Look around with sample nights first. No account needed.</p>
+        </div>
+
+        <!-- the night's horizon: the product rises from it -->
+        <div class="stage" data-stage>
+          <svg class="horizon" viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="hz-line" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0" stop-color="#7b95d8" stop-opacity="0" />
+                <stop offset="0.2" stop-color="#7b95d8" />
+                <stop offset="0.68" stop-color="#f4b896" />
+                <stop offset="1" stop-color="#7b95d8" stop-opacity="0" />
+              </linearGradient>
+              <linearGradient id="hz-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#7b95d8" stop-opacity="0.22" />
+                <stop offset="1" stop-color="#7b95d8" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path class="horizon-fill" d="M0 118 C 180 118 260 112 380 122 S 600 132 720 116 S 900 26 1010 30 S 1180 106 1290 114 S 1400 118 1440 118 L 1440 160 L 0 160 Z" fill="url(#hz-fill)" />
+            <path class="horizon-line" d="M0 118 C 180 118 260 112 380 122 S 600 132 720 116 S 900 26 1010 30 S 1180 106 1290 114 S 1400 118 1440 118" stroke="url(#hz-line)" />
+          </svg>
+          <div class="stage-inner">
+            <div class="stage-tilt" data-tilt>
+              <img
+                class="stage-desktop"
+                src="/site/tonight-desktop.webp"
+                width="2000"
+                height="1250"
+                fetchpriority="high"
+                alt="Nocta on a computer. Last night's headline reads Mask leak spiked, with the night's shape as a curve, tonight's suggestion to re-fit the mask, the morning check-in and last night's numbers."
+              />
+            </div>
+            <figure class="phone stage-phone">
+              <img
+                src="/site/tonight-phone.webp"
+                width="780"
+                height="1688"
+                alt="The same night on a phone: Mask leak spiked, 98.4 liters a minute in the leakiest stretch, usually 10.8."
+              />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== plain facts, in place of logos we don't have ======== -->
+      <section class="facts wrap" aria-label="At a glance">
+        <ul class="fact-strip">
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
+            Read in your browser
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 17.5l4.5-5 4 3 4.5-6" /><circle cx="19" cy="7" r="2.2" /></svg>
+            Compared with your own usual
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z" /></svg>
+            One thing to try each night
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z" /></svg>
+            Not a medical device
+          </li>
+        </ul>
+      </section>
+
+      <!-- ======== the problem, in one statement ======== -->
+      <section class="statement wrap" aria-label="Why Nocta">
+        <p class="statement-text" data-reveal>
+          Your machine writes down every minute of every night.
+          <span>Its app gives you a score. Nocta reads the whole card and tells you what stood out, in words
+          first, with every chart there when you want it.</span>
+        </p>
+      </section>
+
+      <!-- ======== features: a bento of the app, recreated live ======== -->
+      <section id="features" class="features wrap" aria-labelledby="features-title">
+        <h2 id="features-title" class="section-title" data-reveal>
+          A story for every night.
+          <span>And the reasons behind it.</span>
+        </h2>
+
+        <div class="bento">
+          <!-- the night in one sentence -->
+          <article class="tile tile-night" data-reveal data-spot>
+            <div class="tile-copy">
+              <h3>The night in one sentence.</h3>
+              <p>A plain headline for what stood out, and the shape of the night under it.</p>
+            </div>
+            <div class="mini-night" aria-hidden="true">
+              <div class="mn-days">
+                <span>7</span><span class="has">8</span><span>9</span><span class="has">10</span><span>11</span><span>12</span><span class="on has">13</span>
+              </div>
+              <p class="mn-head">Mask leak <em>spiked.</em></p>
+              <p class="mn-detail">98.4 L/min in the leakiest stretch, usually 10.8</p>
+              <svg class="mn-curve" viewBox="0 0 600 150" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="mn-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#7b95d8" stop-opacity="0.35" />
+                    <stop offset="1" stop-color="#7b95d8" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <path class="mn-area" d="M0 70 C 80 70 140 96 220 96 S 330 46 380 40 S 470 104 540 108 L 600 108 L 600 150 L 0 150 Z" fill="url(#mn-fill)" />
+                <path class="mn-line" d="M0 70 C 80 70 140 96 220 96 S 330 46 380 40 S 470 104 540 108 L 600 108" />
+                <line class="mn-usual" x1="0" y1="132" x2="600" y2="132" />
+              </svg>
+              <span class="mn-pin">30 events</span>
+            </div>
+          </article>
+
+          <!-- it shows its work -->
+          <article class="tile tile-why" data-reveal data-spot>
+            <div class="tile-copy">
+              <h3>It shows its work.</h3>
+              <p>Every explanation cites the numbers it used and says how sure it is.</p>
+            </div>
+            <ul class="receipts" aria-label="Example: the numbers behind a leaky night">
+              <li><span>Leak, leakiest stretch</span><b>98.4 L/min</b></li>
+              <li><span>Time above 24 L/min</span><b>82 min</b></li>
+              <li><span>Events while it leaked</span><b>43 of 85</b></li>
+              <li><span>AHI, against your usual</span><b>31.2 vs 3.5</b></li>
+            </ul>
+            <p class="confidence"><span class="conf-bars" aria-hidden="true"><i></i><i></i><i></i></span>High confidence</p>
+          </article>
+
+          <!-- one thing to try -->
+          <article class="tile tile-try" data-reveal data-spot>
+            <div class="tile-copy">
+              <h3>One thing to try.</h3>
+              <p>Not a list of ten tips. One small change for tonight.</p>
+            </div>
+            <div class="try-card" aria-label="Example suggestion">
+              <svg class="try-star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.6 7.4L21 12l-7.4 1.6L12 22l-1.6-8.4L3 12l7.4-2.6z" /></svg>
+              <div>
+                <p class="try-label">Tonight</p>
+                <p class="try-head">Re-fit your mask before bed.</p>
+                <p class="try-body">Loosen the straps, then tighten them evenly until it seals without pressing hard.</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- morning check-in: tap the answers -->
+          <article class="tile tile-checkin" data-reveal data-spot>
+            <div class="tile-copy">
+              <h3>Thirty seconds each morning.</h3>
+              <p>Log what your machine can’t see, like a late coffee or a stuffy nose.</p>
+            </div>
+            <div class="checkin" role="group" aria-label="Example check-in: how do you feel this morning? Try tapping the answers.">
+              <p class="checkin-q">How do you feel this morning?</p>
+              <div class="checkin-chips">
+                <button type="button" aria-pressed="false">Rested</button>
+                <button type="button" aria-pressed="true">Tired</button>
+                <button type="button" aria-pressed="false">Sore</button>
+                <button type="button" aria-pressed="false">Foggy</button>
+                <button type="button" aria-pressed="true">Congested</button>
+                <button type="button" aria-pressed="false">Headache</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Nox -->
+          <article class="tile tile-nox" data-reveal data-spot>
+            <div class="tile-copy">
+              <h3>Questions? Ask Nox.</h3>
+              <p>Plain answers about your mask and your numbers. Nox never diagnoses.</p>
+            </div>
+            <div class="chat" aria-label="Example question and answer">
+              <p class="bubble bubble-you">What does an AHI of 31.2 mean?</p>
+              <p class="typing" aria-hidden="true"><i></i><i></i><i></i></p>
+              <p class="bubble bubble-nox">
+                It’s how many times an hour your breathing paused or got shallow. One night bounces around; the
+                trend over a couple of weeks, against your own usual, says more.
+              </p>
+            </div>
+          </article>
+
+          <!-- trends, built from the sample month's real nights -->
+          <article class="tile tile-trend" data-reveal data-spot>
+            <div class="tile-copy">
+              <h3>Trends that compare you with you.</h3>
+              <p>7, 30 or 90 nights at a time, against your own usual, not a chart of strangers.</p>
+            </div>
+            <div class="trend" aria-hidden="true">
+              <div class="trend-bars" data-bars="1.2,0,5.4,28,12.5,11.6,0,5.1,3.2,3.8,4,2.5,2.8,3.2,2,3,2.4,3.5,9.1,8.5,3.4,14,1.8,6,1.6,2.7,0,0,31.1"></div>
+              <div class="trend-usual"><span>your usual</span></div>
+            </div>
+            <p class="tile-foot">AHI each night of the sample month</p>
+          </article>
+
+          <!-- the doctor report -->
+          <article class="tile tile-report" data-reveal data-spot>
+            <div class="tile-copy">
+              <h3>Ready for your appointment.</h3>
+              <p>A summary of your recent nights to print or bring to your doctor.</p>
+            </div>
+            <div class="report" aria-hidden="true">
+              <p class="report-title">CPAP therapy summary</p>
+              <p class="report-sub">Sep 14 – Oct 13 · ResMed AirSense 11</p>
+              <dl>
+                <div><dt>Nights used</dt><dd>29 of 30</dd></div>
+                <div><dt>Average use</dt><dd>5.8 h</dd></div>
+                <div><dt>Average AHI</dt><dd>6.8</dd></div>
+                <div><dt>Leak, 95th percentile</dt><dd>24 L/min</dd></div>
+              </dl>
+              <div class="report-spark"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ======== how it works: the picture stays, the steps scroll past ======== -->
+      <section id="how" class="how" aria-labelledby="how-title">
+        <div class="wrap">
+          <h2 id="how-title" class="section-title" data-reveal>
+            From SD card to story.
+            <span>In about a minute.</span>
+          </h2>
+        </div>
+        <div class="wrap how-grid">
+          <div class="how-visual" data-how-visual aria-hidden="true">
+            <div class="hv hv-1 on">
+              <svg class="sd" viewBox="0 0 160 200">
+                <defs>
+                  <linearGradient id="sd-g" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#2a3358" />
+                    <stop offset="1" stop-color="#141a2e" />
+                  </linearGradient>
+                </defs>
+                <path d="M20 8h90l38 38v136a10 10 0 0 1-10 10H20a10 10 0 0 1-10-10V18A10 10 0 0 1 20 8z" fill="url(#sd-g)" />
+                <g fill="#f0a47a" opacity="0.9">
+                  <rect x="30" y="22" width="9" height="30" rx="2" /><rect x="46" y="22" width="9" height="30" rx="2" />
+                  <rect x="62" y="22" width="9" height="30" rx="2" /><rect x="78" y="22" width="9" height="30" rx="2" />
+                  <rect x="94" y="22" width="9" height="30" rx="2" />
+                </g>
+                <text x="78" y="140" text-anchor="middle" fill="#ecf0fb" font-family="DM Sans, sans-serif" font-size="30" font-weight="500">SD</text>
+              </svg>
+              <p class="hv-caption">On the side of your machine, under a flap</p>
+            </div>
+            <div class="hv hv-2">
+              <div class="browser">
+                <div class="browser-bar"><i></i><i></i><i></i><span>Nocta</span></div>
+                <div class="browser-body">
+                  <p class="drop-title">Reading your card…</p>
+                  <p class="drop-sub">Night 18 of 29</p>
+                  <div class="drop-progress"><span></span></div>
+                  <p class="drop-note">Read here, in your browser. Nothing is uploaded.</p>
+                </div>
+              </div>
+            </div>
+            <div class="hv hv-3">
+              <figure class="phone hv-phone">
+                <img src="/site/tonight-phone.webp" width="780" height="1688" alt="" loading="lazy" />
+              </figure>
+            </div>
+          </div>
+
+          <ol class="how-steps">
+            <li class="how-step" data-step="1">
+              <span class="how-n">1</span>
+              <h3>Take out the SD card.</h3>
+              <p>Turn your ResMed off. The card is on the side, under a flap. Put it in your computer, or in a card reader.</p>
+            </li>
+            <li class="how-step" data-step="2">
+              <span class="how-n">2</span>
+              <h3>Nocta reads it in your browser.</h3>
+              <p>Choose the card and Nocta reads every night on it, right there. The card’s files never leave your computer.</p>
+            </li>
+            <li class="how-step" data-step="3">
+              <span class="how-n">3</span>
+              <h3>Read your nights.</h3>
+              <p>Each night gets a headline, the reasons behind it and one thing to try. Put the card back before bed, and bring it again whenever you want your newest nights.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ======== the desktop app, in tabs ======== -->
+      <section class="showcase wrap" aria-labelledby="showcase-title">
+        <h2 id="showcase-title" class="section-title" data-reveal>
+          On a laptop, the whole picture.
+          <span>Every chart, every night.</span>
+        </h2>
+        <div class="tabs" role="tablist" aria-label="Screens">
+          <button type="button" role="tab" id="tab-tonight" aria-controls="panel-tonight" aria-selected="true">Tonight</button>
+          <button type="button" role="tab" id="tab-trends" aria-controls="panel-trends" aria-selected="false" tabindex="-1">Trends</button>
+          <button type="button" role="tab" id="tab-full" aria-controls="panel-full" aria-selected="false" tabindex="-1">Full night</button>
+        </div>
+        <div class="showcase-frame" data-reveal>
+          <img id="panel-tonight" role="tabpanel" aria-labelledby="tab-tonight" class="on" src="/site/tonight-desktop.webp" width="2000" height="1250" loading="lazy"
+            alt="Tonight on a computer: two weeks of nights, last night's headline and curve, tonight's suggestion, the check-in and last night's numbers." />
+          <img id="panel-trends" role="tabpanel" aria-labelledby="tab-trends" src="/site/trends-desktop.webp" width="2000" height="1250" loading="lazy"
+            alt="Trends over the past 30 nights: average AHI, leak, usage and pressure, with a bar chart of events an hour for each night." />
+          <img id="panel-full" role="tabpanel" aria-labelledby="tab-full" src="/site/fullnight-desktop.webp" width="2000" height="1250" loading="lazy"
+            alt="The full night: mask on and off through the night, breathing rate and mask pressure, minute by minute." />
+        </div>
+
+        <div class="wearables" data-reveal>
+          <p>
+            <strong>Wear a ring or a watch?</strong> With an account, connect it to see how your body did overnight,
+            next to your machine’s numbers.
+          </p>
+          <ul class="wearable-list" aria-label="Wearables Nocta connects to">
+            <li>Oura</li>
+            <li>Fitbit</li>
+            <li>Whoop</li>
+            <li>Withings</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ======== privacy ======== -->
+      <section id="privacy" class="privacy wrap" aria-labelledby="privacy-title">
+        <div class="privacy-panel" data-reveal>
+          <h2 id="privacy-title" class="section-title">
+            Your nights stay yours.
+            <span>The private parts stay on your device.</span>
+          </h2>
+          <ul class="privacy-grid">
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
+              <h3>Read on your device</h3>
+              <p>Your SD card is read in your browser. The card’s files are never uploaded.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="13" height="10" rx="2" /><rect x="17" y="8" width="5" height="10" rx="1.5" /><path d="M5 19h7" /></svg>
+              <h3>On every device, if you want</h3>
+              <p>With an account, a copy of your nights is saved so they follow you to your phone and laptop.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /></svg>
+              <h3>No ads, never sold</h3>
+              <p>Nocta doesn’t show ads and never sells your data or passes it on.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+              <h3>Gone when you say so</h3>
+              <p>Delete your account any time, and the saved copy goes with it.</p>
+            </li>
+          </ul>
+          <a class="text-link" href="/privacy">Read the privacy policy</a>
+        </div>
+      </section>
+
+      <!-- ======== honest limits ======== -->
+      <section class="limits wrap" aria-labelledby="limits-title">
+        <div class="limits-head" data-reveal>
+          <h2 id="limits-title" class="section-title">
+            What Nocta won’t do.
+            <span>It’s a wellness app, not a medical device.</span>
+          </h2>
+          <p>Nocta helps you understand your nights and talk with your doctor. It isn’t a replacement for your care team.</p>
+        </div>
+        <ul class="limit-list" data-reveal>
+          <li><span class="limit-x" aria-hidden="true"></span>It doesn’t diagnose anything.</li>
+          <li><span class="limit-x" aria-hidden="true"></span>It never tells you to change your pressure or stop your therapy.</li>
+          <li><span class="limit-x" aria-hidden="true"></span>It doesn’t grade your numbers red, yellow or green.</li>
+          <li><span class="limit-check" aria-hidden="true"></span>When a pattern is worth your doctor’s look, it says so, and helps you bring the details.</li>
+        </ul>
+      </section>
+
+      <!-- ======== questions ======== -->
+      <section id="questions" class="faq wrap" aria-labelledby="faq-title">
+        <div class="faq-head">
+          <h2 id="faq-title" class="section-title">Questions</h2>
+          <p>Still deciding? <a class="text-link" href="/app/">Look around with sample nights.</a></p>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>Which machines work with Nocta?</summary>
+            <p>ResMed AirSense 10 and AirSense 11. Philips machines aren’t supported yet.</p>
+          </details>
+          <details>
+            <summary>Do I need an account?</summary>
+            <p>Not to look around. You can explore a month of sample nights first. An account is how your own nights, check-ins and settings are kept, and how they show up on all your devices.</p>
+          </details>
+          <details>
+            <summary>Can I use it on my phone?</summary>
+            <p>Yes, Nocta works in your phone’s browser. Reading the SD card takes a computer with a card slot or a card reader. With an account, your nights are on your phone too after that.</p>
+          </details>
+          <details>
+            <summary>Is Nocta a medical device?</summary>
+            <p>No. Nocta explains what your machine recorded. It doesn’t diagnose or treat anything, and it doesn’t change your therapy. Your doctor and equipment supplier are still the people to ask about your care.</p>
+          </details>
+          <details>
+            <summary>Where does my data go?</summary>
+            <p>The card is read in your browser and kept on your device. With an account, a copy is saved so it’s on your other devices too. The <a href="/privacy">privacy policy</a> has the details.</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- ======== the last word ======== -->
+      <section class="closing" aria-labelledby="closing-title">
+        <div class="aurora aurora-low" aria-hidden="true"></div>
+        <div class="wrap closing-inner" data-reveal>
+          <img class="closing-mark" src="/nocta-mark.svg" alt="" width="64" height="64" />
+          <h2 id="closing-title">See what last night was telling you.</h2>
+          <div class="hero-actions">
+            <a class="btn" href="/app/">Open Nocta</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap foot-grid">
+        <div class="foot-brand">
+          <a class="brand" href="/" aria-label="Nocta, home">
+            <img src="/nocta-mark.svg" alt="" width="26" height="26" />
+            <span>Nocta</span>
+          </a>
+          <p>Your CPAP nights, in plain words.</p>
+        </div>
+        <nav class="foot-col" aria-label="Product">
+          <h3>Product</h3>
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="/app/">Open Nocta</a>
+        </nav>
+        <nav class="foot-col" aria-label="Legal">
+          <h3>Legal</h3>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms of Service</a>
+        </nav>
+        <p class="foot-note">Nocta is not a medical device. It doesn’t diagnose, treat or replace your doctor. Talk to your doctor about your therapy.</p>
+      </div>
+    </footer>
   </body>
 </html>
