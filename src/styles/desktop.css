@@ -2205,3 +2205,10 @@ html:has(.desktop-modal-wrap) {
   align-self: center;
   min-width: 160px;
 }
+
+/* Was this helpful? on desktop: the answers sit right after the question,
+ * not across the full width of the dashboard */
+.desktop-stage .ir {
+  justify-content: flex-start;
+  gap: 16px;
+}

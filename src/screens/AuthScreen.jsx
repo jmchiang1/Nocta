@@ -223,7 +223,9 @@ function Forgot({ initialEmail, onSent, onBack }) {
 
 /* back from a reset link: signed in, owes a new password */
 /* making an account means agreeing to the Terms and the Privacy Policy, so
- * say so where it happens (the public pages, in a new tab: setup isn't left) */
+ * say so where it happens (the public pages, in a new tab: setup isn't left),
+ * along with the one thing on by default that people should hear up front:
+ * sharing nights to improve the insights (lib/research.js) */
 function LegalNote() {
   return (
     <p className="au-legal">
@@ -235,7 +237,9 @@ function LegalNote() {
       <a href="/privacy" target="_blank" rel="noopener noreferrer">
         Privacy Policy
       </a>
-      .
+      . With an account, Nocta’s makers can see your data, including your CPAP and wearable
+      nights, check-ins and setup answers, to improve Nocta. You can turn this off any time in
+      Settings.
     </p>
   );
 }

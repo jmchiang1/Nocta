@@ -58,9 +58,21 @@ re-rendering are materially cleaner as components. Everything else in the handof
   `docs/NOX_SETUP.md`, privacy-policy update included. The why-card insights are the
   rule engine (`src/lib/insights.js`), not an LLM.
 - **Analytics**: PostHog (`posthog-js`, version pinned) via `src/lib/analytics.js`:
-  named events only (`track()`), properties from an allowlist, never CPAP data,
-  check-in answers or anything typed. Off without `VITE_POSTHOG_KEY`; people can opt
-  out in Settings. Adding an event means updating `docs/ANALYTICS_SETUP.md` too.
+  named events (`track()`, properties from an allowlist), masked autocapture and
+  heatmaps, and **fully masked session replay** — never CPAP data, check-in answers or
+  anything typed. Any new element that shows someone's data as a shape, colour or size
+  (a bar, a chart outside SVG/canvas) must be added to the replay `blockSelector` in
+  `analytics.js` or carry the class `ph-no-capture`. Off without `VITE_POSTHOG_KEY`;
+  people can opt out in Settings. Adding an event means updating
+  `docs/ANALYTICS_SETUP.md` too. Don't accept the PostHog wizard's rewrite of it.
+- **Shared data (research)**: accounts share everything with Nocta's makers by default
+  (the user's decision): each night in full (card night incl. event list and per-minute
+  series, Oura/Whoop/Withings nights, check-in, insight, rating) to
+  `nocta_research_nights` via `src/lib/research.js`; identity and setup answers are
+  joined in the `nocta_research` schema's views (dashboard only, not API-exposed).
+  Stated at sign-up and in the Privacy Policy; off in Settings deletes the rows and
+  hides them from the views. Never guests, never the sample; **Fitbit only with its own
+  opt-in** on the Fitbit page (Google Limited Use needs affirmative agreement). Anything new that's shared must be in the Privacy Policy's list first.
 - **Feedback**: Settings › Send feedback and a now-and-then card on Tonight write to
   Supabase `nocta_feedback` (insert-only from the app). See `docs/ANALYTICS_SETUP.md`.
 - **Demo controls**: removed (2026-10-22). Test states from the browser console in dev via
@@ -76,6 +88,15 @@ re-rendering are materially cleaner as components. Everything else in the handof
   the app's tokens, no React; screenshots in `public/site/`) and the app at `/app/`
   (`app/index.html`). Its copy follows the same voice and safety rules as the app. Old
   sign-in / wearable links that land on `/` are forwarded to `/app/` by `src/site/site.js`.
+  The card-reading screen (with Nox) is a live copy of the app's: markup in `index.html`,
+  styles in `src/site/app-parts.css`, both copied from the running app. The why card is
+  rebuilt at sky size (`.nightcard`) with the app's type and the sample night's numbers.
+  If those components change in the app, neither follows: update them here too.
+  The page tells one night in pinned chapters (`src/site/story.js`: a dot per minute,
+  the card being read, last night's events as stars that join into the why card,
+  a clock running 11 pm → 7 am), over a sky that runs dusk → night → dawn as you scroll
+  (`src/site/sky.js`, `sky.css`), on **GSAP + ScrollTrigger** and **Lenis** smooth scrolling (versions pinned;
+  added at the user's direction, marketing site only, never the app).
 
 If a request would pull in a UI framework or CSS framework, push back and ask first.
 

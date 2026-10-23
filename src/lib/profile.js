@@ -64,6 +64,13 @@ const EMPTY = {
   checkinReminder: null, // their choice in onboarding / Settings (true / false / null = never asked)
   completedAt: null, // when onboarding finished (null: never went through it)
   reminders: { off: false, snoozedUntil: null, lastShown: null },
+  // sharing nights with Nocta to improve the insights (lib/research.js): on
+  // for an account unless they turn it off (Settings); follows the account
+  shareResearch: true,
+  // Fitbit's nights in that sharing: Google's Limited Use rules need the
+  // person's affirmative agreement, so off until they turn it on (the Fitbit
+  // page, DeviceDetailSheet)
+  shareFitbit: false,
 };
 
 let profile = load();
@@ -132,6 +139,16 @@ export function setPhoto(dataUrl) {
 
 export function setCheckinReminder(on) {
   profile = { ...profile, checkinReminder: on };
+  save();
+}
+
+export function setShareResearch(on) {
+  profile = { ...profile, shareResearch: on };
+  save();
+}
+
+export function setShareFitbit(on) {
+  profile = { ...profile, shareFitbit: on };
   save();
 }
 

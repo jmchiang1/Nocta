@@ -22,6 +22,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { prefersReducedMotion } from '../lib/motion.jsx';
 import { NoxLogoArt, LOGO_STARS } from './NoxLogo.jsx';
+import { splashScore } from '../lib/sound.js';
 
 const RESOLVE_MS = 3900; // awake (keep in step with the CSS delays)
 
@@ -65,7 +66,14 @@ export function NoxReveal({ className = '', onResolve, settled = false }) {
   useEffect(() => {
     if (still) return undefined;
     const t = setTimeout(() => onResolveRef.current?.(), RESOLVE_MS);
-    return () => clearTimeout(t);
+    // its sound: each outline star lands at its own delay + the 2.1 s gather
+    const stop = splashScore({
+      outline: DUST.filter((d) => !d.star).map((d) => ({ x: d.x, land: d.delay + 2100 })),
+    });
+    return () => {
+      clearTimeout(t);
+      stop();
+    };
   }, [still]);
 
   return (

@@ -9,7 +9,8 @@ import { PRIVACY_NOTE, MEDICAL_NOTE } from '../data/account.js';
 import { exportMyData } from '../lib/accountData.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
-import { setReminders, missingQuestions, setCheckinReminder } from '../lib/profile.js';
+import { setReminders, missingQuestions, setCheckinReminder, setShareResearch } from '../lib/profile.js';
+import { setResearchSharing } from '../lib/research.js';
 
 /* accessible on/off switch — same one used in YouScreen */
 function Switch({ on, onChange, label }) {
@@ -164,6 +165,29 @@ export function SettingsContent({ children }) {
                 if (on) track('analytics_on');
               }}
               label="Share usage data"
+            />
+          </div>
+        )}
+        {/* an account's nights, shared to improve the insights (lib/research.js):
+         * on unless turned off; off deletes what was shared */}
+        {!guest && (
+          <div className="list-row">
+            <div className="lr-icon bare">
+              <Icon name="spark" size={17} />
+            </div>
+            <div className="lr-main">
+              <div className="lr-title">Share my data to improve Nocta</div>
+            </div>
+            <Switch
+              on={profile.shareResearch !== false}
+              onChange={async (on) => {
+                setShareResearch(on);
+                const r = await setResearchSharing(on);
+                track(on ? 'research_sharing_on' : 'research_sharing_off');
+                if (!on)
+                  showToast(r.ok ? 'Sharing is off' : 'Sharing is off. Deleting what you shared didn’t finish; it’ll try again', r.ok ? 'check' : 'info');
+              }}
+              label="Share my data to improve Nocta"
             />
           </div>
         )}

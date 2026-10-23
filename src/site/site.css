@@ -1,15 +1,17 @@
 /* Nocta — the marketing site (index.html). Built on the app's tokens and type
- * so the page and the product read as one thing. Mobile first. Surfaces never
- * carry borders: fill, glow and shadow only (the project's standing rule). */
+ * so the page and the product read as one thing; the pieces of the app it
+ * shows live (night sky, why card, Nox, the reading screen) use the app's own
+ * styles (app-parts.css). Mobile first. Surfaces never carry borders: fill,
+ * glow and shadow only. */
 @import '../styles/tokens.css';
+@import './app-parts.css';
+@import './sky.css';
 
 :root {
   --ink: var(--bg-base);
-  --tile: #0d1224;
-  --tile-hi: #141b33;
   --peach: var(--accent);
   --moon: var(--data-1);
-  --display-tight: -0.045em;
+  --tight: -0.045em;
 }
 
 *,
@@ -19,7 +21,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -34,12 +35,9 @@ body {
   overflow-x: hidden;
 }
 
-img,
-svg {
+img {
   display: block;
   max-width: 100%;
-}
-img {
   height: auto;
 }
 
@@ -67,7 +65,7 @@ p {
 
 .wrap {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1160px;
   margin-inline: auto;
   padding-inline: 20px;
 }
@@ -93,13 +91,13 @@ p {
 
 /* a section's title: the claim, then its quieter second half */
 .section-title {
-  font-size: clamp(32px, 4.8vw, 56px);
-  line-height: 1.04;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.06;
   letter-spacing: -0.035em;
-  max-width: 17ch;
+  max-width: 16ch;
   text-wrap: balance;
 }
-.section-title span {
+.section-title span:not(.w) {
   display: block;
   color: var(--text-tertiary);
 }
@@ -182,6 +180,31 @@ p {
   -webkit-backdrop-filter: blur(18px) saturate(150%);
   transition: background 0.3s ease, box-shadow 0.3s ease;
 }
+.js .nav-bar {
+  animation: navOpen 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s backwards;
+}
+.js .nav-bar > *,
+.js .nav-links a {
+  animation: rise 0.7s var(--ease-out) backwards;
+  animation-delay: 1.15s;
+}
+.js .nav-links a:nth-child(1) { animation-delay: 1.2s; }
+.js .nav-links a:nth-child(2) { animation-delay: 1.26s; }
+.js .nav-links a:nth-child(3) { animation-delay: 1.32s; }
+.js .nav-links a:nth-child(4) { animation-delay: 1.38s; }
+.js .nav-bar > .btn { animation-delay: 1.45s; }
+@keyframes navOpen {
+  from {
+    clip-path: inset(0 47% 0 47% round 18px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 18px);
+  }
+}
 .nav.scrolled .nav-bar {
   background: color-mix(in srgb, #0c1122 82%, transparent);
   box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.8);
@@ -231,45 +254,13 @@ p {
 /* ================= hero ================= */
 .hero {
   position: relative;
-  padding-top: 128px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 120px 0 240px;
   isolation: isolate;
-  overflow: hidden;
-}
-/* two slow glows behind the headline: peach dawn and the night's blue */
-.aurora {
-  position: absolute;
-  z-index: -1;
-  inset: -10% -10% auto;
-  height: 900px;
-  background:
-    radial-gradient(40% 45% at 30% 30%, color-mix(in srgb, var(--moon) 30%, transparent), transparent 70%),
-    radial-gradient(35% 40% at 72% 38%, color-mix(in srgb, var(--peach) 20%, transparent), transparent 70%),
-    radial-gradient(60% 50% at 50% 0%, #10183a, transparent 75%);
-  filter: blur(20px);
-  animation: drift 18s ease-in-out infinite alternate;
-}
-/* stars, fixed in the sky */
-.hero::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background-image:
-    radial-gradient(1.2px 1.2px at 12% 18%, rgba(236, 240, 251, 0.6), transparent 60%),
-    radial-gradient(1px 1px at 27% 34%, rgba(236, 240, 251, 0.35), transparent 60%),
-    radial-gradient(1.4px 1.4px at 41% 9%, rgba(236, 240, 251, 0.55), transparent 60%),
-    radial-gradient(1px 1px at 58% 26%, rgba(236, 240, 251, 0.3), transparent 60%),
-    radial-gradient(1.2px 1.2px at 69% 12%, rgba(236, 240, 251, 0.5), transparent 60%),
-    radial-gradient(1px 1px at 84% 31%, rgba(236, 240, 251, 0.35), transparent 60%),
-    radial-gradient(1.4px 1.4px at 93% 8%, rgba(236, 240, 251, 0.5), transparent 60%),
-    radial-gradient(1px 1px at 6% 40%, rgba(236, 240, 251, 0.3), transparent 60%),
-    radial-gradient(1.1px 1.1px at 77% 44%, rgba(236, 240, 251, 0.35), transparent 60%);
-  mask-image: linear-gradient(180deg, #000 30%, transparent 60%);
-}
-@keyframes drift {
-  to {
-    transform: translate3d(3%, 2%, 0) scale(1.06);
-  }
 }
 
 .hero-head {
@@ -299,19 +290,20 @@ p {
 .hero-title {
   margin-top: 26px;
   max-width: 11ch;
+  /* room under the last line so the gradient-clipped "g" isn't cut off */
+  padding-bottom: 0.1em;
   font-size: clamp(48px, 9vw, 104px);
-  line-height: 0.98;
-  letter-spacing: var(--display-tight);
+  line-height: 1;
+  letter-spacing: var(--tight);
   text-wrap: balance;
-  /* moonlight on the type: bright at the top, settling into blue-grey */
   background: linear-gradient(180deg, #ffffff 30%, #a9b4d6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .hero-lede {
-  margin-top: 26px;
-  max-width: 34em;
+  margin-top: 20px;
+  max-width: 32em;
   font-size: clamp(17px, 2vw, 20px);
   line-height: 1.55;
   color: var(--text-secondary);
@@ -321,22 +313,61 @@ p {
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
-  margin-top: 34px;
+  margin-top: 32px;
 }
 .hero-note {
   margin-top: 16px;
   font-size: 14px;
   color: var(--text-tertiary);
 }
-
-/* the opening sequence: one orchestrated rise, then the horizon draws */
-.js .hero-head > * {
-  animation: rise 0.9s var(--ease-out) backwards;
+/* the opening, after the sky has opened and the bar is in: each word of the
+ * headline rises up through its line, then the sentence, then the buttons,
+ * and the horizon draws last */
+.hero-title.split {
+  background: none;
+  color: var(--text-primary);
 }
-.js .hero-head > :nth-child(2) { animation-delay: 0.08s; }
-.js .hero-head > :nth-child(3) { animation-delay: 0.16s; }
-.js .hero-head > :nth-child(4) { animation-delay: 0.24s; }
-.js .hero-head > :nth-child(5) { animation-delay: 0.3s; }
+.hl {
+  display: inline-block;
+  overflow: hidden;
+  /* room for the descenders (the "g") inside the clip */
+  padding: 0.04em 0.02em 0.16em;
+  margin: -0.04em -0.02em -0.16em;
+  vertical-align: top;
+}
+.hw {
+  display: inline-block;
+  background: linear-gradient(180deg, #ffffff 30%, #c9d2ee 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hl.l2 .hw {
+  background-image: linear-gradient(180deg, #c9d2ee 10%, #a9b4d6 100%);
+}
+.js .hw {
+  animation: wordUp 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(1.3s + var(--i) * 0.12s);
+}
+@keyframes wordUp {
+  from {
+    transform: translateY(135%) rotate(5deg);
+  }
+}
+.js .hero-lede {
+  animation: rise 1.2s var(--ease-out) 2.15s backwards;
+}
+.js .hero-actions .btn {
+  animation: pop 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+}
+.js .hero-actions .btn:nth-child(1) { animation-delay: 2.5s; }
+.js .hero-actions .btn:nth-child(2) { animation-delay: 2.62s; }
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+}
 @keyframes rise {
   from {
     opacity: 0;
@@ -345,44 +376,71 @@ p {
   }
 }
 
-/* stage: the horizon, and the product rising from it */
+/* stage: the night's horizon across the foot of the first screen */
 .stage {
-  position: relative;
-  margin-top: 8px;
-}
-@media (min-width: 820px) {
-  .stage {
-    margin-top: 56px;
-  }
-}
-.horizon {
   position: absolute;
-  z-index: 0;
   left: 0;
   right: 0;
-  top: -50px; /* the whole arc clears the product rising under it */
+  bottom: 0;
+  height: 400px;
+  pointer-events: none;
+  /* the glow under the wave fades out well before the hero ends, so the
+   * next chapter's sky carries straight on */
+  -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+}
+.waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 80px;
   width: 100%;
-  height: 160px;
+  height: 300px;
   overflow: visible;
 }
-/* the line draws left to right: a wipe (a dash animation drifts when the
- * stroke doesn't scale with the stretched drawing) */
-.horizon-line {
+.wave-line {
   fill: none;
   stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 8px rgba(123, 149, 216, 0.8));
-  animation: wipe 2.6s var(--ease-out) 0.4s backwards;
+  filter: drop-shadow(0 0 10px rgba(123, 149, 216, 0.85));
+  animation:
+    wipe 2.6s var(--ease-out) 2.3s backwards,
+    breathe 4.5s ease-in-out 4.9s infinite alternate;
 }
-.horizon-fill {
-  animation: fade 1.6s ease 1.2s backwards;
+/* once drawn, the glow slowly swells and settles, like breathing */
+@keyframes breathe {
+  to {
+    filter: drop-shadow(0 0 18px rgba(163, 183, 223, 1)) drop-shadow(0 0 4px rgba(244, 184, 150, 0.6));
+  }
 }
+/* the light that travels the line (its gradient moves; index.html) */
+.wave-pulse {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 214, 0.9));
+  animation: fade 1s ease 4.4s backwards;
+}
+.wave-echo {
+  fill: none;
+  stroke: rgba(163, 183, 223, 0.22);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 8;
+  vector-effect: non-scaling-stroke;
+  animation: wipe 3s var(--ease-out) 2.7s backwards;
+}
+.wave-fill {
+  animation: fade 1.6s ease 3.1s backwards;
+}
+/* a wipe, not a dash: a dash animation drifts when the stroke doesn't scale
+ * with the stretched drawing */
 @keyframes wipe {
   from {
-    clip-path: inset(-30px 100% -30px -30px);
+    clip-path: inset(-40px 100% -40px -40px);
   }
   to {
-    clip-path: inset(-30px -30px -30px -30px);
+    clip-path: inset(-40px -40px -40px -40px);
   }
 }
 @keyframes fade {
@@ -391,100 +449,574 @@ p {
   }
 }
 
-.stage-inner {
+@media (min-width: 900px) {
+  .stage {
+    height: 460px;
+    -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 80%, transparent 100%);
+  }
+  .waves {
+    top: 110px;
+    height: 340px;
+  }
+}
+
+/* ================= reveal on scroll ================= */
+.js [data-reveal]:not([data-reveal='words']):not([data-reveal='stagger']):not([data-reveal='focus']):not([data-reveal='open']) {
+  opacity: 0;
+  transform: translateY(28px);
+  filter: blur(6px);
+  transition:
+    opacity 0.9s var(--ease-out),
+    transform 0.9s var(--ease-out),
+    filter 0.9s var(--ease-out);
+}
+.js [data-reveal].in:not([data-reveal='words']):not([data-reveal='stagger']):not([data-reveal='focus']):not([data-reveal='open']) {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+/* titles: word by word, like the app's headlines */
+.js [data-reveal='words'] .w {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.35em);
+  filter: blur(8px);
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out),
+    filter 0.7s var(--ease-out);
+  transition-delay: calc(var(--i) * 55ms);
+}
+.js [data-reveal='words'].in .w {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+/* lists: one item after another */
+.js [data-reveal='stagger'] > * {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s var(--ease-out),
+    transform 0.8s var(--ease-out);
+  transition-delay: var(--d, 0ms);
+}
+.js [data-reveal='stagger'].in > * {
+  opacity: 1;
+  transform: none;
+}
+
+/* "Clear, not clinical": the words come into focus where they stand */
+.js [data-reveal='focus'] .w {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(16px);
+  transition:
+    opacity 1s ease,
+    filter 1.6s var(--ease-out);
+  transition-delay: calc(var(--i) * 90ms);
+}
+.js [data-reveal='focus'].in .w {
+  opacity: 1;
+  filter: none;
+}
+/* privacy: the panel opens out from its middle */
+.js [data-reveal='open'] {
+  opacity: 0;
+  clip-path: inset(14% 10% round 28px);
+  transition:
+    clip-path 1.2s var(--ease-out),
+    opacity 0.8s ease;
+}
+.js [data-reveal='open'].in {
+  opacity: 1;
+  clip-path: inset(0 round 28px);
+}
+/* …and its checks tick, one after another */
+.js [data-stagger='tick'] li::before {
+  transform: scale(0);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--d) + 0.25s);
+}
+.js [data-stagger='tick'] li::after {
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--d) + 0.45s);
+}
+.js [data-stagger='tick'].in li::before {
+  transform: none;
+}
+.js [data-stagger='tick'].in li::after {
+  transform: rotate(45deg);
+}
+/* questions slide in from the side */
+.js [data-reveal='stagger'][data-stagger='slide'] > * {
+  transform: translateX(70px);
+}
+.js [data-reveal='stagger'][data-stagger='slide'].in > * {
+  transform: none;
+}
+/* the feature icons, each its own way: the info mark draws itself, the
+ * moon swings round, Nox drops in with a bounce */
+.js .f-info circle,
+.js .f-info path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.2s var(--ease-out) calc(var(--d) + 0.35s);
+}
+.js .f-info path {
+  transition-delay: calc(var(--d) + 0.9s);
+}
+.in .f-info circle,
+.in .f-info path {
+  stroke-dashoffset: 0;
+}
+.js .f-moon svg {
+  opacity: 0;
+  transform: rotate(-140deg) scale(0.4);
+  transition:
+    transform 1.1s cubic-bezier(0.34, 1.3, 0.64, 1) calc(var(--d) + 0.35s),
+    opacity 0.5s ease calc(var(--d) + 0.35s);
+}
+.in .f-moon svg {
+  opacity: 1;
+  transform: none;
+}
+.js .f-nox img {
+  opacity: 0;
+}
+.in .f-nox img {
+  animation: noxDrop 0.9s cubic-bezier(0.34, 1.6, 0.64, 1) calc(var(--d) + 0.35s) both;
+}
+@keyframes noxDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-34px) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ================= the story: one night, in chapters =================
+ * each chapter is tall; its stage sticks to the window while you scroll
+ * through it, and story.js plays it in step with the scroll */
+.ch {
   position: relative;
-  z-index: 1;
-  width: min(1180px, 100% - 40px);
-  margin: 104px auto 0;
-  perspective: 1600px;
+  height: 320vh;
 }
-.stage-tilt {
-  --tilt: 22deg;
-  --lift: 40px;
-  display: none;
-  transform: translateY(var(--lift)) rotateX(var(--tilt));
-  transform-origin: 50% 0%;
-  will-change: transform;
+.ch-card {
+  height: 340vh;
 }
-.stage-desktop {
-  border-radius: 16px;
-  box-shadow:
-    0 60px 120px -40px rgba(0, 0, 0, 0.9),
-    0 -20px 90px -30px color-mix(in srgb, var(--moon) 45%, transparent);
+.ch-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
 }
-/* below the product, the page fades back to night */
-.stage::after {
+.ch-stage > * {
+  grid-area: 1 / 1;
+}
+.ch-copy {
+  position: relative;
+  z-index: 2;
+  width: min(100% - 40px, 900px);
+  text-align: center;
+  align-self: start;
+  margin-top: 18vh;
+}
+.ch-title {
+  font-size: clamp(34px, 5.6vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.ch-sub {
+  margin-top: 18px;
+  font-size: clamp(17px, 1.8vw, 20px);
+  color: var(--text-secondary);
+}
+
+/* titles split into letters (story.js): words stay whole for wrapping */
+.sw {
+  display: inline-block;
+  white-space: nowrap;
+}
+.sc {
+  display: inline-block;
+}
+/* "Nocta reads the whole card": a peach scan line sweeps the words in */
+.ch-scan {
+  position: relative;
+  --scan: 100%;
+  --scan-o: 0;
+}
+.scan-text {
+  display: inline-block;
+}
+.ch-scan::after {
   content: '';
   position: absolute;
-  z-index: 2;
-  left: 0;
+  top: -8%;
+  bottom: -8%;
+  left: var(--scan);
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent-soft);
+  box-shadow:
+    0 0 12px 2px rgba(240, 164, 122, 0.8),
+    0 0 40px 8px rgba(240, 164, 122, 0.35);
+  opacity: var(--scan-o);
+}
+.ch-scan {
+  display: inline-block;
+}
+
+/* midnight: the minutes of the night, across the sky */
+.minutes {
+  align-self: end;
+  width: 100%;
+  height: 34vh;
+  margin-bottom: 14vh;
+  overflow: visible;
+}
+.minutes .m {
+  fill: #c9d4f2;
+}
+.minutes .m.hot {
+  fill: var(--accent-soft);
+  filter: drop-shadow(0 0 4px rgba(244, 184, 150, 0.9));
+}
+
+/* 4 am: the reading screen, floating in the sky */
+.ch-card .read-panel {
+  margin-top: 16vh;
+}
+
+/* 6 am: the why card, drawn in the sky (story.js builds it as you scroll).
+ * The app's own type and colours (components/WhyHorizon.jsx), at sky size,
+ * with no card around it */
+.nightcard {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: min(100% - 40px, 980px);
+  padding-top: 64px; /* clear of the nav */
+}
+.nc-top {
+  display: grid;
+}
+.nc-top > * {
+  grid-area: 1 / 1;
+}
+.nc-intro .ch-sub {
+  margin-top: 14px;
+}
+.nc-headline {
+  font: 500 clamp(44px, 6.6vw, 92px) / 1.02 var(--font-display);
+  letter-spacing: -0.045em;
+  color: var(--text-primary);
+}
+.nc-headline em {
+  font-style: italic;
+  color: var(--accent-soft);
+}
+.nc-w {
+  display: inline-block;
+}
+.nc-detail {
+  margin-top: 12px;
+  font-size: clamp(17px, 1.6vw, 21px);
+  color: var(--text-secondary);
+}
+.nc-chart {
+  margin: clamp(22px, 4vh, 44px) 0 0;
+}
+.nc-plot {
+  position: relative;
+  height: clamp(170px, 30vh, 290px);
+}
+/* in open sky there's no card edge: the curve fades in from the left and
+ * out to the right, and its fill into the night below */
+.nc-plot svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.nc-line {
+  fill: none;
+  stroke: var(--stage-rem);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 8px rgba(163, 183, 223, 0.6));
+}
+.nc-usual {
+  stroke: color-mix(in srgb, var(--text-primary) 38%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
+}
+/* the night's events, as stars */
+.nc-stars i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: #ecf0fb;
+  box-shadow: 0 0 6px rgba(236, 240, 251, 0.8);
+  opacity: 0; /* the finished card keeps only the line */
+}
+.nc-stars i.hour {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  box-shadow: 0 0 12px 2px rgba(236, 240, 251, 0.75);
+}
+.nc-stars i.peak {
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  background: #fff4ec;
+  box-shadow: 0 0 22px 6px rgba(244, 184, 150, 0.75);
+}
+.nc-peak-dot {
+  position: absolute;
+  left: 62.51%;
+  top: 24.26%;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  box-shadow:
+    0 0 0 9px color-mix(in srgb, var(--text-primary) 15%, transparent),
+    0 0 24px color-mix(in srgb, var(--text-primary) 60%, transparent);
+}
+.nc-peak-label,
+.nc-usual-label {
+  position: absolute;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.nc-peak-label {
+  left: 62.51%;
+  top: 24.26%;
+  margin-top: -50px;
+  translate: -50% 0;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+.nc-usual-label {
   right: 0;
-  bottom: 0;
-  height: 30%;
-  background: linear-gradient(180deg, transparent, var(--ink));
+  top: 86.74%;
+  translate: 0 -50%;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--bg-base) 72%, transparent);
+}
+.nc-ticks {
+  position: relative;
+  height: 18px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.nc-ticks span {
+  position: absolute;
+  top: 0;
+  translate: -50% 0;
+}
+/* tonight's suggestion, led by its guiding star */
+.nc-guide {
+  display: flex;
+  gap: 18px;
+  margin-top: clamp(22px, 4vh, 40px);
+}
+.nc-guide-mark {
+  flex-shrink: 0;
+  width: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.nc-star {
+  width: 30px;
+  height: 30px;
+  fill: var(--accent-hi);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent-hi) 90%, transparent))
+    drop-shadow(0 0 20px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+.nc-trail {
+  margin-top: 6px;
+  width: 1px;
+  flex-grow: 1;
+  transform-origin: top;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-hi) 70%, transparent), transparent);
+}
+.nc-guide-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+.nc-guide-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.nc-guide-head {
+  font: 500 clamp(24px, 2.6vw, 34px) / 1.12 var(--font-display);
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+.nc-guide-reason {
+  max-width: 34em;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.ch-stars {
+  height: 440vh;
+}
+
+/* the night's clock, bottom left */
+.clock {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 11px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, #0c1122 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font: 500 14px/1 var(--font-display);
+  font-feature-settings: 'tnum' 1;
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s var(--ease-out);
   pointer-events: none;
 }
-
-.phone {
-  margin: 0;
-  padding: 8px;
-  border-radius: 46px;
-  background: #0b0f1d;
-  box-shadow:
-    0 50px 90px -30px rgba(0, 0, 0, 0.9),
-    0 0 80px -20px color-mix(in srgb, var(--moon) 40%, transparent);
+.clock.on {
+  opacity: 1;
+  transform: none;
 }
-.phone img {
-  width: 100%;
-  border-radius: 38px;
+/* on a phone the words run along the left edge: the clock keeps right */
+@media (max-width: 700px) {
+  .clock {
+    left: auto;
+    right: 16px;
+    bottom: 16px;
+  }
 }
-.stage-phone {
-  width: min(300px, 76vw);
-  margin-inline: auto;
-}
-@media (min-width: 820px) {
-  .stage-tilt {
-    display: block;
-  }
-  .stage-phone {
-    position: absolute;
-    z-index: 3;
-    right: -1%;
-    bottom: -6%;
-    width: 25%;
-    min-width: 220px;
-  }
-  .stage-inner {
-    margin-top: 140px;
-    padding-bottom: 40px;
-  }
+.clock svg {
+  width: 15px;
+  height: 15px;
+  fill: var(--accent-soft);
 }
 
-/* ================= facts strip ================= */
-.facts {
+/* reduced motion (or no JS): every chapter laid out as it ends, no pinning */
+.story-still .ch,
+html:not(.js) .ch {
+  height: auto;
+}
+.story-still .ch-stage,
+html:not(.js) .ch-stage {
   position: relative;
-  z-index: 3;
-  margin-top: 40px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 120px 0;
 }
-.fact-strip {
+.story-still .ch-copy,
+html:not(.js) .ch-copy,
+.story-still .ch-card .read-panel {
+  margin-top: 0;
+  align-self: center;
+}
+.story-still .nc-top,
+html:not(.js) .nc-top {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* the app's reading screen, then its "All read" */
+.read-panel {
+  position: relative;
+  width: min(340px, 100%);
+  min-height: 300px;
+  padding: 0 12px;
+}
+.read-state {
+  position: absolute;
+  inset: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px 16px;
-  margin: 0;
+  align-content: center;
+  transition: opacity 0.35s ease;
+}
+.read-done {
+  opacity: 0;
+}
+.read-panel.is-done .read-working {
+  opacity: 0;
+}
+.read-panel.is-done .read-done {
+  opacity: 1;
+}
+.read-panel .ci-reading h3 {
+  color: var(--text-primary);
+}
+.read-panel .settings-note {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.read-panel .ci-progress span {
+  transition: none;
+}
+
+/* ================= features: three things ================= */
+.features {
+  padding-block: 120px 40px;
+}
+.feature-list {
+  display: grid;
+  gap: 36px;
+  margin: 48px 0 0;
   padding: 0;
   list-style: none;
 }
-.fact-strip li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-secondary);
+.f-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1a2244, #121833);
+  box-shadow: 0 10px 30px -12px rgba(123, 149, 216, 0.6);
 }
-.fact-strip svg,
-.privacy-grid svg {
-  flex-shrink: 0;
+.f-icon svg {
   width: 22px;
   height: 22px;
   fill: none;
@@ -493,930 +1025,88 @@ p {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-@media (min-width: 900px) {
-  .fact-strip {
-    grid-template-columns: repeat(4, auto);
-    justify-content: space-between;
-  }
-}
-
-/* ================= statement ================= */
-.statement {
-  padding-block: 120px 40px;
-}
-.statement-text {
-  max-width: 24ch;
-  font: 500 clamp(28px, 4vw, 48px) / 1.14 var(--font-display);
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-  text-wrap: pretty;
-}
-.statement-text span {
-  color: var(--text-tertiary);
-}
-@media (min-width: 900px) {
-  .statement-text {
-    max-width: 30ch;
-  }
-}
-
-/* ================= features: the bento ================= */
-.features {
-  padding-block: 100px 40px;
-}
-.bento {
-  display: grid;
-  gap: 14px;
-  margin-top: 48px;
-}
-@media (min-width: 720px) {
-  .bento {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .tile-night,
-  .tile-trend,
-  .tile-report {
-    grid-column: span 2;
-  }
-}
-@media (min-width: 1040px) {
-  .bento {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-  .tile-night {
-    grid-column: span 4;
-  }
-  .tile-why,
-  .tile-try,
-  .tile-checkin,
-  .tile-nox {
-    grid-column: span 2;
-  }
-  .tile-trend,
-  .tile-report {
-    grid-column: span 3;
-  }
-}
-
-.tile {
-  --mx: 50%;
-  --my: -200px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 26px;
-  min-height: 340px;
-  padding: 28px;
-  border-radius: 24px;
-  overflow: hidden;
-  isolation: isolate;
-  background:
-    radial-gradient(420px circle at var(--mx) var(--my), rgba(123, 149, 216, 0.12), transparent 60%),
-    linear-gradient(180deg, var(--tile-hi), var(--tile) 55%);
-  box-shadow: 0 30px 60px -40px rgba(0, 0, 0, 0.9);
-}
-.tile-copy h3 {
-  font-size: 21px;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-}
-.tile-copy p {
-  margin-top: 6px;
-  max-width: 30em;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-.tile-foot {
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-
-/* things that come into view: a short rise (only with JS on) */
-.js [data-reveal] {
-  opacity: 0;
-  transform: translateY(24px);
-  transition:
-    opacity 0.8s var(--ease-out),
-    transform 0.8s var(--ease-out);
-}
-.js [data-reveal].in {
-  opacity: 1;
-  transform: none;
-}
-.bento .tile:nth-child(2) { transition-delay: 0.06s; }
-.bento .tile:nth-child(3) { transition-delay: 0.04s; }
-.bento .tile:nth-child(4) { transition-delay: 0.1s; }
-.bento .tile:nth-child(5) { transition-delay: 0.16s; }
-.bento .tile:nth-child(7) { transition-delay: 0.08s; }
-
-/* -- the night in one sentence -- */
-.tile-night {
-  background:
-    radial-gradient(420px circle at var(--mx) var(--my), rgba(123, 149, 216, 0.12), transparent 60%),
-    radial-gradient(80% 70% at 85% 0%, rgba(123, 149, 216, 0.16), transparent 70%),
-    linear-gradient(180deg, #121a36, var(--tile) 70%);
-}
-.mini-night {
-  position: relative;
-  margin-top: auto;
-}
-.mn-days {
-  display: flex;
-  justify-content: space-between;
-  max-width: 360px;
-  font: 500 14px/1 var(--font-display);
-  color: var(--text-tertiary);
-  font-feature-settings: 'tnum' 1;
-}
-.mn-days span {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-}
-.mn-days .has::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  right: 7px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--peach);
-}
-.mn-days .on {
-  background: rgba(123, 149, 216, 0.18);
-  color: var(--text-primary);
-}
-.mn-head {
-  margin-top: 20px;
-  font: 500 clamp(36px, 5vw, 56px) / 1 var(--font-display);
-  letter-spacing: var(--display-tight);
-  color: var(--text-primary);
-}
-.mn-head em {
-  font-style: italic;
-  color: var(--peach);
-}
-.mn-detail {
-  margin-top: 10px;
-  font-size: 15px;
-  color: var(--text-secondary);
-  font-feature-settings: 'tnum' 1;
-}
-.mn-curve {
-  width: 100%;
-  height: 130px;
+.feature-list h3 {
   margin-top: 18px;
-}
-.mn-line {
-  fill: none;
-  stroke: var(--moon);
-  stroke-width: 2.5;
-  vector-effect: non-scaling-stroke;
-  clip-path: inset(-10px 100% -10px -10px);
-  transition: clip-path 1.8s var(--ease-out) 0.3s;
-}
-.mn-area {
-  opacity: 0;
-  transition: opacity 1s ease 1s;
-}
-.mn-usual {
-  stroke: rgba(236, 240, 251, 0.2);
-  stroke-dasharray: 4 6;
-  vector-effect: non-scaling-stroke;
-}
-.mn-pin {
-  position: absolute;
-  right: 33%;
-  bottom: 118px;
-  padding: 5px 10px;
-  border-radius: var(--r-pill);
-  background: rgba(10, 14, 28, 0.85);
-  font-size: 13px;
-  font-weight: 600;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.5s ease 1.5s, transform 0.5s var(--ease-out) 1.5s;
-}
-.in .mn-line,
-html:not(.js) .mn-line {
-  clip-path: inset(-10px -10px -10px -10px);
-}
-.in .mn-area,
-.in .mn-pin,
-html:not(.js) .mn-area,
-html:not(.js) .mn-pin {
-  opacity: 1;
-  transform: none;
-}
-
-/* -- it shows its work -- */
-.receipts {
-  margin: auto 0 0;
-  padding: 0;
-  list-style: none;
-}
-.receipts li {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  padding: 11px 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-.receipts li + li {
-  border-top: 1px solid var(--hairline);
-}
-.receipts b {
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  font-feature-settings: 'tnum' 1;
-}
-.confidence {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-.conf-bars {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 12px;
-}
-.conf-bars i {
-  width: 3px;
-  border-radius: 1px;
-  background: var(--moon);
-}
-.conf-bars i:nth-child(1) { height: 5px; }
-.conf-bars i:nth-child(2) { height: 8px; }
-.conf-bars i:nth-child(3) { height: 12px; }
-
-/* -- one thing to try -- */
-.tile-try {
-  background:
-    radial-gradient(420px circle at var(--mx) var(--my), rgba(240, 164, 122, 0.12), transparent 60%),
-    radial-gradient(90% 60% at 10% 100%, rgba(240, 164, 122, 0.12), transparent 70%),
-    linear-gradient(180deg, var(--tile-hi), var(--tile) 55%);
-}
-.try-card {
-  display: flex;
-  gap: 14px;
-  margin-top: auto;
-}
-.try-star {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  margin-top: 2px;
-  fill: #fff4ec;
-  filter: drop-shadow(0 0 8px var(--peach));
-}
-.try-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--peach);
-}
-.try-head {
-  margin-top: 4px;
-  font: 500 22px/1.2 var(--font-display);
+  font-size: 22px;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
 }
-.try-body {
+.feature-list p {
   margin-top: 8px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-
-/* -- check-in: real buttons you can tap -- */
-.checkin {
-  margin-top: auto;
-}
-.checkin-q {
-  font: 500 18px/1.25 var(--font-display);
-  color: var(--text-primary);
-}
-.checkin-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
-.checkin-chips button {
-  min-height: 44px;
-  padding: 0 15px;
-  border: 0;
-  border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, 0.06);
-  font: 500 14px/1 var(--font-body);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
-}
-.checkin-chips button:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-.checkin-chips button:active {
-  transform: scale(0.96);
-}
-.checkin-chips button[aria-pressed='true'] {
-  background: var(--peach);
-  color: var(--text-on-accent);
-  font-weight: 600;
-}
-
-/* -- Nox: the answer arrives after a beat -- */
-.chat {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: auto;
-}
-.bubble {
-  max-width: 92%;
-  padding: 11px 14px;
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.45;
-}
-.bubble-you {
-  align-self: flex-end;
-  border-bottom-right-radius: 5px;
-  background: var(--peach);
-  color: var(--text-on-accent);
-  font-weight: 500;
-}
-.bubble-nox {
-  align-self: flex-start;
-  border-bottom-left-radius: 5px;
-  background: #1a2140;
-  color: var(--text-primary);
-}
-.typing {
-  display: inline-flex;
-  align-self: flex-start;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: #1a2140;
-}
-.typing i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-  animation: dot 1s ease-in-out infinite;
-}
-.typing i:nth-child(2) { animation-delay: 0.15s; }
-.typing i:nth-child(3) { animation-delay: 0.3s; }
-@keyframes dot {
-  50% {
-    transform: translateY(-3px);
-    opacity: 0.5;
-  }
-}
-/* the exchange plays once the tile is in view: question, a moment of typing, answer */
-.js .tile-nox .bubble,
-.js .tile-nox .typing {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.js .tile-nox.in .bubble-you {
-  animation: pop 0.45s var(--ease-out) 0.3s forwards;
-}
-.js .tile-nox.in .typing {
-  animation: pop 0.3s var(--ease-out) 0.9s forwards, gone 0.2s ease 2.1s forwards;
-}
-.js .tile-nox.in .bubble-nox {
-  animation: pop 0.5s var(--ease-out) 2.2s forwards;
-}
-@keyframes pop {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes gone {
-  to {
-    opacity: 0;
-    height: 0;
-    padding: 0;
-    margin: -10px 0 0;
-  }
-}
-
-/* -- trends: thirty nights grow in -- */
-.trend {
-  position: relative;
-  margin-top: auto;
-}
-.trend-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 150px;
-}
-.trend-bars i {
-  flex: 1;
-  height: var(--h);
-  min-height: 3px;
-  border-radius: 3px 3px 1px 1px;
-  background: linear-gradient(180deg, #8aa2e0, #4f66a8);
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.7s var(--ease-out);
-  transition-delay: calc(var(--i) * 18ms + 0.2s);
-}
-.trend-bars i.hi {
-  background: linear-gradient(180deg, #f4b896, #c97a52);
-}
-.in .trend-bars i,
-html:not(.js) .trend-bars i {
-  transform: none;
-}
-.trend-usual {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px; /* about 3.5 an hour, the sample month's usual */
-  border-top: 1px dashed rgba(236, 240, 251, 0.3);
-}
-.trend-usual span {
-  position: absolute;
-  left: 38%;
-  top: -30px;
-  padding: 3px 8px;
-  border-radius: var(--r-pill);
-  background: rgba(10, 14, 28, 0.85);
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-/* -- the report: a sheet of paper in the dark -- */
-.tile-report {
-  background:
-    radial-gradient(420px circle at var(--mx) var(--my), rgba(123, 149, 216, 0.12), transparent 60%),
-    linear-gradient(180deg, var(--tile-hi), var(--tile) 55%);
-}
-.report {
-  align-self: center;
-  width: min(100%, 420px);
-  margin-top: auto;
-  margin-bottom: -60px;
-  padding: 22px 22px 70px;
-  border-radius: 12px 12px 0 0;
-  background: #f5f6fa;
-  color: #1a1f33;
-  box-shadow: 0 -10px 60px -10px rgba(123, 149, 216, 0.35);
-  transform: translateY(30px) rotate(-1.5deg);
-  transition: transform 0.9s var(--ease-out) 0.2s;
-}
-.in .report,
-html:not(.js) .report {
-  transform: rotate(-1.5deg);
-}
-.report-title {
-  font: 600 17px/1.2 var(--font-display);
-}
-.report-sub {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #5b6380;
-}
-.report dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 16px;
-  margin: 18px 0 0;
-}
-.report dt {
-  font-size: 11px;
-  color: #5b6380;
-}
-.report dd {
-  margin: 2px 0 0;
-  font: 600 18px/1.2 var(--font-display);
-  font-feature-settings: 'tnum' 1;
-}
-.report-spark {
-  height: 40px;
-  margin-top: 16px;
-  border-radius: 6px;
-  background:
-    repeating-linear-gradient(90deg, #7b95d8 0 6px, transparent 6px 10px) bottom / 100% 60% no-repeat,
-    #eceef5;
-  mask-image: linear-gradient(90deg, #000, #000);
-}
-
-/* ================= how it works ================= */
-.how {
-  padding-block: 120px 40px;
-}
-.how-grid {
-  display: grid;
-  gap: 40px;
-  margin-top: 48px;
-}
-.how-visual {
-  display: none;
-}
-.how-steps {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: none;
-}
-.how-step {
-  padding: 26px 0;
-}
-.how-step + .how-step {
-  border-top: 1px solid var(--hairline);
-}
-.how-n {
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--peach) 16%, transparent);
-  color: var(--peach);
-  font: 600 16px/1 var(--font-display);
-}
-.how-step h3 {
-  margin-top: 16px;
-  font-size: clamp(24px, 3vw, 34px);
-  line-height: 1.12;
-  letter-spacing: -0.03em;
-}
-.how-step p {
-  margin-top: 12px;
-  max-width: 30em;
-  font-size: 17px;
-  color: var(--text-secondary);
-}
-
-@media (min-width: 900px) {
-  .how-grid {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-    gap: 72px;
-    align-items: start;
-  }
-  /* the picture holds still while the steps scroll by */
-  .how-visual {
-    display: block;
-    position: sticky;
-    top: 15vh;
-    height: 70vh;
-    min-height: 460px;
-    border-radius: 28px;
-    overflow: hidden;
-    background:
-      radial-gradient(70% 60% at 50% 40%, rgba(123, 149, 216, 0.18), transparent 70%),
-      linear-gradient(180deg, #10162c, #0a0e1c);
-  }
-  .how-step {
-    min-height: 70vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0;
-    opacity: 0.32;
-    transition: opacity 0.4s ease;
-  }
-  .how-step + .how-step {
-    border-top: 0;
-  }
-  .how-step.active {
-    opacity: 1;
-  }
-}
-
-.hv {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 22px;
-  padding: 32px;
-  opacity: 0;
-  transform: scale(0.96);
-  transition: opacity 0.5s ease, transform 0.6s var(--ease-out);
-}
-.hv.on {
-  opacity: 1;
-  transform: none;
-}
-.sd {
-  width: 150px;
-  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 40px rgba(240, 164, 122, 0.25));
-  animation: float 6s ease-in-out infinite;
-}
-@keyframes float {
-  50% {
-    transform: translateY(-10px) rotate(-2deg);
-  }
-}
-.hv-caption {
-  font-size: 15px;
-  color: var(--text-secondary);
-}
-.browser {
-  width: min(440px, 100%);
-  border-radius: 14px;
-  overflow: hidden;
-  background: #0e1428;
-  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.9);
-}
-.browser-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 14px;
-  background: #151c36;
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-.browser-bar i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-}
-.browser-bar span {
-  margin-left: 10px;
-}
-.browser-body {
-  padding: 34px 28px 30px;
-}
-.drop-title {
-  font: 500 22px/1.2 var(--font-display);
-  color: var(--text-primary);
-}
-.drop-sub {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--text-secondary);
-  font-feature-settings: 'tnum' 1;
-}
-.drop-progress {
-  height: 6px;
-  margin-top: 18px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-.drop-progress span {
-  display: block;
-  height: 100%;
-  width: 62%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, var(--moon), var(--peach));
-}
-.hv-2.on .drop-progress span {
-  animation: fill 2.4s var(--ease-out);
-}
-@keyframes fill {
-  from {
-    width: 8%;
-  }
-}
-.drop-note {
-  margin-top: 18px;
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-.hv-phone {
-  width: min(250px, 60%);
-  transform: translateY(18%);
-}
-
-/* ================= showcase ================= */
-.showcase {
-  padding-block: 120px 40px;
-}
-.tabs {
-  display: inline-flex;
-  gap: 4px;
-  margin-top: 36px;
-  padding: 4px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-}
-.tabs button {
-  min-height: 44px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  font: 500 15px/1 var(--font-body);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-.tabs button:hover {
-  color: var(--text-primary);
-}
-.tabs button[aria-selected='true'] {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-}
-.showcase-frame {
-  position: relative;
-  display: grid;
-  margin-top: 24px;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow:
-    0 60px 120px -50px rgba(0, 0, 0, 0.95),
-    0 0 120px -50px color-mix(in srgb, var(--moon) 60%, transparent);
-}
-.showcase-frame img {
-  grid-area: 1 / 1;
-  opacity: 0;
-  transform: scale(1.015);
-  transition: opacity 0.45s ease, transform 0.6s var(--ease-out);
-}
-.showcase-frame img.on {
-  opacity: 1;
-  transform: none;
-}
-.wearables {
-  display: grid;
-  gap: 18px;
-  align-items: center;
-  margin-top: 40px;
-  padding: 24px 26px;
-  border-radius: 20px;
-  background: linear-gradient(90deg, #10162c, #0c1122);
-}
-.wearables p {
+  max-width: 24em;
   font-size: 16px;
   color: var(--text-secondary);
-  max-width: 36em;
 }
-.wearables strong {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.wearable-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.wearable-list li {
-  padding: 9px 16px;
-  border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, 0.06);
-  font: 500 15px/1 var(--font-display);
-  color: var(--text-primary);
-}
-@media (min-width: 900px) {
-  .wearables {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 32px;
+@media (min-width: 820px) {
+  .feature-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px;
   }
 }
 
-/* ================= privacy ================= */
-.privacy {
+/* ================= private, and honest ================= */
+.trust {
   padding-block: 120px 40px;
 }
-.privacy-panel {
-  position: relative;
-  padding: 36px 24px;
+.trust-panel {
+  padding: 40px 24px;
   border-radius: 28px;
-  overflow: hidden;
-  isolation: isolate;
   background:
-    radial-gradient(60% 80% at 100% 0%, rgba(240, 164, 122, 0.14), transparent 65%),
-    radial-gradient(60% 80% at 0% 100%, rgba(123, 149, 216, 0.16), transparent 65%),
+    radial-gradient(60% 80% at 100% 0%, rgba(240, 164, 122, 0.13), transparent 65%),
+    radial-gradient(60% 80% at 0% 100%, rgba(123, 149, 216, 0.15), transparent 65%),
     #0c1122;
 }
-.privacy-grid {
+.trust-panel .section-title {
+  max-width: 14ch;
+}
+.trust-cols {
   display: grid;
-  gap: 28px;
-  margin: 44px 0 36px;
+  gap: 36px;
+  margin-top: 40px;
+}
+.trust-cols h3 {
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+.ticks {
+  margin: 14px 0 20px;
   padding: 0;
   list-style: none;
 }
-.privacy-grid h3 {
-  margin-top: 14px;
-  font-size: 18px;
-  letter-spacing: -0.01em;
-}
-.privacy-grid p {
-  margin-top: 6px;
-  font-size: 15px;
+.ticks li {
+  position: relative;
+  padding: 10px 0 10px 30px;
+  font-size: 16px;
   line-height: 1.5;
   color: var(--text-secondary);
 }
-.privacy-grid svg {
-  width: 26px;
-  height: 26px;
-}
-@media (min-width: 760px) {
-  .privacy-panel {
-    padding: 56px;
-  }
-  .privacy-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 36px 48px;
-  }
-}
-@media (min-width: 1100px) {
-  .privacy-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-/* ================= limits ================= */
-.limits {
-  display: grid;
-  gap: 36px;
-  padding-block: 120px 40px;
-}
-.limits-head p {
-  margin-top: 20px;
-  max-width: 30em;
-  font-size: 17px;
-  color: var(--text-secondary);
-}
-.limit-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.limit-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 18px 0;
-  font-size: 18px;
-  line-height: 1.45;
-  color: var(--text-primary);
-}
-.limit-list li + li {
-  border-top: 1px solid var(--hairline);
-}
-.limit-x,
-.limit-check {
-  position: relative;
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  margin-top: 1px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-}
-.limit-x::before,
-.limit-x::after {
+.ticks li::before {
   content: '';
   position: absolute;
-  left: 8px;
-  top: 12px;
-  width: 10px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--text-tertiary);
-  transform: rotate(45deg);
-}
-.limit-x::after {
-  transform: rotate(-45deg);
-}
-.limit-check {
+  left: 0;
+  top: 14px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
   background: color-mix(in srgb, var(--peach) 18%, transparent);
 }
-.limit-check::after {
+.ticks li::after {
   content: '';
   position: absolute;
-  left: 9px;
-  top: 6px;
-  width: 6px;
-  height: 11px;
-  border-right: 2px solid var(--peach);
-  border-bottom: 2px solid var(--peach);
+  left: 6.5px;
+  top: 17.5px;
+  width: 4px;
+  height: 8px;
+  border-right: 1.8px solid var(--peach);
+  border-bottom: 1.8px solid var(--peach);
   transform: rotate(45deg);
 }
-@media (min-width: 900px) {
-  .limits {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 72px;
-    align-items: start;
+@media (min-width: 820px) {
+  .trust-panel {
+    padding: 56px;
+  }
+  .trust-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 56px;
   }
 }
 
@@ -1463,10 +1153,14 @@ html:not(.js) .report {
   color: var(--text-secondary);
   transition: transform 0.25s var(--ease-out);
 }
-.faq details[open] summary::after {
+.faq details.is-open summary::after {
   transform: rotate(45deg);
 }
-.faq details p {
+/* the answer slides open and shut (site.js animates its height) */
+.faq-a {
+  overflow: hidden;
+}
+.faq-a p {
   padding: 0 40px 24px 0;
   font-size: 16px;
   line-height: 1.6;
@@ -1482,43 +1176,87 @@ html:not(.js) .report {
 /* ================= closing ================= */
 .closing {
   position: relative;
-  margin-top: 80px;
-  padding-block: 140px 160px;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding-block: 120px;
   overflow: hidden;
   isolation: isolate;
   text-align: center;
-}
-.aurora-low {
-  inset: auto -10% -40%;
-  height: 700px;
-  background:
-    radial-gradient(45% 50% at 35% 60%, color-mix(in srgb, var(--moon) 30%, transparent), transparent 70%),
-    radial-gradient(40% 45% at 65% 55%, color-mix(in srgb, var(--peach) 22%, transparent), transparent 70%);
 }
 .closing-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.closing-mark {
-  filter: drop-shadow(0 0 30px rgba(240, 164, 122, 0.5));
+/* Nox, coming up like the sun: his glow grows as he rises (--glow, story.js),
+ * then breathes; he floats gently once he's up */
+.closing-sun {
+  --glow: 1;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
 }
-.closing h2 {
-  margin-top: 28px;
-  max-width: 13ch;
-  font-size: clamp(40px, 7vw, 84px);
-  line-height: 1;
-  letter-spacing: var(--display-tight);
-  text-wrap: balance;
-  background: linear-gradient(180deg, #ffffff 30%, #a9b4d6 100%);
+.closing-sun::before {
+  content: '';
+  position: absolute;
+  inset: -110%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(244, 184, 150, 0.4), rgba(240, 164, 122, 0.12) 45%, transparent 72%);
+  opacity: var(--glow);
+  animation: sunBreathe 5s ease-in-out infinite alternate;
+}
+@keyframes sunBreathe {
+  to {
+    scale: 1.12;
+  }
+}
+.closing-mark {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  filter: drop-shadow(0 0 30px rgba(240, 164, 122, 0.55));
+  animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+  50% {
+    translate: 0 -8px;
+  }
+}
+@media (max-width: 700px) {
+  .closing-sun,
+  .closing-mark {
+    width: 96px;
+    height: 96px;
+  }
+}
+.closing-note {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+/* the last line rises off the horizon (story.js), lit from below like dawn */
+.closing-title {
+  background: linear-gradient(0deg, #f4b896 0%, #ffe6d6 30%, #ffffff 65%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  margin-top: 36px;
+  max-width: 13ch;
+  padding-bottom: 0.1em;
+  font-size: clamp(40px, 7vw, 84px);
+  line-height: 1.02;
+  letter-spacing: var(--tight);
+  text-wrap: balance;
 }
 
 /* ================= footer ================= */
 .foot {
-  background: #03050b;
+  background: color-mix(in srgb, #03050b 62%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .foot-grid {
   display: grid;
@@ -1574,8 +1312,5 @@ html:not(.js) .report {
     animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
-  }
-  .stage-tilt {
-    transform: none;
   }
 }

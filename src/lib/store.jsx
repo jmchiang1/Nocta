@@ -14,6 +14,7 @@ import { forgetAccountOnDevice } from './accountData.js';
 import { reloadOwner } from './owner.js';
 import { ownerOf, getOwner } from './owner.js';
 import { track, identify } from './analytics.js';
+import { researchChanged } from './research.js';
 import { DEFAULT_MACHINE_ID } from '../data/therapy.js';
 import {
   DEFAULT_DEVICE_CONNECTIONS,
@@ -324,6 +325,7 @@ export function StoreProvider({ children }) {
         const res = await syncWearable(provider);
         patchLink(provider, { syncing: false, needsReconnect: false, lastSyncAt: res.syncedAt });
         if (!res.throttled) cloudChanged(`wearable:${provider}`); // the account's copy too
+        if (!res.throttled) researchChanged(); // and the shared nights (lib/research.js)
         setWearableNonce((n) => n + 1);
         return res;
       } catch (e) {
@@ -456,6 +458,7 @@ export function StoreProvider({ children }) {
     if (isLast) setCheckin({ done: true, tags });
     setCheckinVersion((v) => v + 1);
     track('checkin_logged', { late: !isLast }); // never the answers
+    researchChanged(); // the night's shared summary carries its check-in (lib/research.js)
   }, []);
   const resetCheckin = useCallback(() => {
     clearCheckin(LAST_NIGHT);

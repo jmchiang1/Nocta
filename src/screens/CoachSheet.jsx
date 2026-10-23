@@ -128,6 +128,7 @@ export function CoachSheet() {
   );
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
+  const conversationId = useRef(crypto.randomUUID()).current;
   const bottomRef = useRef(null);
 
   // scroll only the sheet body — scrollIntoView would also scroll the page behind
@@ -151,6 +152,7 @@ export function CoachSheet() {
       await askNox(history, {
         context,
         fx: FIXTURES[fixtureId],
+        conversationId,
         signal: ctrl.signal,
         onText: (t) => patchLast((l) => ({ ...l, text: l.text + t })),
         // another model took over: its answer starts fresh

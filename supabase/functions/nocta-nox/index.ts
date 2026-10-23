@@ -20,6 +20,8 @@
  * Deploy with --no-verify-jwt (the project's signing keys need the function to
  * check the session itself, as delete-account does). */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.135.0';
+import { Anthropic as PostHogAnthropic } from 'npm:@posthog/ai@8.13.5/anthropic';
+import { PostHog } from 'npm:posthog-node@5.55.1';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.0';
 
 const MODEL = 'claude-opus-5-5';
@@ -33,7 +35,21 @@ const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
-const anthropic = apiKey ? new Anthropic({ apiKey }) : null;
+const posthogKey = Deno.env.get('VITE_POSTHOG_KEY');
+const posthogHost = Deno.env.get('VITE_POSTHOG_HOST');
+const posthog =
+  posthogKey && posthogHost
+    ? new PostHog(posthogKey, {
+        host: posthogHost,
+        // a health app: PostHog gets each call's model, tokens, cost, speed and
+        // errors, never the question, Nox's answer or the person's data
+        privacyMode: true,
+        flushAt: 1,
+        flushInterval: 0,
+        enableExceptionAutocapture: false, // an error can quote the request
+      })
+    : null;
+const anthropic = apiKey ? (posthog ? new PostHogAnthropic({ apiKey, posthog }) : new Anthropic({ apiKey })) : null;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -113,7 +129,9 @@ Deno.serve(async (req) => {
   const body = await req.json().catch(() => null);
   const turns = validTurns(body?.messages);
   const context = typeof body?.context === 'string' ? body.context.slice(0, MAX_CONTEXT_CHARS) : '';
-  if (!turns) return json({ error: 'bad_request' }, 400);
+  const sessionId =
+    typeof body?.conversationId === 'string' && /^[A-Za-z0-9_~.@()!':|-]{1,200}$/.test(body.conversationId) ? body.conversationId : null;
+  if (!turns || !sessionId) return json({ error: 'bad_request' }, 400);
 
   try {
     if (!(await takeQuestion(user.id))) return json({ error: 'daily_limit', limit: DAILY_LIMIT }, 429);
@@ -142,6 +160,10 @@ Deno.serve(async (req) => {
           { type: 'text', text: `The person's data:\n\n${context || '(none available)'}`, cache_control: { type: 'ephemeral' } },
         ],
         messages: turns,
+        posthogDistinctId: user.id,
+        posthogPrivacyMode: true, // never the conversation (also set on the client)
+        posthogTraceId: crypto.randomUUID(),
+        posthogProperties: { $ai_session_id: sessionId },
       };
       try {
         // deno-lint-ignore no-explicit-any
@@ -163,6 +185,11 @@ Deno.serve(async (req) => {
           send({ type: 'error', code: 'failed' });
         }
       } finally {
+        try {
+          await posthog?.flush();
+        } catch (e) {
+          console.error('[nox] posthog flush', e);
+        }
         controller.close();
       }
     },

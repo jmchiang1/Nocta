@@ -1,0 +1,207 @@
+/* Nocta — the one-night sky behind the marketing site (index.html .night,
+ * driven by sky.js). Four skies stacked, dusk → deep night → pre-dawn →
+ * dawn, crossfaded as the page scrolls; three star layers at different
+ * depths, with the Milky Way; clouds sailing across; the odd shooting star;
+ * extra stars around the pointer. Fixed behind everything, never in the way. */
+
+.night {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: #04060d;
+}
+/* on load the sky opens out of black, before anything else arrives */
+.night::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #04060d;
+  animation: veil 1.6s ease 0.1s forwards;
+}
+@keyframes veil {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---- the four skies ---- */
+.sky-phase {
+  position: absolute;
+  inset: 0;
+}
+.sky-phase.dusk {
+  background:
+    radial-gradient(120% 70% at 50% 115%, rgba(240, 164, 122, 0.2), transparent 60%),
+    radial-gradient(90% 60% at 18% 0%, rgba(123, 149, 216, 0.26), transparent 70%),
+    linear-gradient(180deg, #0c1533 0%, #161d45 55%, #251f48 100%);
+}
+.sky-phase.deep {
+  opacity: 0;
+  background:
+    radial-gradient(50% 40% at 78% 18%, rgba(123, 149, 216, 0.16), transparent 70%),
+    radial-gradient(45% 38% at 16% 72%, rgba(150, 132, 214, 0.12), transparent 70%),
+    radial-gradient(80% 50% at 50% 110%, rgba(74, 99, 168, 0.18), transparent 70%),
+    linear-gradient(180deg, #050816 0%, #070c1c 60%, #0b1126 100%);
+}
+.sky-phase.predawn {
+  opacity: 0;
+  background:
+    radial-gradient(120% 60% at 50% 120%, rgba(163, 183, 223, 0.2), transparent 65%),
+    linear-gradient(180deg, #060a18 0%, #121838 60%, #22264f 100%);
+}
+/* dawn: the light comes up behind the closing, above the footer */
+.sky-phase.dawn {
+  opacity: 0;
+  background:
+    radial-gradient(70% 45% at 50% 66%, rgba(255, 196, 160, 0.42), rgba(240, 164, 122, 0.14) 50%, transparent 75%),
+    radial-gradient(130% 70% at 50% 100%, rgba(240, 164, 122, 0.4), transparent 70%),
+    linear-gradient(180deg, #0b1130 0%, #24234f 50%, #4a3156 100%);
+}
+
+/* after dawn: a calm early-morning blue under the page's quieter part */
+.sky-phase.morning {
+  opacity: 0;
+  background:
+    radial-gradient(90% 50% at 50% 0%, rgba(244, 184, 150, 0.1), transparent 70%),
+    linear-gradient(180deg, #121a3c 0%, #0b1129 60%, #080c1d 100%);
+}
+
+/* ---- stars ---- */
+.star-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  will-change: transform, opacity;
+}
+.star-layer i {
+  position: absolute;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: #ecf0fb;
+  opacity: var(--a);
+}
+.star-layer.near i {
+  box-shadow: 0 0 6px rgba(236, 240, 251, 0.7);
+}
+/* each star pops into being at its own moment (--in), then twinkles */
+.star-layer i {
+  animation: born 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) var(--in, 0s) backwards;
+}
+.star-layer i.tw {
+  animation:
+    born 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) var(--in, 0s) backwards,
+    skyTwinkle var(--t) ease-in-out var(--d) infinite alternate;
+}
+@keyframes born {
+  from {
+    transform: scale(0);
+  }
+}
+@keyframes skyTwinkle {
+  to {
+    opacity: calc(var(--a) * 0.25);
+  }
+}
+/* the pointer's own patch of sky: a dense field, shown only around it */
+.star-layer.cursor-stars {
+  position: fixed;
+  inset: 0;
+  height: auto;
+  --cx: -999px;
+  --cy: -999px;
+  -webkit-mask-image: radial-gradient(180px circle at var(--cx) var(--cy), #000 0%, rgba(0, 0, 0, 0.5) 40%, transparent 72%);
+  mask-image: radial-gradient(180px circle at var(--cx) var(--cy), #000 0%, rgba(0, 0, 0, 0.5) 40%, transparent 72%);
+}
+
+/* ---- the Milky Way (a band inside the far stars) ---- */
+.milky-way {
+  position: absolute;
+  left: -30%;
+  top: 4%;
+  width: 160%;
+  height: 46%;
+  rotate: -18deg;
+}
+.mw-glow {
+  position: absolute;
+  inset: 0;
+  animation: skyIn 3s ease 0.9s backwards;
+  background:
+    radial-gradient(38% 30% at 30% 50%, rgba(163, 183, 223, 0.16), transparent 72%),
+    radial-gradient(30% 24% at 58% 54%, rgba(240, 164, 122, 0.07), transparent 72%),
+    radial-gradient(42% 34% at 72% 48%, rgba(150, 132, 214, 0.12), transparent 72%),
+    radial-gradient(70% 22% at 50% 50%, rgba(123, 149, 216, 0.1), transparent 75%);
+  filter: blur(14px);
+}
+
+/* ---- clouds: soft, slow, always sailing ---- */
+.cloud-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  animation: skyIn 3.5s ease 1.2s backwards;
+}
+@keyframes skyIn {
+  from {
+    opacity: 0;
+  }
+}
+.cloud {
+  position: absolute;
+  width: var(--w);
+  height: var(--h);
+  animation: sail var(--t) ease-in-out var(--at) infinite alternate;
+}
+.cloud::before,
+.cloud::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(26px);
+  background: radial-gradient(closest-side, rgba(176, 192, 232, var(--o)), transparent);
+}
+.cloud::before {
+  inset: 0 30% 10% 0;
+}
+.cloud::after {
+  inset: 25% 0 0 38%;
+}
+.cloud.c1 { --w: 46vw; --h: 22vh; --o: 0.2; --t: 120s; --at: -30s; left: -6%; top: 14%; }
+.cloud.c2 { --w: 38vw; --h: 18vh; --o: 0.15; --t: 150s; --at: -80s; left: 58%; top: 36%; }
+.cloud.c3 { --w: 52vw; --h: 24vh; --o: 0.17; --t: 170s; --at: -10s; left: 18%; top: 64%; }
+.cloud.c4 { --w: 30vw; --h: 14vh; --o: 0.13; --t: 110s; --at: -55s; left: 72%; top: 82%; }
+.cloud.c5 { --w: 40vw; --h: 18vh; --o: 0.14; --t: 140s; --at: -100s; left: 4%; top: 100%; }
+@keyframes sail {
+  to {
+    translate: 24vw 0;
+  }
+}
+
+/* ---- a shooting star ---- */
+.meteor {
+  position: absolute;
+  width: 130px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+  transform-origin: left center;
+  rotate: 152deg;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+}
+
+/* ---- reduced motion: a still night ---- */
+.night.still .sky-phase.dusk {
+  opacity: 0;
+}
+.night.still .sky-phase.deep {
+  opacity: 1;
+}
+.night.still .star-layer i.tw,
+.night.still .cloud {
+  animation: none;
+}

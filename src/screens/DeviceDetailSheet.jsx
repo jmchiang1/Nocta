@@ -14,6 +14,8 @@
  * Without Supabase (the mock sign-in), the sheet runs a mock OAuth flow:
  * authorize → syncing → done. Each step replaces the sheet body until the
  * device flips to connected, then the normal detail view returns. */
+import { setShareFitbit } from '../lib/profile.js';
+import { researchChanged } from '../lib/research.js';
 import { track } from '../lib/analytics.js';
 import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
@@ -212,6 +214,7 @@ function LiveDeviceDetail() {
     deviceReads,
     setDeviceRead,
     switchToAccount,
+    profile,
   } = useStore();
   const device = deviceByKey(sheet.deviceKey);
   const key = device.key;
@@ -245,6 +248,7 @@ function LiveDeviceDetail() {
     syncWearableNow(key)
       .then((r) => {
         if (!alive) return;
+        track('wearable_sync_completed', { provider: key, nights: r.nights });
         setPulled(r.nights);
         setStep('done');
       })
@@ -278,7 +282,10 @@ function LiveDeviceDetail() {
     try {
       const r = await syncWearableNow(key);
       if (r.throttled) setNotice(`${device.title} allows one sync every 10 minutes. Try again shortly.`);
-      else setNotice(r.nights ? `${r.nights} ${r.nights === 1 ? 'night' : 'nights'} checked.` : 'No new nights yet.');
+      else {
+        track('wearable_sync_completed', { provider: key, nights: r.nights });
+        setNotice(r.nights ? `${r.nights} ${r.nights === 1 ? 'night' : 'nights'} checked.` : 'No new nights yet.');
+      }
     } catch (e) {
       setError(wearableError(e.code, device.title));
     }
@@ -439,6 +446,40 @@ function LiveDeviceDetail() {
                       ? `Finish in the ${device.title} tab`
                       : `Reconnect ${device.title}`}
                 </button>
+              )}
+
+              {/* Fitbit only: its data comes through Google, whose Limited Use
+               * rules need a clear yes before people may read it, so it's off
+               * until they turn it on here (lib/research.js) */}
+              {key === 'fitbit' && (
+                <>
+                  <div className="section-head">
+                    <h3>Help improve Nocta</h3>
+                  </div>
+                  <p className="settings-note">
+                    Let the people who make Nocta see your Fitbit nights (sleep stages, heart rate,
+                    heart-rate variability, breathing rate and blood oxygen), linked to your account, to
+                    improve Nocta’s insights. Off unless you turn it on. Turning it off stops sharing
+                    and deletes what was shared.
+                    {profile.shareResearch === false && ' Sharing is off in Settings, so nothing is shared right now.'}
+                  </p>
+                  <div className="list">
+                    <div className="list-row">
+                      <div className="lr-main">
+                        <div className="lr-title">Let Nocta’s makers see my Fitbit data</div>
+                      </div>
+                      <Switch
+                        on={profile.shareFitbit === true}
+                        onChange={(on) => {
+                          setShareFitbit(on);
+                          researchChanged();
+                          track(on ? 'fitbit_sharing_on' : 'fitbit_sharing_off');
+                        }}
+                        label="Let Nocta’s makers see my Fitbit data"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
 
               <div className="section-head">

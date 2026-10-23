@@ -178,7 +178,8 @@ export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy
       )}
 
       <figure className="wh-figure">
-        <div className="wh-plot" ref={plotRef}>
+        {/* ph-no-capture: the peak dot and usual label sit outside the svg, placed by the data */}
+        <div className="wh-plot ph-no-capture" ref={plotRef}>
           <svg
             width={W}
             height={PLOT_H}

@@ -589,7 +589,11 @@ const DETECTORS = [
   calibrating,
 ];
 
-/* ---- actions: each finding offers its candidates, best-evidenced first;
+/* ---- actions. Every action has a `key`, and the key must stay the same
+ * for the same tip: the "Was this helpful?" ratings (InsightRating, the
+ * insight_rated event) are grouped by it. Variants of one tip share a key
+ * (refit / refitLeak / refitWeek are all 'refit').
+ * Each finding offers its candidates, best-evidenced first;
  * the first one not already suggested on the last few nights is the one
  * (so a tip that didn't move the numbers makes way for the next). A
  * doctor action is never rotated away. ---- */
@@ -988,11 +992,15 @@ function write(f, row, ctx) {
           { cause: 'The oximeter slipping during the night', probability_label: 'possible' },
           { cause: 'A real dip worth watching', probability_label: 'possible' },
         ],
-        recommended_action: {
-          action: `Wear the oximeter snugly ${w.tonight}. That way Nox can tell whether it happens again.`,
-          category: 'equipment_check',
-          effort: 'tonight',
-        },
+        recommended_action: pick(ctx, [
+          {
+            key: 'oximeter_snug',
+            short: 'wearing the oximeter snugly',
+            action: `Wear the oximeter snugly ${w.tonight}. That way Nox can tell whether it happens again.`,
+            category: 'equipment_check',
+            effort: 'tonight',
+          },
+        ]),
         escalation_flag: 'soft',
         data_citations: [cite('Minutes under 90% SpO₂', f.minutes, 'min'), cite('Lowest SpO₂', f.min, '%')],
       };

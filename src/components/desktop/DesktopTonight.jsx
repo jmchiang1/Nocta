@@ -21,6 +21,7 @@ import { BodyResponse } from '../BodyResponse.jsx';
 import { TonightSkeleton } from '../Skeleton.jsx';
 import { nightMarks, StripHead } from '../WeekStrip.jsx';
 import { activeBodyResponses } from '../../lib/bodySource.js';
+import { InsightRating } from '../InsightRating.jsx';
 
 /* The 14-night strip under the page head: the latest two weeks, or the
  * stretch around an older night picked from the calendar. The arrows either
@@ -205,6 +206,8 @@ export function DesktopTonight() {
               onAsk={() => openSheet('coach', { context: { kind: 'why' } })}
               onDoctor={() => openSheet('doctor')}
             />
+            {/* was the insight above any use (lib/insightRatings.js) */}
+            {fx.session && <InsightRating date={fixtureId} />}
 
             <div className="dash-tonight-pair">
               {/* the check-in is half of what Nox learns from, so it leads

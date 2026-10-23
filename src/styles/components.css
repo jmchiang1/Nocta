@@ -3934,3 +3934,37 @@ button.nl-row:focus-visible {
   pointer-events: none;
   background: radial-gradient(80% 100% at 50% 0%, color-mix(in srgb, var(--page-glow) 36%, transparent), transparent 74%);
 }
+
+/* =================================================================
+ * "Was this helpful?" under a night's insight (components/InsightRating)
+ * ================================================================= */
+.ir {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 4px 0;
+}
+.ir-q {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.ir-choices {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ir-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: background var(--dur-fast) ease;
+}
+.ir-btn.on {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}

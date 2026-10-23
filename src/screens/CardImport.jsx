@@ -21,7 +21,7 @@ import { Icon } from '../components/Icons.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { NoxThinking } from '../components/NoxThinking.jsx';
 import { parseCard, CardError } from '../lib/resmed/card.js';
-import { track } from '../lib/analytics.js';
+import { appLog, track } from '../lib/analytics.js';
 import { entriesFromFileList, entriesFromDrop, canPickFolder, mergeEntries, cardContents } from '../lib/cardFiles.js';
 
 /* the card couldn't be read: say what probably happened and what to try.
@@ -389,6 +389,7 @@ export function CardImport({ onFinish, onCancel }) {
       if (left > 0) await new Promise((r) => setTimeout(r, left));
       setResult(saved);
       track('card_imported', { nights: saved.card.nights.length });
+      appLog.info('card import completed', { operation: 'card_import', outcome: 'completed' });
       // a beat for Nox to be pleased about it, then the result rises in
       setPhase('celebrate');
       noxHappy();
@@ -403,8 +404,10 @@ export function CardImport({ onFinish, onCancel }) {
       setPhase('done');
     } catch (err) {
       console.warn('[import]', err);
-      setError(err instanceof CardError ? err.code : 'unreadable');
-      track('card_import_failed', { reason: err instanceof CardError ? err.code : 'unreadable' });
+      const reason = err instanceof CardError ? err.code : 'unreadable';
+      setError(reason);
+      track('card_import_failed', { reason });
+      appLog.error('card import failed', { operation: 'card_import', outcome: 'failed', reason });
       setPhase('error');
     }
   }

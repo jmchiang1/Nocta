@@ -6,9 +6,10 @@
  * cold load the splash may start silent; the first tap or key anywhere
  * unlocks it. Every call here quietly no-ops while audio isn't running. */
 
-/* off for now: the splash plays silently. Flip to true to bring the sound
- * back — nothing else changes (with it off, no audio context is ever made). */
-export const SOUND_ENABLED = false;
+/* the splash's score (splashScore below). It follows the same "Sound
+ * effects" switch in Settings as Nox's sounds; false here silences it
+ * everywhere (and no audio context is ever made for it). */
+export const SOUND_ENABLED = true;
 
 /* Nox's little sounds (landing, hopping, a happy finish) are separate: on
  * unless the person turns "Sound effects" off in Settings (this device). */
@@ -78,7 +79,7 @@ function noise() {
 /* the context if it's running, else null (and a nudge to resume). `nox`:
  * one of Nox's sounds, which follow the Settings switch, not the splash's */
 function ready(nox = false) {
-  if (!(nox ? soundEffectsOn() : SOUND_ENABLED) || !init()) return null;
+  if (!(nox ? soundEffectsOn() : SOUND_ENABLED && soundEffectsOn()) || !init()) return null;
   if (ac.state !== 'running' && !resuming) {
     resuming = true;
     ac.resume()
@@ -94,7 +95,7 @@ function ready(nox = false) {
 if (typeof window !== 'undefined') {
   const GESTURES = ['pointerdown', 'keydown', 'touchend'];
   const unlock = () => {
-    if (!(SOUND_ENABLED || soundEffectsOn()) || !init()) return;
+    if (!soundEffectsOn() || !init()) return;
     ac.resume()
       .then(() => GESTURES.forEach((e) => window.removeEventListener(e, unlock, true)))
       .catch(() => {});
@@ -277,4 +278,55 @@ export function noxHappy() {
   const t = ac.currentTime + 0.01;
   [523, 659, 784].forEach((f, i) => blip(t + i * 0.075, f, f * 1.02, { dur: 0.14, gain: 0.06, type: 'sine' }));
   ping(t + 0.24, 2093, { gain: 0.03, decay: 0.5 });
+}
+
+/* ---- the splash: Nox gathers out of the night sky (components/NoxReveal)
+ * Scored to the animation's own beats (onboarding.css › .nox-reveal):
+ *   0 s      a low night-air pad, and a slow breath of air sweeping across
+ *   2.1 s    each outline star lands with a soft glass note, round the
+ *            shape in order, so the landings rise like a harp glissando
+ *   2.25 s   the constellation line draws: a brighter breath
+ *   2.7 s    the moon lights: the pad lifts a little (no bell: kept sparse)
+ *   4.8 s    the logo rises into the page: the pad lets go
+ * All in D major pentatonic, so nothing can clash. Quiet by design. Each cue
+ * checks for running audio when it's due, so a tap partway through the
+ * splash (which is what unlocks audio in most browsers) still brings in the
+ * rest. Returns a stop function. */
+const D = 146.83; // D3
+const PENTA = [1, 9 / 8, 5 / 4, 3 / 2, 5 / 3]; // D E F♯ A B
+const note = (step) => D * 2 ** Math.floor(step / 5) * PENTA[((step % 5) + 5) % 5];
+
+export function splashScore({ outline = [] } = {}) {
+  const timers = [];
+  let bed = null;
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+  at(0, () => {
+    bed = pad([D * 2, D * 3, D * 4], { gain: 0.016, attack: 2.4 }); // D4 A4 D5: air, not bass
+    breath({ from: 260, to: 1300, dur: 2.0, gain: 0.018, q: 0.9, pan: -0.6, panTo: 0.6 });
+  });
+  // the outline stars landing (every other one: a glissando, not a rattle)
+  outline.forEach((p, i) => {
+    if (i % 2) return;
+    at(p.land, () =>
+      chime(note(10 + Math.round((i / outline.length) * 9)), {
+        gain: 0.022,
+        attack: 0.004,
+        decay: 1.1,
+        pan: (p.x - 50) / 60,
+        send: 0.7,
+      })
+    );
+  });
+  at(2250, () => breath({ from: 1100, to: 3400, dur: 0.7, gain: 0.012, q: 1.6, pan: 0.3, panTo: -0.3 }));
+  at(2700, () => {
+    if (!bed) bed = pad([D * 2, D * 3, D * 4], { gain: 0.016, attack: 0.6 });
+    bed?.swell(0.022, 1.2);
+  });
+  at(4800, () => bed?.stop(3.5));
+
+  return () => {
+    timers.forEach(clearTimeout);
+    bed?.stop(1.2);
+  };
 }

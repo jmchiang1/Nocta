@@ -158,7 +158,7 @@ export function buildNoxContext({ context, fx } = {}) {
  * the answer restarts on another model. Resolves when the answer is done;
  * throws an Error with .code: 'daily_limit' | 'unauthorized' | 'refusal' |
  * 'not_configured' | 'failed'. */
-export async function askNox(history, { context, fx, onText, onReset, signal } = {}) {
+export async function askNox(history, { context, fx, conversationId, onText, onReset, signal } = {}) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   const fail = (code) => Object.assign(new Error(`[nox] ${code}`), { code });
@@ -172,7 +172,7 @@ export async function askNox(history, { context, fx, onText, onReset, signal } =
       apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ messages: history, context: buildNoxContext({ context, fx }) }),
+    body: JSON.stringify({ messages: history, context: buildNoxContext({ context, fx }), conversationId }),
   });
   if (!res.ok || !res.body) {
     const body = await res.json().catch(() => ({}));

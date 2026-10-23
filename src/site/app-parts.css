@@ -1,0 +1,279 @@
+/* Nocta — the app's own styles for the pieces the marketing site shows live:
+ * the night sky (components/NightSky.jsx), the why card on Tonight
+ * (components/WhyHorizon.jsx), Nox (components/Mascot.jsx, NoxThinking.jsx)
+ * and the card-reading screen (screens/CardImport.jsx).
+ *
+ * Copied from the running app (every rule that matched those elements, with
+ * its keyframes and the variables it reads), so the site matches the product
+ * exactly; their markup in index.html was copied the same way. They don't
+ * follow the app on their own: if those components change, copy them again. */
+:root {
+  --text-secondary: #9aa3c0;
+  --accent-soft: #f4b896;
+  --accent: #f0a47a;
+  --accent-deep: #d97f4f;
+  --text-on-accent: #1a1424;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 200ms;
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --font-display: 'DM Sans', system-ui, sans-serif;
+  --text-primary: #ecf0fb;
+  --text-tertiary: #6b7396;
+  --r-pill: 999px;
+  --bg-base: #05080f;
+  --hairline: rgba(255, 255, 255, 0.06);
+  --stage-rem: #a3b7df;
+  --dur-press: 120ms;
+  --accent-hi: #ffe6d6;
+  --data-deep: #4a63a8;
+  --data-1: #7b95d8;
+  --surface-3: #242c4d;
+}
+
+.tnum { font-feature-settings: "tnum"; }
+.settings-note { font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin: 0px 4px 14px; }
+.mascot { display: block; flex-shrink: 0; overflow: visible; }
+.mascot .mc-stop-hi { stop-color: var(--accent-soft); }
+.mascot .mc-stop-mid { stop-color: var(--accent); }
+.mascot .mc-stop-lo { stop-color: var(--accent-deep); }
+.mascot .mc-crater { fill: var(--accent-deep); opacity: 0.45; }
+.mascot .mc-open { fill: var(--text-on-accent); }
+.mascot .mc-shut { fill: none; stroke: var(--text-on-accent); stroke-linecap: round; opacity: 0; }
+.mascot .mc-body, .mascot .mc-eyes, .mascot .mc-open { transform-box: fill-box; }
+.mascot .mc-body { transform-origin: 50% 85%; }
+.mascot .mc-eyes, .mascot .mc-open { transform-origin: center center; }
+.mascot .mc-eyes { transition: transform 0.45s var(--ease-out); }
+.mascot .mc-open, .mascot .mc-shut { transition: opacity var(--dur-fast) ease; }
+.mascot.thinking .mc-eyes { transform: translate(4px, -5px); }
+.mascot.thinking .mc-body { animation: 2.4s ease-in-out 0s infinite normal none running mcBob; }
+.mascot .mc-happy { fill: none; stroke: var(--text-on-accent); stroke-linecap: round; }
+.mascot.pleased .mc-open { opacity: 0; }
+.mascot.pleased .mc-body { animation: mcHop 0.7s var(--ease-spring) 0.15s backwards; }
+.mascot.idle .mc-eyes { animation: 14s ease-in-out 2.5s infinite normal none running mcGlance; }
+.mascot.idle .mc-open { animation: 14s ease-in-out 2.5s infinite normal none running mcIdleBlink; }
+.nox-thinking { position: relative; width: calc(var(--nox) * 1.4); height: calc(var(--nox) * 1.3); display: grid; place-items: end center; }
+.nox-thinking .nt-nox { filter: drop-shadow(0 0 22px color-mix(in srgb, var(--accent) 40%, transparent)); }
+.nox-thinking .mascot.thinking .mc-eyes { animation: 4.8s ease-in-out 0s infinite normal none running ntPonder; }
+.nt-dots { position: absolute; top: 0px; right: 0px; width: calc(var(--nox) * 0.5); height: calc(var(--nox) * 0.5); }
+.nt-dots > span { position: absolute; border-radius: 50%; background: var(--accent-soft); animation: 1.8s ease-in-out 0s infinite normal none running ntDot; }
+.nt-dots > span:nth-child(1) { left: 0px; bottom: 0px; width: calc(var(--nox) * 0.08); height: calc(var(--nox) * 0.08); }
+.nt-dots > span:nth-child(2) { left: 30%; bottom: 30%; width: calc(var(--nox) * 0.11); height: calc(var(--nox) * 0.11); animation-delay: 0.25s; }
+.nt-dots > span:nth-child(3) { right: 0px; top: 0px; width: calc(var(--nox) * 0.15); height: calc(var(--nox) * 0.15); animation-delay: 0.5s; }
+.why-horizon { position: relative; display: flex; flex-direction: column; padding-top: 14px; }
+.wh-headline { margin: 0px; font-family: var(--font-display); font-size: 48px; line-height: 1.02; font-weight: 500; letter-spacing: -0.045em; color: var(--text-primary); }
+.wh-headline em { font-style: italic; color: var(--accent-soft); }
+.wh-detail { margin: 10px 0px 0px; display: flex; align-items: center; gap: 2px; font-size: 17px; color: var(--text-secondary); animation: riseIn 0.5s var(--ease-out) 0.7s backwards; }
+.wh-figure { margin: 14px -20px 0px; }
+.wh-plot { position: relative; height: 190px; margin-top: 34px; }
+.wh-plot svg { display: block; overflow: visible; }
+.wh-info { display: grid; place-items: center; width: 44px; height: 44px; margin: -12px -10px -12px 0px; border: 0px; border-radius: 50%; background: none; color: var(--text-tertiary); transition: color var(--dur-fast) ease; }
+.wh-info:hover, .wh-info:active { color: var(--text-primary); }
+.wh-usual { stroke: color-mix(in srgb, var(--text-primary) 38%, transparent); stroke-width: 1; stroke-dasharray: 3, 5; animation: 0.8s ease-out 0.5s 1 normal backwards running whFade; }
+.wh-usual-label { position: absolute; right: 16px; transform: translateY(-50%); padding: 3px 9px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--bg-base) 72%, transparent); border: 1px solid var(--hairline); backdrop-filter: blur(8px); font-size: 12px; font-weight: 500; color: var(--text-secondary); animation: 0.8s ease-out 0.6s 1 normal backwards running whFade; }
+.wh-ticks { position: relative; height: 18px; margin-top: 8px; font-size: 12px; color: var(--text-tertiary); }
+.wh-ticks span { position: absolute; top: 0px; transform: translateX(-50%); }
+.wh-line { stroke: var(--stage-rem); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 1; animation: whDraw 1.4s var(--ease-out) 0.35s backwards; }
+.wh-area { animation: 1.2s ease-out 0.7s 1 normal backwards running whFade; }
+.wh-peak-dot { position: absolute; width: 10px; height: 10px; margin: -5px 0px 0px -5px; border-radius: 50%; background: var(--text-primary); box-shadow: 0 0 0 8px color-mix(in srgb, var(--text-primary) 15%, transparent),
+    0 0 22px color-mix(in srgb, var(--text-primary) 60%, transparent); animation: whPop 0.6s var(--ease-spring) 1.3s backwards; }
+.wh-peak-label { position: absolute; transform: translate(-50%, calc(-100% - 18px)); padding: 5px 11px; border-radius: var(--r-pill); white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 10%, transparent); border: 1px solid color-mix(in srgb, var(--text-primary) 18%, transparent); backdrop-filter: blur(10px); animation: whLabel 0.5s var(--ease-out) 1.5s backwards; }
+.wh-head { display: flex; align-items: flex-start; gap: 12px; }
+.wh-ask { flex-shrink: 0; display: grid; place-items: center; width: 48px; height: 48px; margin: 0px -6px 0px 0px; padding: 0px; border: 0px; background: none; animation: riseIn 0.5s var(--ease-out) 0.9s backwards; transition: transform var(--dur-press) ease; }
+.wh-ask .mascot { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.wh-ask:active { transform: scale(0.94); }
+.wh-guide { margin: 24px 0px 6px; display: flex; gap: 16px; }
+.wh-guide-mark { flex-shrink: 0; width: 28px; display: flex; flex-direction: column; align-items: center; }
+.wh-star { fill: var(--accent-hi); filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent-hi) 90%, transparent))
+    drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 60%, transparent)); transform-origin: center center; animation: starIn 0.7s var(--ease-spring) 1.5s backwards,
+    starTwinkle 4.5s ease-in-out 2.4s infinite; }
+.wh-guide-trail { margin-top: 6px; width: 1px; flex-grow: 1; background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-hi) 70%, transparent),
+    transparent
+  ); transform-origin: center top; animation: trailIn 0.8s var(--ease-out) 1.8s backwards; }
+.wh-guide-body { display: flex; flex-direction: column; gap: 6px; padding: 2px 0px 4px; animation: riseIn 0.55s var(--ease-out) 1.7s backwards; }
+.wh-guide-label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.wh-guide-head { font-family: var(--font-display); font-size: 28px; line-height: 1.12; font-weight: 500; letter-spacing: -0.03em; color: var(--text-primary); }
+.wh-guide-reason { font-size: 17px; line-height: 1.45; color: var(--text-secondary); }
+.mascot.pop { transform-origin: 50% 90%; animation: 0.72s cubic-bezier(0.34, 1.4, 0.64, 1) 0s 1 normal both running noxPop; }
+.nox-thinking.done .nt-dots > span { animation: 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) 0s 1 normal both running ntBurst; }
+.nox-thinking.done .nt-dots > span:nth-child(1) { --bx: -30px; --by: -6px; }
+.nox-thinking.done .nt-dots > span:nth-child(2) { --bx: 6px; --by: -26px; animation-delay: 0.05s; }
+.nox-thinking.done .nt-dots > span:nth-child(3) { --bx: 26px; --by: -8px; animation-delay: 0.1s; }
+.nox-thinking.done::after { content: ""; position: absolute; left: 50%; bottom: calc(var(--nox) * 0.5); width: var(--nox); height: var(--nox); margin-left: calc(var(--nox) * -0.5); margin-bottom: calc(var(--nox) * -0.5); border-radius: 50%; border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); animation: 0.9s ease-out 0.1s 1 normal both running ntRing; pointer-events: none; }
+.si-working { margin-bottom: 22px; }
+.ci-reading { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 0px 20px; }
+.ci-reading h3 { margin: 0px 0px 6px; font-family: var(--font-display); font-size: 22px; font-weight: 500; }
+.ci-progress { width: 70%; height: 4px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.ci-progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-deep), var(--accent-soft)); transition: width 0.2s linear; }
+.ci-celebrate h3, .ci-celebrate .settings-note { animation: riseIn 0.45s var(--ease-out) 0.15s backwards; }
+.sky { position: absolute; top: 0px; left: 0px; right: 0px; height: 680px; z-index: 0; overflow: hidden; pointer-events: none; mask-image: linear-gradient(rgb(0, 0, 0) 58%, transparent 100%); }
+.sky::before { content: ""; position: absolute; inset: 0px; background: linear-gradient(180deg, color-mix(in srgb, var(--data-deep) 24%, transparent) 0%, transparent 70%); }
+.sky-glow { position: absolute; border-radius: 50%; filter: blur(64px); transition: opacity 1.2s; }
+.sky-glow.a { width: 480px; height: 400px; left: -170px; top: -130px; background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--data-deep) 52%, transparent) 0%,
+    color-mix(in srgb, var(--data-deep) 30%, transparent) 30%,
+    color-mix(in srgb, var(--data-deep) 12%, transparent) 58%,
+    color-mix(in srgb, var(--data-deep) 3%, transparent) 80%,
+    transparent 100%
+  ); animation: 28s ease-in-out 0s infinite alternate none running skyDriftA; }
+.sky-glow.b { width: 400px; height: 360px; right: -160px; top: 0px; background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--stage-rem) 18%, transparent) 0%,
+    color-mix(in srgb, var(--stage-rem) 10%, transparent) 30%,
+    color-mix(in srgb, var(--stage-rem) 4%, transparent) 60%,
+    transparent 100%
+  ); animation: 34s ease-in-out 0s infinite alternate none running skyDriftB; }
+.sky-glow.c { width: 560px; height: 340px; left: -80px; top: 270px; background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--data-1) 14%, transparent) 0%,
+    color-mix(in srgb, var(--data-1) 8%, transparent) 32%,
+    color-mix(in srgb, var(--data-1) 3%, transparent) 62%,
+    transparent 100%
+  ); animation: 40s ease-in-out 0s infinite alternate none running skyDriftC; }
+.sky-stars { position: absolute; inset: -2% -6%; animation: 180s ease-in-out 0s infinite alternate none running starDrift; }
+.sky-stars.t1-layer { --drift: 36px; }
+.sky-stars.t2-layer { --drift: 24px; animation-duration: 200s; }
+.sky-stars.t3-layer { --drift: 14px; animation-duration: 230s; }
+.sky-stars i { position: absolute; border-radius: 50%; background: var(--text-primary); opacity: calc(var(--a) * var(--tier-show, 1)); transition: opacity 1.2s; }
+.sky-stars i.t1 { --tier-show: var(--t1, 1); box-shadow: 0 0 4px color-mix(in srgb, var(--text-primary) 60%, transparent); }
+.sky-stars i.t2 { --tier-show: var(--t2, 0.8); }
+.sky-stars i.t3 { --tier-show: var(--t3, 0.55); }
+.sky-stars i.tw { animation: twinkle var(--t) ease-in-out var(--d) infinite alternate; }
+.sky-stars i.gl { animation: glimmer var(--g) ease-in-out var(--gd) infinite; }
+.sky-stars i.gl::before, .sky-stars i.gl::after { content: ""; position: absolute; left: 50%; top: 50%; border-radius: 1px; opacity: 0; animation: glint var(--g) ease-in-out var(--gd) infinite; }
+.sky-stars i.gl::before { width: 700%; height: 1px; translate: -50% -50%; background: linear-gradient(90deg, transparent, var(--text-primary), transparent); }
+.sky-stars i.gl::after { width: 1px; height: 700%; translate: -50% -50%; background: linear-gradient(180deg, transparent, var(--text-primary), transparent); }
+.sky-clouds { position: absolute; inset: 0px; opacity: var(--clouds, 0); transition: opacity 1.4s; }
+.sky-clouds i { position: absolute; left: 0px; right: 0px; height: var(--h); animation: cloudSail var(--sail) linear var(--at) infinite; }
+.sky-clouds i::before, .sky-clouds i::after { content: ""; position: absolute; border-radius: 50%; filter: blur(16px); background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--stage-rem) 42%, var(--surface-3)),
+    color-mix(in srgb, var(--stage-rem) 16%, transparent) 60%,
+    transparent
+  ); }
+.sky-clouds i::before { left: 0px; top: 0px; width: var(--w); height: var(--h); }
+.sky-clouds i::after { left: calc(var(--w) * 0.28); top: calc(var(--h) * -0.35); width: calc(var(--w) * 0.5); height: calc(var(--h) * 1.1); opacity: 0.8; }
+.sky-clouds .c1 { --w: 380px; --h: 120px; top: 110px; --sail: 210s; --at: -40s; }
+.sky-clouds .c2 { --w: 300px; --h: 80px; top: 190px; --sail: 250s; --at: -175s; }
+.sky-clouds .c3 { --w: 420px; --h: 110px; top: 330px; --sail: 230s; --at: -120s; }
+.sky-clouds .c4 { --w: 280px; --h: 70px; top: 470px; --sail: 270s; --at: -20s; }
+.sky-clouds .c5 { --w: 340px; --h: 120px; top: 20px; --sail: 240s; --at: -150s; }
+.sky-meteor { position: absolute; top: 90px; left: 62%; width: 90px; height: 1.5px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--text-primary)); opacity: 0; transform: rotate(-28deg); }
+.sky-hazy { --t1: 0.9; --t2: 0.5; --t3: 0.15; --clouds: 0.6; }
+
+/* the headline's word-by-word rise (lib/motion.jsx RevealText) */
+.reveal-word {
+  display: inline-block;
+  animation: wordIn 0.62s var(--ease-out) backwards;
+  animation-delay: calc(140ms + var(--i) * 55ms);
+}
+@keyframes wordIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.32em);
+    filter: blur(6px);
+  }
+}
+
+@keyframes mcHop { 
+  40% { transform: translateY(-9px) scale(1.03, 0.98); }
+}
+@keyframes mcGlance { 
+  0%, 14% { transform: translate(0px, 0px); }
+  17%, 27% { transform: translate(-8px, 1px); }
+  30%, 46% { transform: translate(0px, 0px); }
+  49%, 58% { transform: translate(8px, -7px); }
+  61%, 74% { transform: translate(0px, 0px); }
+  77%, 85% { transform: translate(3px, 8px); }
+  88%, 100% { transform: translate(0px, 0px); }
+}
+@keyframes mcIdleBlink { 
+  0%, 37%, 39.5%, 92%, 94.5%, 100% { transform: scaleY(1); }
+  38.2%, 93.2% { transform: scaleY(0.1); }
+}
+@keyframes mcBob { 
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px) rotate(-2deg); }
+}
+@keyframes ntDot { 
+  0%, 100% { opacity: 0.18; transform: translateY(2px) scale(0.75); }
+  35%, 55% { opacity: 1; transform: translateY(0px) scale(1); }
+}
+@keyframes ntPonder { 
+  0%, 38% { transform: translate(5px, -6px); }
+  48%, 82% { transform: translate(-4px, -7px); }
+  86% { transform: translate(-4px, -7px) scaleY(0.12); }
+  90%, 100% { transform: translate(5px, -6px); }
+}
+@keyframes starIn { 
+  0% { opacity: 0; transform: scale(0.2) rotate(-45deg); }
+}
+@keyframes starTwinkle { 
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(0.86); }
+}
+@keyframes trailIn { 
+  0% { transform: scaleY(0); }
+}
+@keyframes whDraw { 
+  0% { stroke-dashoffset: 1; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes whFade { 
+  0% { opacity: 0; }
+}
+@keyframes whPop { 
+  0% { opacity: 0; transform: scale(0.3); }
+}
+@keyframes whLabel { 
+  0% { opacity: 0; transform: translate(-50%, calc(-100% - 8px)); }
+}
+@keyframes noxPop { 
+  0% { opacity: 0; transform: translateY(14px) scale(0.45, 0.35); }
+  45% { opacity: 1; transform: translateY(-6px) scale(1.1, 0.94); }
+  68% { transform: translateY(0px) scale(0.95, 1.06); }
+  84% { transform: scale(1.03, 0.98); }
+  100% { transform: none; }
+}
+@keyframes ntBurst { 
+  0% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(1.6); }
+}
+@keyframes ntRing { 
+  0% { opacity: 0.9; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+@keyframes riseIn { 
+  0% { opacity: 0; transform: translateY(14px); }
+}
+@keyframes skyDriftA { 
+  100% { transform: translate(60px, 30px) scale(1.12); }
+}
+@keyframes skyDriftB { 
+  100% { transform: translate(-70px, 40px) scale(0.92); }
+}
+@keyframes skyDriftC { 
+  100% { transform: translate(40px, -30px) scale(1.08); }
+}
+@keyframes starDrift { 
+  0% { transform: translateX(calc(var(--drift) * -0.5)); }
+  100% { transform: translateX(calc(var(--drift) * 0.5)); }
+}
+@keyframes twinkle { 
+  100% { opacity: calc(var(--a) * var(--tier-show, 1) * 0.3); }
+}
+@keyframes glimmer { 
+  0%, 86%, 100% { transform: scale(1); }
+  91% { opacity: var(--tier-show, 1); transform: scale(1.7); }
+  96% { transform: scale(1); }
+}
+@keyframes glint { 
+  0%, 87%, 96%, 100% { opacity: 0; transform: scale(0.4); }
+  91% { opacity: calc(0.85 * var(--tier-show, 1)); transform: scale(1); }
+}
+@keyframes cloudSail { 
+  0% { transform: translateX(calc(var(--w) * -1)); }
+  100% { transform: translateX(100%); }
+}
