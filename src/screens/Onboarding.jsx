@@ -99,6 +99,13 @@ function Intro({ settled, onStart, onGuest }) {
       className={`ob-intro ${phase}${settled ? ' settled' : ''}${leaving ? ' leaving' : ''}`}
     >
       <StatusBar />
+      {/* back out to the website (index.html at /), for someone who landed
+       * here first and wants to know what Nocta is: top left, opposite the
+       * peek */}
+      <a className="ob-intro-site" href="/" tabIndex={dawn ? 0 : -1}>
+        <Icon name="chevronLeft" size={18} />
+        <span>About Nocta</span>
+      </a>
       {/* a peek with sample data: no setup, nothing saved — small, up top,
        * level with the back button on the screens that follow */}
       <button className="ob-intro-peek" onClick={() => leave(onGuest)} tabIndex={dawn ? 0 : -1}>

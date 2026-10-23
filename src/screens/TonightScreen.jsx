@@ -1,5 +1,4 @@
 /* Nocta — Tonight tab. The hero why-card + last night's metrics + the night timeline. */
-import { InsightRating } from '../components/InsightRating.jsx';
 import { StaleDataBanner, SampleDataBanner } from '../components/NoNights.jsx';
 import { firstName } from '../data/account.js';
 import { LAST_NIGHT } from '../data/history.js';
@@ -92,10 +91,9 @@ export function TonightScreen() {
               onWhy={() => openSheet('why')}
               onAsk={() => openSheet('coach', { context: { kind: 'why' } })}
               onDoctor={() => openSheet('doctor')}
+              rate={fx.session ? fixtureId : null}
             />
           </NightSwiper>
-          {/* was the insight above any use (lib/insightRatings.js) */}
-          {fx.session && <InsightRating date={fixtureId} />}
 
           {/* the check-in is half of what Nox learns from, so it sits right
            * under the night's suggestion rather than inside the full night */}

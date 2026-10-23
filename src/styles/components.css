@@ -3936,35 +3936,74 @@ button.nl-row:focus-visible {
 }
 
 /* =================================================================
- * "Was this helpful?" under a night's insight (components/InsightRating)
+ * "Was this helpful?": two small thumbs under the night's suggestion
+ * (components/InsightRating › InsightThumbs, inside WhyHorizon)
  * ================================================================= */
-.ir {
+.thumbs {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 10px 4px 0;
+  gap: 2px;
+  margin: 2px 0 0 -12px;
 }
-.ir-q {
-  font-size: 15px;
+.thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  transition:
+    color var(--dur-fast) ease,
+    background var(--dur-fast) ease,
+    transform var(--dur-press) ease;
+}
+/* a 48px target around the smaller circle */
+.thumb::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+.thumb:hover {
   color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
 }
-.ir-choices {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+.thumb:active {
+  transform: scale(0.9);
 }
-.ir-btn {
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  transition: background var(--dur-fast) ease;
+.thumb.on {
+  color: var(--accent-soft);
 }
-.ir-btn.on {
-  background: var(--accent);
-  color: var(--text-on-accent);
+.thumb .ic-fill {
+  transition: fill var(--dur-fast) ease;
+}
+.thumb.on .ic-fill {
+  fill: currentColor;
+}
+.thumb.on svg {
+  animation: thumbPop 0.4s var(--ease-spring);
+}
+@keyframes thumbPop {
+  40% {
+    transform: scale(1.25) rotate(-8deg);
+  }
+}
+.thumbs-thanks {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s var(--ease-out);
+  pointer-events: none;
+}
+.thumbs-thanks.show {
+  opacity: 1;
+  transform: none;
+}
+/* under the doctor path's button, a little room above */
+.wh-doctor + .thumbs {
+  margin: 8px 0 0 -8px;
 }

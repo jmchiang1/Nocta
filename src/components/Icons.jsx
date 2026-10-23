@@ -108,6 +108,22 @@ const PATHS = {
       <path d="M12 11v6M12 7.5v.5" />
     </>
   ),
+  // "was this helpful?": the hand's palm is a shape of its own, so a picked
+  // thumb can fill (.on) while the sleeve stays a line
+  thumbUp: (
+    <>
+      <path d="M7 10v12" />
+      <path className="ic-fill" d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H7V10l3.55-7.1A3.13 3.13 0 0 1 15 5.88Z" />
+      <path d="M7 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3" />
+    </>
+  ),
+  thumbDown: (
+    <>
+      <path d="M17 14V2" />
+      <path className="ic-fill" d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H17v12l-3.55 7.1A3.13 3.13 0 0 1 9 18.12Z" />
+      <path d="M17 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3" />
+    </>
+  ),
   coach: <path d="M21 12c0 4.4-4 8-9 8a10 10 0 01-3.5-.6L3 21l1.6-4.5A8 8 0 013 12c0-4.4 4-8 9-8s9 3.6 9 8z" />,
   spark: <path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />,
   calendar: (

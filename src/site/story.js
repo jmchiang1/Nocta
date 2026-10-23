@@ -13,6 +13,9 @@
  * The clock in the corner runs 11 pm → 7 am across the whole story.
  * Reduced motion: no pinning, every chapter shown as it ends. */
 
+import { dawnSounds } from '../lib/sound.js';
+import { siteSoundOn } from './soundToggle.js';
+
 const SVG = 'http://www.w3.org/2000/svg';
 
 /* a seeded random, so the night looks the same on every visit */
@@ -123,6 +126,7 @@ export function initStory(sky, { still = false, reader } = {}) {
     document.documentElement.classList.add('story-still');
     reader?.progress(1);
     reader?.done(true);
+    document.querySelector('[data-sun] .mascot')?.setAttribute('class', 'mascot idle');
     return;
   }
   const { gsap, ScrollTrigger } = sky;
@@ -163,7 +167,7 @@ export function initStory(sky, { still = false, reader } = {}) {
   // drift (the whole line, not letters), as the dots below fade away
   cue(
     ch1,
-    at(ch1, 0.58),
+    at(ch1, 0.36),
     words()
       // the first line clears before the second arrives: never both at once
       .to(copyA, { opacity: 0, y: -40, duration: 0.45, ease: 'power2.in' })
@@ -172,16 +176,17 @@ export function initStory(sky, { still = false, reader } = {}) {
       .fromTo(q(copyB, '.ch-sub'), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.7 }, '-=0.6')
   );
   const t1 = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: st(ch1) });
-  t1.fromTo(minuteDots, { opacity: 0, scale: 0.2, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: 0.02, stagger: 0.4 / minuteDots.length }, 0.06)
+  t1.fromTo(minuteDots, { opacity: 0, scale: 0.2, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: 0.02, stagger: 0.26 / minuteDots.length }, 0.04)
     // most of the night's detail fades and drifts off; a few dots stay
     .to(
       minuteDots.filter((d) => !d.classList.contains('hot')),
-      { opacity: 0.06, y: () => -20 - Math.random() * 60, duration: 0.22, stagger: { amount: 0.08, from: 'random' } },
-      0.62
+      // slowly, over most of the chapter, while "never reaches you" holds
+      { opacity: 0.06, y: () => -20 - Math.random() * 60, duration: 0.3, stagger: { amount: 0.22, from: 'random' } },
+      0.4
     )
     .set({}, {}, 1);
   // the chapter bows out as a whole
-  cue(ch1, at(ch1, 0.92), words().to(q(ch1, '.ch-stage'), { opacity: 0, duration: 0.5 }));
+  cue(ch1, at(ch1, 0.95), words().to(q(ch1, '.ch-stage'), { opacity: 0, duration: 0.5 }));
 
   // ---- 4 am: the card is read as you scroll; it finishes before you leave ----
   const ch2 = q(story, '.ch-card');
@@ -263,27 +268,105 @@ export function initStory(sky, { still = false, reader } = {}) {
     // the card holds for the rest of the chapter
     .set({}, {}, 1);
 
-  // ---- dawn: Nox comes up like the sun (with the scroll); the words rise
-  // off the horizon once he's up (on their own clock) ----
+  // ---- dawn: the stage holds while Nox wakes up with the sun. It plays
+  // once you arrive (after a beat) and the page waits for it to finish
+  // before it lets you scroll on; scroll back up and it resets ----
+  const dawn = document.querySelector('#dawn');
   const sun = document.querySelector('[data-sun]');
   const sunrise = document.querySelector('[data-sunrise]');
-  if (sun) {
-    gsap.fromTo(
-      sun,
-      { y: 180, scale: 0.5, opacity: 0, '--glow': 0 },
-      { y: 0, scale: 1, opacity: 1, '--glow': 1, ease: 'none', scrollTrigger: { trigger: '#dawn', start: 'top 95%', end: 'center 55%', scrub: 0.8 } }
-    );
-  }
-  if (sunrise) {
-    cue(
-      '#dawn',
-      'top 45%',
-      words().fromTo(
-        sunrise,
-        { clipPath: 'inset(100% -10% -20% -10%)', y: 50 },
-        { clipPath: 'inset(-20% -10% -20% -10%)', y: 0, duration: 1.3, ease: 'power3.out' }
+  if (dawn && sun && sunrise) {
+    const nox = q(sun, '.mascot');
+    const face = (state) => nox.setAttribute('class', `mascot ${state}`);
+    const btn = dawn.querySelector('.hero-actions');
+    const sparks = [...sun.querySelectorAll('.sparks i')];
+    const zz = [...sun.querySelectorAll('.zz i')];
+    // its sound, cue by cue (lib/sound.js › dawnSounds), unless switched off
+    const sfx = dawnSounds();
+    const cue = (name, ...args) => () => siteSoundOn() && sfx[name](...args);
+    const wake = gsap.timeline({ paused: true, defaults: { ease: 'power2.out' } });
+    wake
+      .set(nox, { attr: { class: 'mascot asleep' } })
+      // a beat of empty dawn sky, then he rises, still asleep
+      .fromTo(q(sun, '.sun-nox'), { y: 220, opacity: 0 }, { y: 0, opacity: 1, duration: 1.6, ease: 'power3.out' }, 0.7)
+      .fromTo(q(sun, '.sun-glow'), { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 2, ease: 'power2.out' }, 0.7)
+      // a few sleepy z's drift up
+      .fromTo(zz, { opacity: 0, x: 0, y: 0, scale: 0.6 }, { opacity: 1, x: (i) => 14 + i * 10, y: (i) => -30 - i * 22, scale: 1, duration: 0.7, stagger: 0.35 }, 2.0)
+      .to(zz, { opacity: 0, duration: 0.5, stagger: 0.35 }, 2.6)
+      // a big stretch…
+      .to(q(sun, '.sun-nox'), { scaleY: 1.14, scaleX: 0.9, duration: 0.45, ease: 'power2.inOut', transformOrigin: '50% 90%' }, 3.4)
+      .to(q(sun, '.sun-nox'), { scaleY: 0.92, scaleX: 1.08, duration: 0.2 }, 3.85)
+      .to(q(sun, '.sun-nox'), { scaleY: 1, scaleX: 1, duration: 0.5, ease: 'elastic.out(1, 0.45)' }, 4.05)
+      // …eyes open with a blink…
+      .call(() => face('waking'), null, 3.9)
+      // …and he's delighted it's morning: a hop, happy eyes, a burst of sparks
+      .call(() => face('pleased'), null, 4.6)
+      .fromTo(
+        sparks,
+        { opacity: 0, x: 0, y: 0, scale: 0.3 },
+        {
+          opacity: 1,
+          x: (i) => Math.cos((i / sparks.length) * Math.PI * 2) * 95,
+          y: (i) => Math.sin((i / sparks.length) * Math.PI * 2) * 95,
+          scale: 1,
+          duration: 0.6,
+          ease: 'power3.out',
+        },
+        4.7
       )
-    );
+      .to(sparks, { opacity: 0, scale: 0.4, duration: 0.6 }, 5.2)
+      // then the words come up off the horizon, and the way in
+      .fromTo(sunrise, { clipPath: 'inset(100% -10% -20% -10%)', y: 50 }, { clipPath: 'inset(-20% -10% -20% -10%)', y: 0, duration: 1.2, ease: 'power3.out' }, 5.0)
+      .fromTo(btn, { opacity: 0, y: 20, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: 'back.out(2)' }, 5.8)
+      // and he settles in, glancing around now and then
+      .call(() => face('idle'), null, 6.4)
+      // the score, on the same beats
+      .call(cue('rise'), null, 0.7)
+      .call(cue('snore', 0), null, 2.0)
+      .call(cue('snore', 1), null, 2.35)
+      .call(cue('snore', 2), null, 2.7)
+      .call(cue('stretch'), null, 3.4)
+      .call(cue('squash'), null, 3.85)
+      .call(cue('blink'), null, 4.1)
+      .call(cue('cheer'), null, 4.6)
+      .call(cue('sparkle'), null, 4.72)
+      .call(cue('sunrise'), null, 5.0)
+      .call(cue('pop'), null, 5.85)
+      .call(() => sfx.end(), null, 6.6);
+
+    const { lenis } = sky;
+    let locked = false;
+    const unlock = () => {
+      if (!locked) return;
+      locked = false;
+      lenis?.start();
+    };
+    wake.eventCallback('onComplete', unlock);
+    // a jump from the nav (or any in-page link) flies past dawn: no holding
+    // the page mid-jump; he's simply up already when you come back
+    let jumpedAt = -1e9;
+    document.addEventListener('click', (e) => {
+      if (e.target.closest?.('a[href^="#"]')) jumpedAt = performance.now();
+    });
+    ScrollTrigger.create({
+      trigger: dawn,
+      start: 'top top',
+      onEnter: () => {
+        if (wake.progress() === 1 || locked) return;
+        if (performance.now() - jumpedAt < 2500) {
+          wake.progress(1);
+          return;
+        }
+        // hold the page right here (the stage is pinned) until he's up
+        locked = true;
+        lenis?.stop();
+        wake.play();
+      },
+      onLeaveBack: () => {
+        if (locked) return; // he's still waking: leave him be
+        wake.pause(0);
+        sfx.end();
+      },
+    });
   }
 
   // ---- the clock: 11 pm at the top of the page, 7 am as dawn arrives ----
@@ -299,7 +382,7 @@ export function initStory(sky, { still = false, reader } = {}) {
       trigger: document.querySelector('.hero'),
       start: 'top top',
       endTrigger: '#dawn',
-      end: 'top center',
+      end: 'top top',
       onUpdate: (s) => {
         time.textContent = fmt(23 * 60 + s.progress * 8 * 60);
       },

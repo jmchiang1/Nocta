@@ -7,10 +7,10 @@
     <title>Nocta · Understand every night on CPAP</title>
     <meta
       name="description"
-      content="Nocta reads your CPAP's SD card and tells you, in plain words, what happened last night and one thing to try tonight."
+      content="Nocta reads your CPAP's SD card and tells you what happened last night in plain words. Then it gives you one thing to try tonight."
     />
     <meta property="og:title" content="Nocta · Understand every night on CPAP" />
-    <meta property="og:description" content="Your CPAP's SD card, explained in plain words, with one thing to try tonight." />
+    <meta property="og:description" content="Your CPAP's SD card explained in plain words with one thing to try tonight." />
     <meta property="og:image" content="/site/tonight-desktop.webp" />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -49,8 +49,8 @@
 
     <header class="nav" data-nav>
       <div class="nav-bar">
-        <a class="brand" href="/" aria-label="Nocta, home">
-          <img src="/nocta-mark.svg" alt="" width="30" height="30" />
+        <a class="brand" href="/" aria-label="Nocta, home" data-nav-nox>
+          <span class="nav-nox"><svg class="mascot idle" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><defs><radialGradient id="mgnav" cx="34%" cy="28%" r="80%"><stop offset="0" class="mc-stop-hi"/><stop offset="0.55" class="mc-stop-mid"/><stop offset="1" class="mc-stop-lo"/></radialGradient><mask id="mbnav"><rect width="100" height="100" fill="#fff"/><circle cx="84" cy="19" r="22" fill="#000"/></mask></defs><g transform="translate(8 14) scale(.8)"><g class="mc-body"><g mask="url(#mbnav)"><circle cx="50" cy="53" r="42" fill="url(#mgnav)"/><circle class="mc-crater" cx="27" cy="76" r="5"/><circle class="mc-crater" cx="66" cy="81" r="3"/></g><g class="mc-eyes"><g class="mc-open"><rect x="32.75" y="46.5" width="8.5" height="17" rx="4.25"/><rect x="50.75" y="46.5" width="8.5" height="17" rx="4.25"/></g><g class="mc-shut" stroke-width="3.6"><path d="M32.11 57.04 q4.89 5.38 9.77 0"/><path d="M50.11 57.04 q4.89 5.38 9.77 0"/></g><g class="mc-happy" stroke-width="3.6"><path d="M32.11 59.04 q4.89 -7.33 9.77 0"/><path d="M50.11 59.04 q4.89 -7.33 9.77 0"/></g></g></g></g><g class="nx-stars"><circle cx="80" cy="12" r="2.6"/><circle cx="92" cy="25" r="1.8"/><circle cx="14" cy="17" r="1.8"/></g></svg></span>
           <span>Nocta</span>
         </a>
         <nav class="nav-links" aria-label="On this page">
@@ -59,6 +59,13 @@
           <a href="#privacy">Privacy</a>
           <a href="#questions">Questions</a>
         </nav>
+        <button class="sound-toggle" type="button" data-sound aria-pressed="false" aria-label="Turn sound on" title="Sound off">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="spk" d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" />
+            <path class="on-wave" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+            <path class="off-x" d="M16 9.5l5 5M21 9.5l-5 5" />
+          </svg>
+        </button>
         <a class="btn btn-small" href="/app/">Open Nocta</a>
       </div>
     </header>
@@ -76,13 +83,17 @@
           <!-- <p class="chip"><span class="chip-dot" aria-hidden="true"></span>Works with ResMed AirSense 10 and 11</p> -->
           <h1 id="hero-title" class="hero-title" data-hero-title>Understand every night on CPAP.</h1>
           <p class="hero-lede">
-            Nocta reads your machine’s SD card and tells you, in plain words, what happened last night and one
-            thing to try tonight.
+            Nocta reads your machine’s SD card and tells you what happened last night in plain words. Then it
+            gives you one thing to try tonight.
           </p>
           <div class="hero-actions">
             <a class="btn" href="/app/">Open Nocta</a>
             <a class="btn btn-quiet" href="#how">See how it works</a>
           </div>
+          <!-- <a class="film-pill" href="#film">
+            <span class="film-pill-play" aria-hidden="true"></span>
+            Watch the night in 46 seconds
+          </a> -->
           <!-- <p class="hero-note">Look around with sample nights first. No account needed.</p> -->
         </div>
 
@@ -116,6 +127,39 @@
         </div>
       </section>
 
+      <!-- ======== the sky opens: the launch film rises out of the horizon,
+           grows, and dissolves into the page's sky (site.js › film) ======== -->
+      <section id="film" class="ch ch-film" aria-label="Nocta launch film, 46 seconds">
+        <div class="ch-stage film-stage">
+          <div class="film" data-film>
+            <video
+              class="film-video"
+              muted
+              playsinline
+              preload="none"
+              poster="/site/launch-poster.webp"
+              data-src-wide="/site/launch-1080.mp4"
+              data-src-narrow="/site/launch-720.mp4"
+              aria-label="Nocta launch film"
+            ></video>
+            <span class="film-hint" aria-hidden="true">Tap for sound</span>
+            <button class="sound-toggle film-sound" type="button" data-sound aria-pressed="false" aria-label="Turn sound on" title="Sound off">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="spk" d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" />
+                <path class="on-wave" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+                <path class="off-x" d="M16 9.5l5 5M21 9.5l-5 5" />
+              </svg>
+            </button>
+            <button class="film-full" type="button" data-film-full aria-label="Watch the film full screen, with sound">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+            </button>
+            <button class="film-play" type="button" data-film-play aria-label="Play the film">
+              <span aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- ======== the story: one night, in chapters. Each one pins while you
            scroll through it (site.js › story); the sky behind moves on. ======== -->
       <div id="how" class="story">
@@ -124,7 +168,7 @@
           <div class="ch-stage">
             <div class="ch-copy">
               <h2 id="ch1-title" class="ch-title" data-fx="type">Every night, your machine writes down every minute.</h2>
-              <p class="ch-sub">Your breathing, the leak, the pressure, every pause.</p>
+              <p class="ch-sub">It records every breath and every pause.</p>
             </div>
             <svg class="minutes" data-minutes viewBox="0 0 1200 260" preserveAspectRatio="none" aria-hidden="true"></svg>
             <div class="ch-copy ch-copy-b">
@@ -139,7 +183,7 @@
           <div class="ch-stage">
             <div class="ch-copy">
               <h2 id="ch2-title" class="ch-title ch-scan" data-fx="scan">Nocta reads the whole card.</h2>
-              <p class="ch-sub">Right in your browser. The card’s files never leave your computer.</p>
+              <p class="ch-sub">It all happens in your browser, so the card’s files never leave your computer.</p>
             </div>
             <div class="read-panel" data-reader aria-hidden="true">
               <div class="read-state read-working"><div class="ci-reading"><div class="nox-thinking si-working" style="--nox:84px"><span class="nt-dots"><span></span><span></span><span></span></span><svg class="mascot thinking pop nt-nox" viewBox="0 0 100 100" aria-hidden="true" focusable="false" width="84" height="84"><defs><radialGradient id="mgr2" cx="34%" cy="28%" r="80%"><stop offset="0" class="mc-stop-hi"></stop><stop offset="0.55" class="mc-stop-mid"></stop><stop offset="1" class="mc-stop-lo"></stop></radialGradient><mask id="mbr2"><rect width="100" height="100" fill="#fff"></rect><circle cx="84" cy="19" r="22" fill="#000"></circle></mask></defs><g class="mc-body"><g mask="url(#mbr2)"><circle cx="50" cy="53" r="42" fill="url(#mgr2)"></circle><circle class="mc-crater" cx="27" cy="76" r="5"></circle><circle class="mc-crater" cx="66" cy="81" r="3"></circle></g><g class="mc-eyes"><g class="mc-open"><rect x="32.75" y="46.5" width="8.5" height="17" rx="4.25"></rect><rect x="50.75" y="46.5" width="8.5" height="17" rx="4.25"></rect></g><g class="mc-shut" stroke-width="3.6"><path d="M32.1125 57.04 q4.887499999999999 5.37625 9.774999999999999 0"></path><path d="M50.1125 57.04 q4.887499999999999 5.37625 9.774999999999999 0"></path></g></g></g></svg></div><h3>Reading your card…</h3><p class="settings-note tnum">Night 18 of 29</p><div class="ci-progress"><span style="width:62%"></span></div></div></div>
@@ -156,7 +200,7 @@
               <div class="nc-top">
                 <div class="nc-intro">
                   <h2 id="ch3-title" class="ch-title" data-fx="connect">Then it connects the dots.</h2>
-                  <p class="ch-sub">Last night’s events, hour by hour, against your own usual.</p>
+                  <p class="ch-sub">It lays out last night’s events by the hour and compares them with your usual.</p>
                 </div>
                 <div class="nc-verdict">
                   <p class="nc-headline"><span class="nc-w">Mask</span> <span class="nc-w">leak</span> <em class="nc-w">spiked.</em></p>
@@ -205,9 +249,15 @@
       </div>
 
       <!-- ======== dawn ======== -->
+      <!-- dawn: the stage holds while Nox wakes up with the sun (story.js) -->
       <section class="closing" id="dawn" aria-labelledby="closing-title">
         <div class="wrap closing-inner">
-          <span class="closing-sun" data-sun aria-hidden="true"><img class="closing-mark" src="/nocta-mark.svg" alt="" width="128" height="128" /></span>
+          <span class="closing-sun" data-sun aria-hidden="true">
+            <span class="sun-glow"></span>
+            <span class="zz"><i>z</i><i>z</i><i>z</i></span>
+            <span class="sun-nox"><svg class="mascot asleep" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><defs><radialGradient id="mgsun" cx="34%" cy="28%" r="80%"><stop offset="0" class="mc-stop-hi"/><stop offset="0.55" class="mc-stop-mid"/><stop offset="1" class="mc-stop-lo"/></radialGradient><mask id="mbsun"><rect width="100" height="100" fill="#fff"/><circle cx="84" cy="19" r="22" fill="#000"/></mask></defs><g class="mc-body"><g mask="url(#mbsun)"><circle cx="50" cy="53" r="42" fill="url(#mgsun)"/><circle class="mc-crater" cx="27" cy="76" r="5"/><circle class="mc-crater" cx="66" cy="81" r="3"/></g><g class="mc-eyes"><g class="mc-open"><rect x="32.75" y="46.5" width="8.5" height="17" rx="4.25"/><rect x="50.75" y="46.5" width="8.5" height="17" rx="4.25"/></g><g class="mc-shut" stroke-width="3.6"><path d="M32.11 57.04 q4.89 5.38 9.77 0"/><path d="M50.11 57.04 q4.89 5.38 9.77 0"/></g><g class="mc-happy" stroke-width="3.6"><path d="M32.11 59.04 q4.89 -7.33 9.77 0"/><path d="M50.11 59.04 q4.89 -7.33 9.77 0"/></g></g></g></svg></span>
+            <span class="sparks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </span>
           <h2 id="closing-title" class="closing-title" data-sunrise>See what last night was telling you.</h2>
           <div class="hero-actions" data-reveal>
             <a class="btn" href="/app/">Open Nocta</a>
@@ -220,23 +270,23 @@
       <section id="features" class="features wrap" aria-labelledby="features-title">
         <h2 id="features-title" class="section-title" data-words="focus">
           Clear, not clinical.
-          <span>Plain words, real numbers.</span>
+          <span>Plain words with real numbers.</span>
         </h2>
         <ul class="feature-list" data-stagger>
           <li>
             <span class="f-icon f-info" aria-hidden="true"><svg viewBox="0 0 24 24"><circle pathLength="1" cx="12" cy="12" r="9" /><path pathLength="1" d="M12 11v6M12 7.5v.5" /></svg></span>
             <h3>It shows its work.</h3>
-            <p>Tap any night to see the numbers behind it, and how sure Nox is.</p>
+            <p>Tap any night to see the numbers behind it and how sure Nox is.</p>
           </li>
           <li>
             <span class="f-icon f-moon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg></span>
             <h3>Thirty seconds each morning.</h3>
-            <p>Note what your machine can’t see, like a late coffee or a stuffy nose.</p>
+            <p>Log the late coffee or stuffy nose your machine can’t see.</p>
           </li>
           <li>
             <span class="f-icon f-nox" aria-hidden="true"><img src="/nocta-mark.svg" alt="" width="26" height="26" /></span>
             <h3>Questions? Ask Nox.</h3>
-            <p>Plain answers about your mask and your numbers. Never a diagnosis.</p>
+            <p>Get plain answers about your mask and your numbers. Nox never diagnoses.</p>
           </li>
         </ul>
       </section>
@@ -245,13 +295,13 @@
       <section id="privacy" class="trust wrap" aria-labelledby="trust-title">
         <div class="trust-panel" data-reveal="open">
           <h2 id="trust-title" class="section-title" data-words>
-            Private, and honest about what it is.
+            Private and honest about what it is.
           </h2>
           <div class="trust-cols">
             <div>
               <h3>Your nights stay yours</h3>
               <ul class="ticks" data-stagger="tick">
-                <li>Your SD card is read in your browser, never uploaded.</li>
+                <li>Your SD card is read in your browser and never uploaded.</li>
                 <li>No ads. Your data is never sold.</li>
                 <li>Delete your account and the saved copy goes with it.</li>
               </ul>
@@ -260,9 +310,9 @@
             <div>
               <h3>Not a medical device</h3>
               <ul class="ticks" data-stagger="tick">
-                <li>It never diagnoses, or tells you to change your pressure.</li>
+                <li>It never diagnoses you or tells you to change your pressure.</li>
                 <li>It doesn’t grade your numbers red or green.</li>
-                <li>When something is worth your doctor’s look, it says so.</li>
+                <li>It tells you when something is worth showing your doctor.</li>
               </ul>
             </div>
           </div>
@@ -282,11 +332,11 @@
           </details>
           <details>
             <summary>Do I need an account?</summary>
-            <div class="faq-a"><p>Not to look around. An account keeps your own nights and check-ins, and puts them on all your devices.</p></div>
+            <div class="faq-a"><p>Not to look around. An account saves your nights and check-ins so they show up on all your devices.</p></div>
           </details>
           <details>
             <summary>Can I use it on my phone?</summary>
-            <div class="faq-a"><p>Yes. Reading the SD card takes a computer or a card reader; with an account, your nights are on your phone after that.</p></div>
+            <div class="faq-a"><p>Yes. You’ll need a computer or card reader to read the SD card. After that your nights show up on your phone too if you have an account.</p></div>
           </details>
           <details>
             <summary>Is Nocta a medical device?</summary>
@@ -303,7 +353,7 @@
             <img src="/nocta-mark.svg" alt="" width="26" height="26" />
             <span>Nocta</span>
           </a>
-          <p>Your CPAP nights, in plain words.</p>
+          <p>Your CPAP nights in plain words.</p>
         </div>
         <nav class="foot-col" aria-label="Product">
           <h3>Product</h3>
@@ -316,7 +366,7 @@
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
         </nav>
-        <p class="foot-note">Nocta is not a medical device. It doesn’t diagnose, treat or replace your doctor.</p>
+        <p class="foot-note">Nocta is not a medical device and doesn’t replace your doctor.</p>
       </div>
     </footer>
   </body>

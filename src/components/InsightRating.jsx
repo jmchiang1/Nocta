@@ -1,32 +1,37 @@
-/* Nocta — "Was this helpful?" under a night's insight (Tonight, phone and
- * desktop). Two plain answers; picking one says thanks and can be changed by
- * picking the other (or the same one again, to take it back). Feeds
- * analytics (which kind of insight and the rating, never the night's
- * numbers) and, for an account sharing its nights, that night's summary
- * (lib/research.js). */
-import { useEffect, useState } from 'react';
+/* Nocta — "was this helpful?" on a night's suggestion, as two small thumbs
+ * beside it (WhyHorizon), the way chat apps do it. Pick one and it fills, a
+ * short thanks shows for a moment, then fades; pick it again to take it
+ * back, or the other to change it. Kept per night on the device
+ * (lib/insightRatings.js); feeds analytics (which kind of insight and the
+ * rating, never the night's numbers) and, for an account sharing its nights,
+ * that night's summary (lib/research.js). */
+import { useEffect, useRef, useState } from 'react';
 import { ratingFor, rateInsight, onRatings } from '../lib/insightRatings.js';
 import { insightFor } from '../lib/insights.js';
 import { track } from '../lib/analytics.js';
 import { researchChanged } from '../lib/research.js';
+import { Icon } from './Icons.jsx';
 
-const CHOICES = [
-  { value: 'up', label: 'Yes' },
-  { value: 'down', label: 'Not really' },
-];
+const THANKS_MS = 2200;
 
-export function InsightRating({ date }) {
+export function InsightThumbs({ date }) {
   const [rating, setRating] = useState(() => ratingFor(date));
+  const [thanks, setThanks] = useState(false);
+  const timer = useRef(0);
   useEffect(() => {
     setRating(ratingFor(date));
     return onRatings(() => setRating(ratingFor(date)));
   }, [date]);
+  useEffect(() => () => clearTimeout(timer.current), []);
   if (!date) return null;
 
   function pick(value) {
     const next = rating === value ? null : value;
     rateInsight(date, next);
+    clearTimeout(timer.current);
+    setThanks(Boolean(next));
     if (next) {
+      timer.current = setTimeout(() => setThanks(false), THANKS_MS);
       const found = insightFor(date);
       track('insight_rated', {
         rating: next,
@@ -38,23 +43,34 @@ export function InsightRating({ date }) {
   }
 
   return (
-    <div className="ir" role="group" aria-label="Was this insight helpful?">
-      <span className="ir-q" aria-live="polite">
-        {rating ? 'Thanks. Nox uses this to learn what helps.' : 'Was this helpful?'}
+    <span className="thumbs" role="group" aria-label="Was this suggestion helpful?">
+      <button
+        type="button"
+        className={`thumb${rating === 'up' ? ' on' : ''}`}
+        aria-pressed={rating === 'up'}
+        aria-label="Helpful"
+        title="Helpful"
+        onClick={() => pick('up')}
+      >
+        <Icon name="thumbUp" size={17} />
+      </button>
+      <button
+        type="button"
+        className={`thumb${rating === 'down' ? ' on' : ''}`}
+        aria-pressed={rating === 'down'}
+        aria-label="Not helpful"
+        title="Not helpful"
+        onClick={() => pick('down')}
+      >
+        <Icon name="thumbDown" size={17} />
+      </button>
+      {/* the thanks fades in, then out; the live region says it once */}
+      <span className={`thumbs-thanks${thanks ? ' show' : ''}`} aria-hidden="true">
+        Thanks for the feedback
       </span>
-      <div className="ir-choices">
-        {CHOICES.map((c) => (
-          <button
-            key={c.value}
-            type="button"
-            className={`ir-btn${rating === c.value ? ' on' : ''}`}
-            aria-pressed={rating === c.value}
-            onClick={() => pick(c.value)}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-    </div>
+      <span className="sr-only" aria-live="polite">
+        {thanks ? 'Thanks for the feedback' : ''}
+      </span>
+    </span>
   );
 }

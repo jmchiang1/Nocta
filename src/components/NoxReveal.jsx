@@ -66,10 +66,7 @@ export function NoxReveal({ className = '', onResolve, settled = false }) {
   useEffect(() => {
     if (still) return undefined;
     const t = setTimeout(() => onResolveRef.current?.(), RESOLVE_MS);
-    // its sound: each outline star lands at its own delay + the 2.1 s gather
-    const stop = splashScore({
-      outline: DUST.filter((d) => !d.star).map((d) => ({ x: d.x, land: d.delay + 2100 })),
-    });
+    const stop = splashScore(); // its sound (lib/sound.js)
     return () => {
       clearTimeout(t);
       stop();

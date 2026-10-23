@@ -91,7 +91,7 @@ or every PostHog request is blocked.
 | `nox_asked` | A question sent to Nox (never the question) | |
 | `wearable_connect_started` / `wearable_disconnected` | Wearable connect tapped / disconnected | `provider` |
 | `wearable_sync_completed` | User-triggered wearable sync succeeds, including the first sync after connection approval | `provider`, `nights` |
-| `insight_rated` | "Was this helpful?" under a night's insight (Tonight) | `rating` (up/down), `state` (the insight's card state), `action` (which tip) |
+| `insight_rated` | The thumbs up / down on a night's suggestion (Tonight) | `rating` (up/down), `state` (the insight's card state), `action` (which tip) |
 | `doctor_report_opened` | Doctor summary opened | |
 | `data_exported` | Settings › Export my data | |
 | `account_deleted` / `device_erased` | Delete account / erase a guest's data | |

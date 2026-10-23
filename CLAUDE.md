@@ -95,7 +95,9 @@ re-rendering are materially cleaner as components. Everything else in the handof
   The page tells one night in pinned chapters (`src/site/story.js`: a dot per minute,
   the card being read, last night's events as stars that join into the why card,
   a clock running 11 pm → 7 am), over a sky that runs dusk → night → dawn as you scroll
-  (`src/site/sky.js`, `sky.css`), on **GSAP + ScrollTrigger** and **Lenis** smooth scrolling (versions pinned;
+  (`src/site/sky.js`, `sky.css`). Right after the hero, the launch film opens out of the
+  horizon and dissolves into the sky (`src/site/film.js`; web encodes of `Nocta Launch.mp4`
+  in `public/site/launch-*.mp4`, made with ffmpeg; sound follows the bar's speaker switch), on **GSAP + ScrollTrigger** and **Lenis** smooth scrolling (versions pinned;
   added at the user's direction, marketing site only, never the app).
 
 If a request would pull in a UI framework or CSS framework, push back and ask first.

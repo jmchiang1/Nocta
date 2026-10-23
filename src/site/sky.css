@@ -182,16 +182,111 @@
   }
 }
 
-/* ---- a shooting star ---- */
-.meteor {
+/* ---- glimmer: long stretches of a steady star, then a quick flare and a
+ * small cross of light (the app's .sky-stars i.gl) ---- */
+.star-layer i.gl {
+  animation:
+    born 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) var(--in, 0s) backwards,
+    skyGlimmer var(--g) ease-in-out var(--gd) infinite;
+}
+.star-layer i.gl::before,
+.star-layer i.gl::after {
+  content: '';
   position: absolute;
-  width: 130px;
-  height: 1.5px;
+  left: 50%;
+  top: 50%;
+  border-radius: 1px;
+  opacity: 0;
+  animation: skyGlint var(--g) ease-in-out var(--gd) infinite;
+}
+.star-layer i.gl::before {
+  width: 700%;
+  height: 1px;
+  translate: -50% -50%;
+  background: linear-gradient(90deg, transparent, #ecf0fb, transparent);
+}
+.star-layer i.gl::after {
+  width: 1px;
+  height: 700%;
+  translate: -50% -50%;
+  background: linear-gradient(180deg, transparent, #ecf0fb, transparent);
+}
+@keyframes skyGlimmer {
+  0%, 86%, 100% {
+    transform: scale(1);
+  }
+  91% {
+    opacity: 1;
+    transform: scale(1.7);
+  }
+  96% {
+    transform: scale(1);
+  }
+}
+@keyframes skyGlint {
+  0%, 87%, 96%, 100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  91% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+}
+
+/* ---- shooting stars (the app's .sky-comet): a rotated path; the streak
+ * travels along it, bright head first, tail fading behind ---- */
+.meteors {
+  position: absolute;
+  inset: 0;
+}
+.comet-path {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  transform-origin: 0 0;
+}
+.comet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--len, 120px);
+  height: 1.6px;
+  margin-top: -0.8px;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
-  transform-origin: left center;
-  rotate: 152deg;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, #a3b7df 55%, transparent) 60%, #ecf0fb);
+  opacity: 0;
+  animation: skyComet var(--cd, 1.4s) cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+}
+.comet::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 50%;
+  background: #ecf0fb;
+  box-shadow:
+    0 0 6px 1px rgba(236, 240, 251, 0.8),
+    0 0 14px 3px rgba(163, 183, 223, 0.45);
+}
+@keyframes skyComet {
+  0% {
+    opacity: 0;
+    transform: translateX(0) scaleX(0.4);
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(340px) scaleX(1);
+  }
 }
 
 /* ---- reduced motion: a still night ---- */
@@ -202,6 +297,9 @@
   opacity: 1;
 }
 .night.still .star-layer i.tw,
+.night.still .star-layer i.gl,
+.night.still .star-layer i.gl::before,
+.night.still .star-layer i.gl::after,
 .night.still .cloud {
   animation: none;
 }

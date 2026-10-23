@@ -635,9 +635,71 @@
   justify-self: end;
   padding: 0 22px;
 }
-/* each question slides in as the last one goes */
-.ck-inline-enter {
-  animation: riseIn 0.32s var(--ease-out) backwards;
+/* the sheet's motion, in the card: each question slides in from the side
+ * you're going (.ck-step, screens.css), its answers rising one after another */
+.ck-card.wide .ck-step {
+  display: flex;
+  flex-direction: column;
+}
+.ck-card.wide .ck-step .ob-pill {
+  animation: riseIn 0.4s var(--ease-out) backwards;
+  animation-delay: calc(120ms + var(--i, 0) * 35ms);
+}
+/* done: Nox is pleased for a moment, as in the sheet, before the card folds */
+.ck-card-logged {
+  justify-content: center;
+}
+.ck-card-logged .ck-done {
+  flex: 1;
+  justify-content: center;
+  padding: 8px 0;
+}
+.ck-card-logged .ck-nox {
+  margin-bottom: 14px;
+}
+.ck-card-logged .ck-done-title {
+  font-size: 26px;
+  margin: 0;
+}
+.ck-card-logged .ck-logged {
+  margin-top: 18px;
+}
+/* …then folds to the slim bar above last night: the card and its
+ * neighbours glide to their new places (a view transition, CheckinPrompt) */
+.dash-tonight-pair > .ck-card {
+  view-transition-name: nx-checkin;
+}
+.dash-tonight-pair > section.tn-module:not(.ck-card) {
+  view-transition-name: nx-lastnight;
+}
+.dash-body-module {
+  view-transition-name: nx-body;
+}
+::view-transition-group(nx-checkin),
+::view-transition-group(nx-lastnight),
+::view-transition-group(nx-body) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* the card's two looks crossfade at their own size, inside the moving card */
+::view-transition-image-pair(nx-checkin) {
+  overflow: hidden;
+  border-radius: var(--r-xl);
+}
+::view-transition-old(nx-checkin),
+::view-transition-new(nx-checkin) {
+  width: auto;
+  height: auto;
+  object-fit: none;
+  object-position: left top;
+}
+::view-transition-old(nx-checkin) {
+  animation-duration: 0.25s;
+}
+::view-transition-new(nx-checkin) {
+  animation-delay: 0.15s;
+  animation-duration: 0.35s;
+  animation-fill-mode: backwards;
 }
 
 /* once checked in, the card folds to one line — it becomes a slim bar
@@ -1721,6 +1783,17 @@ html:has(.desktop-modal-wrap) {
   bottom: -30%;
 }
 
+/* "About Nocta" on desktop: the same quiet link, top left of the window */
+.desktop-onboarding .ob-intro-site {
+  top: 24px;
+  left: 24px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+}
+.desktop-onboarding .ob-intro-site:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* "Look around first": on desktop, a quiet link under the other two ways
  * in (Onboarding.jsx › .ob-intro-peek-link), in place of the phone's pill */
 .desktop-onboarding .ob-intro-peek {
@@ -2206,9 +2279,3 @@ html:has(.desktop-modal-wrap) {
   min-width: 160px;
 }
 
-/* Was this helpful? on desktop: the answers sit right after the question,
- * not across the full width of the dashboard */
-.desktop-stage .ir {
-  justify-content: flex-start;
-  gap: 16px;
-}

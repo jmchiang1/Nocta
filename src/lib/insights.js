@@ -590,7 +590,7 @@ const DETECTORS = [
 ];
 
 /* ---- actions. Every action has a `key`, and the key must stay the same
- * for the same tip: the "Was this helpful?" ratings (InsightRating, the
+ * for the same tip: the "Was this helpful?" ratings (InsightThumbs, the
  * insight_rated event) are grouped by it. Variants of one tip share a key
  * (refit / refitLeak / refitWeek are all 'refit').
  * Each finding offers its candidates, best-evidenced first;

@@ -14,6 +14,7 @@ import { RevealText } from '../lib/motion.jsx';
 import { binEvents } from './NightTimeline.jsx';
 import { nightBins, clockMin, hourLabel } from '../lib/nightSeries.js';
 import { LAST_NIGHT } from '../data/history.js';
+import { InsightThumbs } from './InsightRating.jsx';
 
 const STATE_CLASS = {
   anomaly: 'state-anomaly',
@@ -83,7 +84,7 @@ function useWidth(fallback) {
 
 /* the one action, led by a guiding star: Nocta's suggestion is the thing to
  * follow tonight. The first sentence is the instruction; the rest, the reason. */
-function GuidingStar({ text, past }) {
+function GuidingStar({ text, past, rate }) {
   const m = /^(.+?[.!?])\s+(.+)$/s.exec(text);
   const head = m ? m[1] : text;
   const reason = m ? m[2] : null;
@@ -100,12 +101,15 @@ function GuidingStar({ text, past }) {
         <span className="wh-guide-label">{past ? 'That morning, Nox suggested' : 'Tonight'}</span>
         <span className={`wh-guide-head${head.length > 44 ? ' long' : ''}`}>{head}</span>
         {reason && <span className="wh-guide-reason">{reason}</span>}
+        {/* was it helpful? (Tonight only: the onboarding example has no night to rate) */}
+        {rate && <InsightThumbs date={rate} />}
       </span>
     </section>
   );
 }
 
-export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy, onAsk, onDoctor }) {
+/* `rate`: the night's date, to show "was this helpful?" thumbs on its suggestion */
+export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy, onAsk, onDoctor, rate }) {
   const [plotRef, W] = useWidth(390);
   const state = insight.card_state;
   const glance = insight.glance ?? {};
@@ -230,13 +234,16 @@ export function WhyHorizon({ insight, timeline, session, usual, fixtureId, onWhy
 
       {action &&
         (doctorPath ? (
-          <button className="wh-doctor" type="button" onClick={onDoctor}>
-            <span className="wh-doctor-title">Prepare doctor summary</span>
-            <span className="wh-doctor-text">{action.action}</span>
-            <Icon name="chevronRight" size={18} />
-          </button>
+          <>
+            <button className="wh-doctor" type="button" onClick={onDoctor}>
+              <span className="wh-doctor-title">Prepare doctor summary</span>
+              <span className="wh-doctor-text">{action.action}</span>
+              <Icon name="chevronRight" size={18} />
+            </button>
+            {rate && <InsightThumbs date={rate} />}
+          </>
         ) : (
-          <GuidingStar text={action.action} past={past} />
+          <GuidingStar text={action.action} past={past} rate={rate} />
         ))}
     </section>
   );

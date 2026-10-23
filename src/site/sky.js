@@ -7,15 +7,19 @@
  *   drifting up at different depths, clouds sailing across
  *
  * GSAP's ScrollTrigger ties all of it to the scroll (scrubbed, so it moves
- * with you, both ways); Lenis smooths the scroll itself. Now and then a star
- * falls in the deep part of the night, and on a desktop more stars show up
- * around the pointer. Reduced motion: a still night sky, native scrolling. */
+ * with you, both ways); Lenis smooths the scroll itself. As on the app's
+ * splash (components/NightSky.jsx): many stars twinkle, a few bright ones
+ * glimmer with a small cross of light, and every so often a shooting star
+ * streaks across. On a desktop more stars show up around the pointer.
+ * Reduced motion: a still night sky, native scrolling. */
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 
 gsap.registerPlugin(ScrollTrigger);
+// a refresh starts at the top: ScrollTrigger mustn't put the old spot back
+ScrollTrigger.clearScrollMemory('manual');
 
 /* a small seeded random, so the sky is the same on every visit */
 function seeded(seed) {
@@ -31,10 +35,12 @@ function seeded(seed) {
 
 /* per layer: how many stars (desktop; phones get about half), their size and brightness */
 /* `born`: when the layer's stars start popping into being on load, far first */
+/* twinkle / glimmer shares follow the splash's showcase sky (twinkle 0.7;
+ * the bright tiers glimmer now and then instead) */
 const LAYERS = {
-  far: { n: 280, size: [0.6, 1.2], alpha: [0.3, 0.7], twinkle: 0.15, born: 0.3 },
-  mid: { n: 110, size: [1, 1.8], alpha: [0.5, 0.9], twinkle: 0.3, born: 0.7 },
-  near: { n: 34, size: [1.8, 3], alpha: [0.8, 1], twinkle: 0.45, born: 1.1 },
+  far: { n: 280, size: [0.6, 1.2], alpha: [0.3, 0.7], twinkle: 0.55, glimmer: 0, born: 0.3 },
+  mid: { n: 110, size: [1, 1.8], alpha: [0.5, 0.9], twinkle: 0.7, glimmer: 0.22, born: 0.7 },
+  near: { n: 34, size: [1.8, 3], alpha: [0.8, 1], twinkle: 0.7, glimmer: 0.6, born: 1.1 },
 };
 
 /* the Milky Way: a soft band of dust and dense faint stars across the sky,
@@ -58,8 +64,9 @@ function fillStars(layer, spec, rnd, scale) {
   const lerp = ([a, b]) => a + rnd() * (b - a);
   let html = '';
   for (let i = 0; i < n; i += 1) {
-    const tw = rnd() < spec.twinkle;
-    html += `<i${tw ? ' class="tw"' : ''} style="left:${(rnd() * 100).toFixed(2)}%;top:${(rnd() * 100).toFixed(2)}%;--s:${lerp(spec.size).toFixed(2)}px;--a:${lerp(spec.alpha).toFixed(2)};--t:${(2.4 + rnd() * 4).toFixed(1)}s;--d:${(-rnd() * 6).toFixed(1)}s;--in:${((spec.born ?? 0) + rnd() * 1.4).toFixed(2)}s"></i>`;
+    const gl = rnd() < (spec.glimmer ?? 0);
+    const tw = !gl && rnd() < spec.twinkle;
+    html += `<i${gl ? ' class="gl"' : tw ? ' class="tw"' : ''} style="--g:${(9 + rnd() * 13).toFixed(1)}s;--gd:${(-rnd() * 22).toFixed(1)}s;left:${(rnd() * 100).toFixed(2)}%;top:${(rnd() * 100).toFixed(2)}%;--s:${lerp(spec.size).toFixed(2)}px;--a:${lerp(spec.alpha).toFixed(2)};--t:${(2.4 + rnd() * 4).toFixed(1)}s;--d:${(-rnd() * 6).toFixed(1)}s;--in:${((spec.born ?? 0) + rnd() * 1.4).toFixed(2)}s"></i>`;
   }
   layer.innerHTML = html;
 }
@@ -95,6 +102,7 @@ export function initSky({ still = false } = {}) {
 
   // ---- smooth scrolling, driven by GSAP's clock so the two never drift ----
   const lenis = new Lenis({ duration: 1.15, smoothWheel: true, anchors: { offset: -84 } });
+  window.__noctaLenis = lenis; // site.js puts a fresh visit back at the top
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
@@ -107,7 +115,7 @@ export function initSky({ still = false } = {}) {
       trigger: document.documentElement,
       start: 'top top',
       endTrigger: '#dawn',
-      end: 'center center',
+      end: 'top top',
       scrub: 0.8,
       invalidateOnRefresh: true, // a resized window re-measures how far the stars travel
     },
@@ -139,32 +147,44 @@ export function initSky({ still = false } = {}) {
     }
   );
 
-  shootingStars(night, deep);
+  shootingStars(night, deep, dawn);
   if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) cursorStars(night, rnd);
-  window.addEventListener('load', () => ScrollTrigger.refresh());
+  window.addEventListener('load', () => {
+    ScrollTrigger.clearScrollMemory('manual');
+    ScrollTrigger.refresh();
+    window.scrollTo(0, 0);
+    lenis.scrollTo(0, { immediate: true, force: true });
+  });
   return { lenis, gsap, ScrollTrigger };
 }
 
-/* now and then a star falls, only in the deep part of the night */
-function shootingStars(night, deep) {
+/* shooting stars, as on the app's splash (NightSky useComets): every 6.5 to
+ * 13 seconds one streaks across the upper sky, mostly left to right and
+ * falling, with a bright head and a fading tail. Not once dawn is up. */
+function shootingStars(night, deep, dawn) {
   const box = night.querySelector('.meteors');
-  const next = () => setTimeout(fire, 4000 + Math.random() * 6000);
+  const next = (ms) => setTimeout(fire, ms);
   const fire = () => {
-    if (document.visibilityState === 'visible' && Number(gsap.getProperty(deep, 'opacity')) > 0.6) {
-      const m = document.createElement('i');
-      m.className = 'meteor';
-      m.style.left = `${35 + Math.random() * 55}vw`;
-      m.style.top = `${4 + Math.random() * 36}vh`;
-      box.append(m);
-      gsap
-        .timeline({ onComplete: () => m.remove() })
-        .fromTo(m, { opacity: 0, x: 0, y: 0 }, { opacity: 1, duration: 0.18, ease: 'power1.out' })
-        .to(m, { x: -280, y: 150, duration: 0.95, ease: 'power2.in' }, 0)
-        .to(m, { opacity: 0, duration: 0.4 }, 0.6);
+    if (document.visibilityState === 'visible' && Number(gsap.getProperty(dawn, 'opacity')) < 0.5) {
+      const r = Math.random;
+      const fromLeft = r() > 0.35;
+      const tilt = 14 + r() * 18;
+      const path = document.createElement('span');
+      path.className = 'comet-path';
+      path.style.top = `${4 + r() * 28}%`;
+      path.style.left = `${fromLeft ? -8 + r() * 40 : 52 + r() * 40}%`;
+      path.style.transform = `rotate(${fromLeft ? tilt : 180 - tilt}deg)`;
+      const c = document.createElement('span');
+      c.className = 'comet';
+      c.style.setProperty('--cd', `${(1.1 + r() * 0.7).toFixed(2)}s`);
+      c.style.setProperty('--len', `${Math.round(90 + r() * 80)}px`);
+      c.addEventListener('animationend', () => path.remove());
+      path.append(c);
+      box.append(path);
     }
-    next();
+    next(6500 + Math.random() * 6500);
   };
-  next();
+  next(2200 + 1800); // the first, once the sky has opened
 }
 
 /* on a desktop, more stars show up around the pointer */

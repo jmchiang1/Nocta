@@ -1759,9 +1759,7 @@
   align-items: center;
   margin: 4px 0 14px;
   border-radius: var(--r-lg);
-  background:
-    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--data-1) 14%, transparent), transparent 60%),
-    var(--surface-1);
+  background: var(--surface-1); /* flat, like a settings row */
 }
 .stale-note-main {
   flex: 1;
@@ -1812,9 +1810,6 @@
 
 /* a guest on Tonight (NoNights › SampleDataBanner): the same slim note as
  * the newest-night one, in the peach of an invitation, the whole row the button */
-.sample-note {
-  background: var(--surface-1); /* flat, like a settings row */
-}
 .sample-note .stale-note-main {
   padding-right: 16px;
 }

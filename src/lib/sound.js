@@ -280,11 +280,93 @@ export function noxHappy() {
   ping(t + 0.24, 2093, { gain: 0.03, decay: 0.5 });
 }
 
+/* ---- the marketing site's dawn: Nox wakes up with the sun (src/site/
+ * story.js). One cue per beat of the animation, all soft and in the same
+ * D major pentatonic as the splash so nothing clashes:
+ *   rise     the sun comes up: a warm low pad swells in, a slow breath of air
+ *   snore    each sleepy "z": a low, soft breath through his nose
+ *   stretch  a long, rising slide; squash: a little boing back down
+ *   blink    his eyes open: a tiny glass ping
+ *   cheer    he's delighted: noxHappy's three notes up
+ *   sparkle  the burst of stars: a quick glassy run up the scale
+ *   sunrise  the words come up: one warm, low bell
+ *   pop      the button lands: a small "bip"
+ *   end      the pad lets go
+ * Each cue checks for running audio when it's due. */
+export function dawnSounds() {
+  let bed = null;
+  const at = () => (ready(true) ? ac.currentTime + 0.01 : null);
+  return {
+    rise() {
+      if (!ready(true)) return;
+      bed?.stop(0.3);
+      bed = pad([note(0), note(3)], { gain: 0.022, attack: 2.4 });
+      breath({ from: 260, to: 1100, dur: 1.8, gain: 0.03, q: 0.9, pan: -0.3, panTo: 0.3 });
+    },
+    snore(i = 0) {
+      if (!ready(true)) return;
+      breath({ from: 300 - i * 30, to: 210 - i * 20, dur: 0.6, gain: 0.04, q: 5 });
+    },
+    stretch() {
+      const t = at();
+      if (t == null) return;
+      blip(t, 260, 760, { dur: 0.5, gain: 0.05, type: 'sine', send: 0.35 });
+    },
+    squash() {
+      const t = at();
+      if (t == null) return;
+      blip(t, 620, 330, { dur: 0.16, gain: 0.05, send: 0.3 });
+      blip(t + 0.14, 420, 520, { dur: 0.1, gain: 0.035, send: 0.3 });
+    },
+    blink() {
+      const t = at();
+      if (t == null) return;
+      ping(t, note(14), { gain: 0.03, decay: 0.3 });
+    },
+    cheer() {
+      noxHappy();
+    },
+    sparkle() {
+      const t = at();
+      if (t == null) return;
+      [10, 11, 12, 13, 14, 15, 16, 17].forEach((step, i) => ping(t + i * 0.045, note(step), { gain: 0.016, decay: 0.6 }));
+    },
+    sunrise() {
+      chime(note(5), { gain: 0.05, decay: 3.2, send: 0.7 });
+      chime(note(8), { gain: 0.025, decay: 2.6, pan: 0.2, send: 0.7 });
+      bed?.swell(0.03, 1.2);
+    },
+    pop() {
+      const t = at();
+      if (t == null) return;
+      blip(t, 480, 900, { dur: 0.08, gain: 0.05 });
+      ping(t + 0.05, note(13), { gain: 0.02, decay: 0.3 });
+    },
+    end() {
+      bed?.stop(3);
+      bed = null;
+    },
+  };
+}
+
+/* for a sound switch: is audio actually playing, and a way to start it (only
+ * works inside a click or key press) */
+export const audioRunning = () => Boolean(ac && ac.state === 'running');
+export function startAudio() {
+  if (!init()) return Promise.resolve(false);
+  return ac
+    .resume()
+    .then(() => ac.state === 'running')
+    .catch(() => false);
+}
+export function onAudioChange(fn) {
+  if (!init()) return;
+  ac.addEventListener('statechange', () => fn(ac.state === 'running'));
+}
+
 /* ---- the splash: Nox gathers out of the night sky (components/NoxReveal)
  * Scored to the animation's own beats (onboarding.css › .nox-reveal):
  *   0 s      a low night-air pad, and a slow breath of air sweeping across
- *   2.1 s    each outline star lands with a soft glass note, round the
- *            shape in order, so the landings rise like a harp glissando
  *   2.25 s   the constellation line draws: a brighter breath
  *   2.7 s    the moon lights: the pad lifts a little (no bell: kept sparse)
  *   4.8 s    the logo rises into the page: the pad lets go
@@ -296,7 +378,7 @@ const D = 146.83; // D3
 const PENTA = [1, 9 / 8, 5 / 4, 3 / 2, 5 / 3]; // D E F♯ A B
 const note = (step) => D * 2 ** Math.floor(step / 5) * PENTA[((step % 5) + 5) % 5];
 
-export function splashScore({ outline = [] } = {}) {
+export function splashScore() {
   const timers = [];
   let bed = null;
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
@@ -304,19 +386,6 @@ export function splashScore({ outline = [] } = {}) {
   at(0, () => {
     bed = pad([D * 2, D * 3, D * 4], { gain: 0.016, attack: 2.4 }); // D4 A4 D5: air, not bass
     breath({ from: 260, to: 1300, dur: 2.0, gain: 0.018, q: 0.9, pan: -0.6, panTo: 0.6 });
-  });
-  // the outline stars landing (every other one: a glissando, not a rattle)
-  outline.forEach((p, i) => {
-    if (i % 2) return;
-    at(p.land, () =>
-      chime(note(10 + Math.round((i / outline.length) * 9)), {
-        gain: 0.022,
-        attack: 0.004,
-        decay: 1.1,
-        pan: (p.x - 50) / 60,
-        send: 0.7,
-      })
-    );
   });
   at(2250, () => breath({ from: 1100, to: 3400, dur: 0.7, gain: 0.012, q: 1.6, pan: 0.3, panTo: -0.3 }));
   at(2700, () => {

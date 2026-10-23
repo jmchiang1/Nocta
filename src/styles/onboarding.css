@@ -1803,6 +1803,42 @@
 .ob-intro:not(.dawn) .ob-intro-peek {
   pointer-events: none;
 }
+/* top left, opposite the peek: back out to the website (Onboarding › Intro) */
+.ob-intro-site {
+  position: absolute;
+  z-index: 3;
+  top: calc(var(--sb-h, 12px) + 8px);
+  left: 10px;
+  min-height: 48px;
+  padding: 0 14px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: var(--r-pill);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  opacity: 0;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    color var(--dur-fast) ease;
+}
+.ob-intro-site:hover,
+.ob-intro-site:active {
+  color: var(--text-primary);
+}
+.ob-intro.dawn .ob-intro-site {
+  opacity: 1;
+  transition-delay: 0.7s, 0s;
+}
+.ob-intro:not(.dawn) .ob-intro-site {
+  pointer-events: none;
+}
+.ob-intro.leaving .ob-intro-site {
+  opacity: 0;
+  transition-delay: 0s;
+}
 
 /* ---- splash → the next screen ----
  * leaving: words, mark and pill lift and fade; the dawn glow SINKS — it

@@ -1,6 +1,22 @@
 /* Nocta — the marketing site (index.html at /). The app lives at /app/. */
 import { initSky } from './sky.js';
 import { initStory } from './story.js';
+import { initSoundToggle } from './soundToggle.js';
+import { initFilm } from './film.js';
+
+/* every visit (and every refresh) starts at the top of the night: no
+ * restoring where you were, and back to the top again once the page has
+ * loaded (some browsers restore the old position late) */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+const toTop = () => {
+  window.scrollTo(0, 0);
+  window.__noctaLenis?.scrollTo(0, { immediate: true, force: true });
+};
+window.addEventListener('pageshow', toTop);
+window.addEventListener('load', () => {
+  toTop();
+  requestAnimationFrame(toTop);
+});
 
 /* ---- links meant for the app ----
  * Before the app moved to /app/, sign-in, email and wearable links came back
@@ -22,16 +38,20 @@ if (forApp) {
 
 
 function start() {
+  toTop();
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.documentElement.classList.add('js');
 
   const sky = initSky({ still });
   navOnScroll();
+  navNox(still);
+  initSoundToggle();
   splitHero();
   splitWords();
   staggers();
   reveals(still);
   parallax(sky);
+  initFilm(sky, { still });
   initStory(sky, { still, reader: makeReader(document.querySelector('[data-reader]')) });
   questions(still);
   // the hero wave's travelling light is an SVG animation: hold it still too
@@ -86,6 +106,38 @@ function navOnScroll() {
   const set = () => nav.classList.toggle('scrolled', window.scrollY > 12);
   set();
   window.addEventListener('scroll', set, { passive: true });
+}
+
+/* Nox in the bar: pops in with the bar, glances around and blinks now and
+ * then, looks the way you scroll, and hops happily when you point at him */
+function navNox(still) {
+  const link = document.querySelector('[data-nav-nox]');
+  const nox = link?.querySelector('.mascot');
+  if (!nox || still) return;
+  const set = (state) => nox.setAttribute('class', `mascot ${state}`);
+  let mood = 0;
+  const cheer = () => {
+    clearTimeout(mood);
+    set('pleased');
+    mood = setTimeout(() => set('idle'), 1100);
+  };
+  link.addEventListener('pointerenter', cheer);
+  link.addEventListener('focus', cheer);
+  // his eyes follow the scroll: down as you go down, up as you come back
+  let last = window.scrollY;
+  let rest = 0;
+  window.addEventListener(
+    'scroll',
+    () => {
+      const dy = window.scrollY - last;
+      last = window.scrollY;
+      if (Math.abs(dy) < 2) return;
+      link.dataset.look = dy > 0 ? 'down' : 'up';
+      clearTimeout(rest);
+      rest = setTimeout(() => delete link.dataset.look, 450);
+    },
+    { passive: true }
+  );
 }
 
 /* the hero's headline: each word rises up through its line, one after
