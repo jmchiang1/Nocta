@@ -87,7 +87,9 @@ re-rendering are materially cleaner as components. Everything else in the handof
 - **Two pages**: the marketing site at `/` (`index.html`, `src/site/`: plain HTML + CSS on
   the app's tokens, no React; screenshots in `public/site/`) and the app at `/app/`
   (`app/index.html`). Its copy follows the same voice and safety rules as the app. Old
-  sign-in / wearable links that land on `/` are forwarded to `/app/` by `src/site/site.js`.
+  sign-in / wearable links that land on `/` are forwarded to `/app/` by `src/site/site.js`,
+  and someone signed in on the device who opens plain `/` goes straight to `/app/`
+  (`public/site/open-app.js`; `/?site` or a link from Nocta itself still shows the site).
   The card-reading screen (with Nox) is a live copy of the app's: markup in `index.html`,
   styles in `src/site/app-parts.css`, both copied from the running app. The why card is
   rebuilt at sky size (`.nightcard`) with the app's type and the sample night's numbers.
