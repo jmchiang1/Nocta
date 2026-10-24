@@ -6,6 +6,7 @@ import { analyticsConfigured, analyticsOn, setAnalytics, track } from '../lib/an
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { PRIVACY_NOTE, MEDICAL_NOTE } from '../data/account.js';
+import { PROVIDERS } from '../data/auth.js';
 import { exportMyData } from '../lib/accountData.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
@@ -50,26 +51,14 @@ export function SettingsContent({ children }) {
             <h3>Sign-in &amp; security</h3>
           </div>
           <div className="list">
-            {authUser.kind === 'email' ? (
-              <button className="list-row" onClick={() => openSheet('changePassword')}>
-                <div className="lr-icon bare">
-                  <Icon name="lock" size={17} />
-                </div>
-                <div className="lr-main">
-                  <div className="lr-title">Change password</div>
-                </div>
-                <Icon name="chevronRight" size={17} />
-              </button>
-            ) : (
-              <div className="list-row">
-                <div className="lr-icon bare">
-                  <Icon name="lock" size={17} />
-                </div>
-                <div className="lr-main">
-                  <div className="lr-title">Signed in with {authUser.kind === 'apple' ? 'Apple' : 'Google'}</div>
-                </div>
+            <div className="list-row">
+              <div className="lr-icon bare">
+                <Icon name="lock" size={17} />
               </div>
-            )}
+              <div className="lr-main">
+                <div className="lr-title">Signed in with {PROVIDERS[authUser.kind]?.label ?? 'email'}</div>
+              </div>
+            </div>
           </div>
         </>
       )}

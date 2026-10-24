@@ -77,7 +77,6 @@ or every PostHog request is blocked.
 | `app_opened` | Once per visit | `layout` |
 | `onboarding_step_viewed` | Each setup step reached, plus `account` and `disclaimer` | `step` |
 | `onboarding_completed` | Setup finished | |
-| `signed_up` | Email sign-up sent its confirmation email | `method` |
 | `signed_in` | An account signed in during this visit (not a restored session) | `method` |
 | `guest_started` | "Look around without an account" | |
 | `signed_out` | Sign out, or leaving guest mode | |
@@ -106,7 +105,7 @@ to `PROPS` with the values it may hold, and to this table.
 
 ### Useful PostHog views
 
-- **Funnel:** `app_opened` → `guest_started` or `signed_up` → `card_import_started`
+- **Funnel:** `app_opened` → `guest_started` or `signed_in` → `card_import_started`
   → `card_imported` → `sheet_opened` (sheet = `fullnight`).
 - **Setup drop-off:** `onboarding_step_viewed`, broken down by `step`.
 - **Import failures:** `card_import_failed`, broken down by `reason`.

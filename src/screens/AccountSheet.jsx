@@ -5,7 +5,11 @@ import { PROVIDERS, isRelayEmail } from '../data/auth.js';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 
-const PROVIDER_LOGO = { apple: '/brands/apple.svg', google: '/brands/google.svg' };
+const PROVIDER_LOGO = {
+  apple: '/brands/apple.svg',
+  google: '/brands/google.svg',
+  microsoft: '/brands/microsoft.svg',
+};
 
 /* how the account is signed in. A guest's way to an account is the card at
  * the top of You (GuestAccountCard); here they can only leave guest mode. */

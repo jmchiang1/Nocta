@@ -1567,8 +1567,8 @@
   flex-direction: column;
 }
 
-/* provider buttons (splash + Account › Sign in with Google): white, per
- * Google's sign-in branding */
+/* provider buttons (Google, Microsoft): white, per both companies' sign-in
+ * branding */
 .si-provider {
   font-size: 17px;
   background: var(--provider-btn-bg);
@@ -1678,7 +1678,7 @@
 .au-google {
   margin-top: 28px;
 }
-/* the choice page is one centred group: mark, title, the two ways in, then
+/* the sign-in page is one centred group: mark, title, the two ways in, then
  * the switch + guest links directly beneath (no gap to a bottom footer) */
 .au-mark {
   width: 72px;
@@ -1699,8 +1699,8 @@
 .au-after .btn.subtle {
   font-size: 15px;
 }
-/* the second way in; its form is the next page */
-.au-email-choice {
+/* the second way in, right under Google */
+.au-microsoft {
   margin-top: 12px;
 }
 .au-field {
@@ -1709,18 +1709,6 @@
 .au-field .ob-field-label {
   display: block;
   margin-bottom: 8px;
-}
-.au-pass {
-  position: relative;
-}
-.au-pass .ob-input {
-  padding-right: 76px;
-}
-.au-show {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
 }
 .au-field-err,
 .au-field-hint {
@@ -1737,14 +1725,6 @@
 .ob-input.invalid {
   border-color: color-mix(in srgb, var(--alert) 70%, transparent);
 }
-.au-forgot {
-  align-self: flex-end;
-  margin-top: 4px;
-  padding: 0 2px;
-}
-.au-submit {
-  margin-top: 20px;
-}
 .au-switch {
   margin: 0;
   min-height: 48px;
@@ -1754,21 +1734,6 @@
   gap: 2px;
   font-size: 15px;
   color: var(--text-secondary);
-}
-.au-exists .ob-link {
-  min-height: 0;
-  padding: 0;
-  font-size: 15px;
-}
-.au-mail {
-  width: 56px;
-  height: 56px;
-  margin-bottom: 20px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  background: color-mix(in srgb, var(--data-1) 12%, transparent);
-  color: var(--data-1);
 }
 /* ---- splash: the peek, top right ----
  * a small flat pill, level with the back button on the screens that follow;

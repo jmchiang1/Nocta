@@ -444,13 +444,14 @@ The splash: **Get started**, **I already have an account**, and a small **Look a
 pill in the top-right corner.
 
 - **Get started** goes straight into the 11 setup steps, with no account yet. The last
-  step is **Save your setup**: Continue with Google, or email + password (confirmed by an
-  email link). Then the medical disclaimer, then the welcome. Setup progress is saved on
-  the device as it goes, so a Google redirect or an email link opened in a new tab
-  doesn't lose it. Signing in to an *existing* account at that step goes to its restore
+  step is **Save your setup**: Continue with Google or Continue with Microsoft. Then the
+  medical disclaimer, then the welcome. Setup progress is saved on the device as it goes,
+  so a sign-in that leaves the page doesn't lose it. Signing in to an *existing* account at that step goes to its restore
   flow instead. Backing out of it returns to the step with the answers intact.
-- **I already have an account** goes to sign in (Google or email, plus "Forgot password?"
-  → reset link → new password). Its "Create an account" starts setup.
+- **I already have an account** goes to sign in (Google or Microsoft). Its "Create an
+  account" starts setup.
+- **No email + password for now**: it needs an email sender of Nocta's own before
+  Supabase can send confirmation and reset emails to the public (`docs/AUTH_SETUP.md`).
 - **Look around first** is a guest. Nothing is saved, so there's no setup: the
   disclaimer, then the app on sample data. Guests can create an account later from
   You › Account.
@@ -459,11 +460,8 @@ pill in the top-right corner.
 - **Sign in with Apple** is off for now. It must return before App Store submission
   (guideline 4.8).
 
-Edge cases covered: a malformed email, a short password, an email that already has an
-account (→ "Sign in instead", email kept), a wrong password, an unconfirmed email, the
-resend cooldown, rate limits, offline, an email link opened in another browser or
-expired, Supabase's mailer refusing an address, a cancelled Google sheet (silent), Google
-switched off, a reload mid-setup, an account pending deletion, a SleepHQ link that
+Edge cases covered: offline, a cancelled Google or Microsoft window (silent), a
+provider switched off in Supabase, a blocked popup (falls back to a redirect), a reload mid-setup, an account pending deletion, a SleepHQ link that
 expired while away, and notification permission being per phone. Real with Supabase
 configured (`docs/AUTH_SETUP.md`). Otherwise the mock runs, and the DevPanel's
 **Sign-in** group picks what the account looks like.

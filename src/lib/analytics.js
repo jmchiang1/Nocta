@@ -46,7 +46,7 @@ const PROPS = {
   tab: ['tonight', 'trends', 'therapy', 'you'],
   sheet: 'name', // a sheet's kind, e.g. 'fullnight' (App.jsx SHEETS)
   step: 'name', // an onboarding step's id
-  method: ['google', 'apple', 'email', 'guest'],
+  method: ['google', 'microsoft', 'apple', 'email', 'guest'],
   provider: ['oura', 'fitbit', 'whoop', 'withings'],
   source: ['settings', 'prompt', 'tonight', 'trends', 'nav', 'button'],
   result: ['ok', 'error', 'cancelled'],

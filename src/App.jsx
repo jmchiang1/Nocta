@@ -30,7 +30,6 @@ import { WhySheet } from './screens/WhySheet.jsx';
 import { CalendarSheet } from './screens/CalendarSheet.jsx';
 import { ImportSheet } from './screens/CardImport.jsx';
 import { ProfileQuestionsSheet } from './screens/ProfileQuestionsSheet.jsx';
-import { ChangePasswordSheet } from './screens/ChangePasswordSheet.jsx';
 import { DeleteAccountSheet } from './screens/DeleteAccountSheet.jsx';
 import { FeedbackSheet } from './screens/FeedbackSheet.jsx';
 import { track } from './lib/analytics.js';
@@ -68,7 +67,6 @@ const SHEETS = {
   why: WhySheet,
   cardImport: ImportSheet,
   profileQuestions: ProfileQuestionsSheet,
-  changePassword: ChangePasswordSheet,
   deleteAccount: DeleteAccountSheet,
   metricDetail: MetricDetailSheet,
   compliancePlan: CompliancePlanSheet,
@@ -78,7 +76,6 @@ const SHEETS = {
 
 /* drill-down subpages push in from the right; everything else is a modal */
 const PAGE_SHEETS = new Set([
-  'changePassword',
   'deleteAccount',
   'account',
   'settings',

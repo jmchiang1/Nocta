@@ -12,6 +12,7 @@ import { useStore } from '../lib/store.jsx';
 import { Sheet } from '../components/Sheet.jsx';
 import { Icon } from '../components/Icons.jsx';
 import { exportMyData, wipeLocalData } from '../lib/accountData.js';
+import { PROVIDERS } from '../data/auth.js';
 
 const WORD = 'DELETE';
 
@@ -65,7 +66,7 @@ export function DeleteAccountSheet() {
             <h4 className="del-h">Not touched</h4>
             <ul className="del-list keep">
               <li>The SD card in your machine, and your machine’s own records</li>
-              {authUser?.kind === 'google' && <li>Your Google account</li>}
+              {PROVIDERS[authUser?.kind] && <li>Your {PROVIDERS[authUser.kind].label} account</li>}
             </ul>
             <button className="btn ghost del-export" type="button" onClick={() => exportMyData(authUser)}>
               <Icon name="download" size={17} />

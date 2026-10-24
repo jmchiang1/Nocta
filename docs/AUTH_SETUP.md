@@ -6,8 +6,15 @@ The splash says **Get started** / **I already have an account**. Both lead to th
 | Option | What happens |
 |---|---|
 | Continue with Google | Supabase OAuth in a popup window (`src/lib/authPopup.js`); the page never leaves. Falls back to a full-page redirect if the browser blocks popups. |
-| Email + password | Sign up (confirmed by an email link), sign in, forgot password → reset link → new password. |
+| Continue with Microsoft | The same, through Supabase's **Azure** provider. For Outlook / Hotmail / Live accounts as well as work and school ones. |
 | Look around without an account | A guest. Nothing is saved, so there's no setup: the medical disclaimer, then the app with sample data. It's a flag on the phone, not a Supabase user. |
+
+**No email + password (removed 2026-10-24).** Supabase's built-in mailer only sends to
+members of your Supabase organization, so confirmation and reset emails never reach
+anyone else. Bringing it back needs a domain and an email sender (Resend, Postmark…) in
+**Authentication › Emails › SMTP Settings**; the screens are in git history (before the
+commit that added Microsoft). An email account made before then stays signed in until it
+signs out, and Settings shows "Signed in with email".
 
 A new account goes through setup. One that finished setup before skips straight to
 Tonight. A guest who wants their own data taps **You › Account › Create an account**.
@@ -45,8 +52,8 @@ Supabase › General › **Authentication › URL Configuration › Redirect URL
 - `http://localhost:5180/app/` (dev; the port is set in `vite.config.js`)
 - the live app: `https://nocta-sleep.vercel.app/app/`
 
-The app lives at `/app/`; `/` is the marketing site (`index.html`, `src/site/`). Sign-in and
-email links come back to the address the app is on, so the `/app/` addresses are the ones
+The app lives at `/app/`; `/` is the marketing site (`index.html`, `src/site/`). Sign-ins
+come back to the address the app is on, so the `/app/` addresses are the ones
 to allow. An older link that still points at `/` is passed on to `/app/` by `src/site/site.js`.
 
 Don't change the **Site URL**, because it belongs to the other app. If a redirect isn't on
@@ -64,22 +71,27 @@ this list, Supabase sends people to the Site URL instead, which means the other 
 3. Supabase › General › **Authentication › Sign In / Providers › Google**: paste the Client
    ID and Client Secret, then enable it.
 
-### 3. Email + password
+### 3. Microsoft (Supabase calls it Azure)
 
-Email sign-in is already on in General. Before real people sign up:
+1. [Azure portal](https://portal.azure.com) › **Microsoft Entra ID › App registrations ›
+   New registration** (a free Microsoft account is enough).
+   - Name: "Nocta" (it shows on Microsoft's sign-in screen).
+   - Supported account types: **Accounts in any organizational directory and personal
+     Microsoft accounts**. Without "personal", Outlook / Hotmail addresses can't sign in.
+   - Redirect URI: platform **Web**, `https://hhkeuxpmcbfkifvhvdxp.supabase.co/auth/v1/callback`
+2. **Certificates & secrets › New client secret.** Copy its **Value** (not the Secret ID)
+   right away; it's shown once. Secrets expire (24 months at most): put the date in your
+   calendar, because sign-in stops working the day it does.
+3. Recommended: **Token configuration › Add optional claim › ID › `xms_edov`**, so
+   Supabase can tell whether a work account's email domain is verified.
+4. Supabase › General › **Authentication › Sign In / Providers › Azure**: paste the
+   **Application (client) ID** (from Overview) and the secret Value. Leave **Azure Tenant
+   URL** empty (it means "any account"). Enable it.
 
-- **Email sending.** Supabase's built-in mailer only delivers to members of your Supabase
-  organization, about 2 emails an hour. Your own address works for testing. Anyone else
-  sees "Nocta can't send email to that address yet." Fix: **Authentication › Emails ›
-  SMTP Settings** with a real sender (Resend, Postmark, SES…).
-- **Email templates are project-wide.** General's "Confirm your signup" and "Reset
-  password" emails are shared with the other app, so word them neutrally, or move Nocta
-  to its own project.
-- **Confirm email** (Authentication › Sign In / Providers › Email) is project-wide too.
-  Nocta handles it either way: on, people get "Check your email"; off, they're straight
-  in.
-- The confirmation and reset links come back to the redirect URL from step 1. Opened in
-  a different browser, they can't finish, and Nocta says so.
+The app asks for the `email` scope (Microsoft leaves the address out otherwise). Microsoft
+shares no profile photo, so those accounts get the neutral avatar. Microsoft's screen says
+"unverified" next to the app name until you complete publisher verification (needs a
+Microsoft Partner Network ID); people can still sign in.
 
 ### 4. Check it works
 
@@ -88,10 +100,9 @@ Email sign-in is already on in General. Before real people sign up:
 | Continue with Google, a Google account new to General | Setup starts with "New account for you@…" |
 | Finish setup, sign out, Continue with Google again | "Restoring your account…", then Welcome back, with no setup |
 | Cancel on Google's screen | Back on the splash, no error |
-| Create account with email (your own address) | "Check your email" → tap the link → setup |
-| Create account with an email that already has one | "There's already a Nocta account… Sign in instead" |
-| Sign in, wrong password | "That email and password don't match…" |
-| Forgot password → link | "Choose a new password" → Welcome back |
+| Continue with Microsoft, an Outlook / Hotmail account | Setup starts with "New account for you@…" |
+| Finish setup, sign out, Continue with Microsoft again | Welcome back, with no setup |
+| Cancel on Microsoft's screen | Back on the splash, no error |
 | Look around without an account | Disclaimer, then Tonight with sample data |
 | As a guest: You › Account › Create an account | The sign-up screen, then setup |
 

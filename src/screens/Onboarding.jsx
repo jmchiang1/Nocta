@@ -6,9 +6,9 @@
  *           └─ Look around first ── disclaimer ── app on sample data (a guest:
  *                                   nothing is saved, so there's nothing to set up)
  *
- * Setup progress is kept on the device as it goes (DRAFT_KEY): Google sign-in
- * leaves the page and an email confirmation link may open in a new tab, and
- * neither should cost the person eleven steps. Pairing/health are mocked. */
+ * Setup progress is kept on the device as it goes (DRAFT_KEY): a Google or
+ * Microsoft sign-in can leave the page (when its popup is blocked), and that
+ * shouldn't cost the person eleven steps. Pairing/health are mocked. */
 import { track } from '../lib/analytics.js';
 import { useState, useRef, useEffect, useLayoutEffect, useId } from 'react';
 import { useStore } from '../lib/store.jsx';
@@ -28,7 +28,7 @@ import { saveOnboardingAnswers } from '../lib/profile.js';
 import { markHandoff } from '../lib/owner.js';
 import { RULE_PRESETS, presetOf, saneRule, ruleFor, startProblem, earliestStart, todayIso } from '../data/compliance.js';
 import { THERAPY_START, LAST_NIGHT } from '../data/history.js';
-import { AuthScreen, NewPassword } from './AuthScreen.jsx';
+import { AuthScreen } from './AuthScreen.jsx';
 import { CardImport } from './CardImport.jsx';
 import {
   Step,
@@ -1126,7 +1126,6 @@ export function Onboarding() {
     authUser,
     authPending,
     authError,
-    authRecovery,
     authEntry,
     setAuthEntry,
     cancelSignIn,
@@ -1152,15 +1151,13 @@ export function Onboarding() {
   const route =
     authStatus === 'loading'
       ? 'loading'
-      : authRecovery
-        ? 'recovery'
-        : authUser?.kind === 'guest'
-          ? 'guest'
-          : authUser?.returning
-            ? 'returning'
-            : authUser || started
-              ? 'setup'
-              : 'intro';
+      : authUser?.kind === 'guest'
+        ? 'guest'
+        : authUser?.returning
+          ? 'returning'
+          : authUser || started
+            ? 'setup'
+            : 'intro';
   const intro = route === 'intro';
   // true once the splash has played, so coming back to it doesn't replay the reveal
   const [introSeen, setIntroSeen] = useState(Boolean(draft));
@@ -1189,7 +1186,7 @@ export function Onboarding() {
     }
     prevUser.current = authUser;
   }, [authUser]);
-  // a failed redirect (Google, an email link) lands where it can be explained:
+  // a failed sign-in (Google, Microsoft) lands where it can be explained:
   // the account step if setup was under way, else sign-in
   useEffect(() => {
     if (authError && !authMode && !started) {
@@ -1210,8 +1207,8 @@ export function Onboarding() {
     if (atAccount) markHandoff();
   }, [atAccount]);
 
-  // a NEW account got made at the end of setup (here, after a Google redirect,
-  // or from an email link in another tab): on to the disclaimer. (An existing
+  // a NEW account got made at the end of setup (here, after a Google or
+  // Microsoft sign-in): on to the disclaimer. (An existing
   // account goes to Returning instead; if they back out of it, they're back
   // on this step with their answers intact.)
   useEffect(() => {
@@ -1305,11 +1302,11 @@ export function Onboarding() {
   );
 
   if (route === 'loading') {
-    // back from Apple / Google: the sign-in finishes before anything shows
+    // back from Google / Microsoft: the sign-in finishes before anything shows
     return withSky(AUTH_LANDING ? <Working title="Signing you in…" /> : null);
   }
 
-  const providerPending = authPending === 'apple' || authPending === 'google';
+  const providerPending = Boolean(PROVIDERS[authPending]);
   if (!authUser && providerPending) {
     const label = PROVIDERS[authPending].label;
     return withSky(
@@ -1327,11 +1324,6 @@ export function Onboarding() {
         />
       </div>
     );
-  }
-
-  // back from a reset-password link: a new password first
-  if (route === 'recovery') {
-    return withSky(<NewPassword onCancel={() => leaveSetup()} />);
   }
 
   // "I already have an account": sign in. Its "Create an account" starts setup,
@@ -1431,8 +1423,8 @@ export function Onboarding() {
         </span>
       </div>
       {/* a brand-new account: say whose it is, in case they meant to sign
-       * in to one they already have (e.g. Apple vs the Google they used) */}
-      {step === 0 && (authUser?.kind === 'apple' || authUser?.kind === 'google') && (
+       * in to one they already have (e.g. Microsoft vs the Google they used) */}
+      {step === 0 && PROVIDERS[authUser?.kind] && (
         <div className="ob-account-note">
           <span className="ob-account-text">
             New account for
@@ -1443,7 +1435,7 @@ export function Onboarding() {
           <button
             className="ob-link"
             onClick={() =>
-              leaveSetup('Sign in with the Apple or Google account you used the first time.')
+              leaveSetup('Sign in with the Google or Microsoft account you used the first time.')
             }
           >
             Used Nocta before?

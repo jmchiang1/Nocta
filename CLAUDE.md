@@ -39,7 +39,8 @@ re-rendering are materially cleaner as components. Everything else in the handof
   insight JSON comes from the rule engine in `src/lib/insights.js` (detect → one
   action → the `FEATURES.md` schema), never hand-authored.
 - **Auth**: Supabase Auth (`@supabase/supabase-js`, version pinned) on the shared Supabase
-  project "General": Google and email + password (Apple returns before the App Store).
+  project "General": Google and Microsoft (Supabase's `azure` provider). No email +
+  password until Nocta has its own email sender; Apple returns before the App Store.
   "Look around without an account" is a local-only guest who skips setup; nothing of
   theirs is saved. Real when
   `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set in `.env.local`, mock
