@@ -37,8 +37,7 @@ holds another app's tables (`properties`, `floor_plans`, `apollo_app_state`,
   schema.
 - **Guest sign-ins (anonymous users) are deliberately not turned on.** Guests are local
   only, so nothing changes for the other app.
-- If Nocta grows into a real product, give it its own project. Moving users later is a
-  migration, not a settings change.
+- **Moving to Nocta's own project:** the steps are in `docs/SUPABASE_MOVE.md`.
 
 `.env.local` (git-ignored) already holds General's URL and **publishable** key. Never put
 the secret / `service_role` key in the app.
