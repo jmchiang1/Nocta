@@ -38,8 +38,9 @@ re-rendering are materially cleaner as components. Everything else in the handof
   and `fixtures.js` derive from it. No live SleepHQ or OpenAI calls — each night's
   insight JSON comes from the rule engine in `src/lib/insights.js` (detect → one
   action → the `FEATURES.md` schema), never hand-authored.
-- **Auth**: Supabase Auth (`@supabase/supabase-js`, version pinned) on the shared Supabase
-  project "General": Google and email + password (Apple returns before the App Store).
+- **Auth**: Supabase Auth (`@supabase/supabase-js`, version pinned) on Nocta's own Supabase
+  project "Nocta" (`fclzquemptbqdoqnrymo`, served at `https://nocta.supabase.co`, org
+  "Paid"; moved off the shared "General" on 2026-10-24): Google and email + password (Apple returns before the App Store).
   "Look around without an account" is a local-only guest who skips setup; nothing of
   theirs is saved. Real when
   `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set in `.env.local`, mock

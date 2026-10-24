@@ -34,15 +34,14 @@ smarter Nox, and the chat opens with "I'm the basic version of Nox…".
 1. **Claude API key.** Create one at console.anthropic.com, then set it yourself so it
    never passes through a chat:
    ```sh
-   supabase secrets set --project-ref hhkeuxpmcbfkifvhvdxp ANTHROPIC_API_KEY=…
+   supabase secrets set --project-ref fclzquemptbqdoqnrymo ANTHROPIC_API_KEY=…
    ```
    Optional: `NOX_DAILY_LIMIT=…` (default 25).
-2. **Table + function.** "General" is shared, so run the migration with the CLI query
-   command (not `db push`), then deploy:
+2. **Function.** The `nocta_nox_usage` table
+   (`supabase/migrations/20261016120000_nocta_nox_usage.sql`) is already on the Nocta
+   project, so only the function needs deploying:
    ```sh
-   supabase db query --linked --project-ref hhkeuxpmcbfkifvhvdxp \
-     -f supabase/migrations/20261016120000_nocta_nox_usage.sql
-   supabase functions deploy nocta-nox --project-ref hhkeuxpmcbfkifvhvdxp --no-verify-jwt --use-api
+   supabase functions deploy nocta-nox --project-ref fclzquemptbqdoqnrymo --no-verify-jwt --use-api
    ```
 3. **Privacy policy first.** In `public/privacy.html`, replace the one Nox paragraph
    ("Nox, Nocta's coach, answers from replies written ahead of time…") with the

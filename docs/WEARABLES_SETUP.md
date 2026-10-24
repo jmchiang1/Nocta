@@ -1,7 +1,7 @@
 # Nocta — Wearables setup (Oura, Fitbit, Whoop, Withings)
 
 Real wearable data reaches Nocta through one Supabase edge function,
-`nocta-wearables`, on the shared project **General** (`hhkeuxpmcbfkifvhvdxp`).
+`nocta-wearables`, on the project **Nocta** (`fclzquemptbqdoqnrymo`, org "Paid").
 The function holds each company's app secret, sends the person to that company to
 approve access, keeps their tokens, and pulls their nights.
 
@@ -32,7 +32,7 @@ Google has to review the app's health-data scopes.
 All four use the same redirect (callback) URL:
 
 ```
-https://hhkeuxpmcbfkifvhvdxp.supabase.co/functions/v1/nocta-wearables/callback
+https://nocta.supabase.co/functions/v1/nocta-wearables/callback
 ```
 
 Each company gives you a **client ID** and a **client secret**. Keep the secret out
@@ -52,7 +52,7 @@ and comes straight back, and nights come from Oura's sandbox (canned data, no ri
 real token needed). Everything is labeled as test data in the app. The sandbox's
 "nights" are only a few minutes long, so the numbers look odd; it's for checking
 the flow, not the data. Turn it off before real people connect:
-`supabase secrets unset --project-ref hhkeuxpmcbfkifvhvdxp OURA_SANDBOX`, then have
+`supabase secrets unset --project-ref fclzquemptbqdoqnrymo OURA_SANDBOX`, then have
 anyone connected through the sandbox disconnect and connect again.
 
 ### Fitbit (Google Health API)
@@ -97,26 +97,31 @@ waiting for it.
 
 ## 2. Create the tables
 
-General is shared with another app, so paste the migration into **Supabase ›
-General › SQL Editor** instead of running `supabase db push`, which also compares
-against the other app's migration history:
+Already done on the Nocta project. For a fresh project, run:
 
-```
-supabase/migrations/20261014120000_nocta_wearables.sql
+```sh
+supabase db query --linked --project-ref <ref> \
+  -f supabase/migrations/20261014120000_nocta_wearables.sql
 ```
 
-It only creates the two `nocta_`-prefixed tables. Nothing existing changes.
+It creates the two `nocta_`-prefixed tables.
 
 ## 3. Set the secrets
 
 ```sh
-supabase secrets set --project-ref hhkeuxpmcbfkifvhvdxp \
+supabase secrets set --project-ref fclzquemptbqdoqnrymo \
   OURA_CLIENT_ID=… OURA_CLIENT_SECRET=… \
   FITBIT_CLIENT_ID=… FITBIT_CLIENT_SECRET=… \
   WHOOP_CLIENT_ID=… WHOOP_CLIENT_SECRET=… \
   WITHINGS_CLIENT_ID=… WITHINGS_CLIENT_SECRET=… \
-  NOCTA_APP_ORIGINS=http://localhost:5180,https://nocta-sleep.vercel.app
+  NOCTA_APP_ORIGINS=http://localhost:5180,https://nocta-sleep.vercel.app \
+  NOCTA_WEARABLE_REDIRECT=https://nocta.supabase.co/functions/v1/nocta-wearables/callback
 ```
+
+- `NOCTA_WEARABLE_REDIRECT`: the callback URL from step 1. Without it the function
+  falls back to `SUPABASE_URL`, which is the project's original
+  `fclzquemptbqdoqnrymo.supabase.co` address, not `nocta.supabase.co`, and the
+  companies would refuse the mismatch.
 
 - `NOCTA_APP_ORIGINS`: the addresses the function may send people back to after
   they approve (comma-separated): local dev and the live site, `https://nocta-sleep.vercel.app`.
@@ -129,7 +134,7 @@ supabase secrets set --project-ref hhkeuxpmcbfkifvhvdxp \
 ## 4. Deploy the function
 
 ```sh
-supabase functions deploy nocta-wearables --project-ref hhkeuxpmcbfkifvhvdxp --no-verify-jwt
+supabase functions deploy nocta-wearables --project-ref fclzquemptbqdoqnrymo --no-verify-jwt
 ```
 
 `--no-verify-jwt` is required. The company redirects the browser to `/callback`

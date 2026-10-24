@@ -115,7 +115,7 @@ to `PROPS` with the values it may hold, and to this table.
 
 Code: `src/screens/FeedbackSheet.jsx`, `src/components/FeedbackPrompt.jsx`,
 `src/lib/feedback.js`. Table: `supabase/migrations/20261022130000_nocta_feedback.sql`
-(applied to General).
+(applied to Nocta).
 
 - **Where people send it:** Settings › Help improve Nocta › Send feedback, any time.
   Also from a card on Tonight (phone and desktop): it appears once someone has
@@ -127,7 +127,7 @@ Code: `src/screens/FeedbackSheet.jsx`, `src/components/FeedbackPrompt.jsx`,
 - **Who can read it:** nobody from the app. `anon` and `authenticated` may only
   insert, and only those columns. `user_id` comes from the session, so it can't be
   faked.
-- **Read it:** Supabase › General › Table Editor › `nocta_feedback`, or SQL:
+- **Read it:** Supabase › Nocta › Table Editor › `nocta_feedback`, or SQL:
   ```sql
   select created_at, rating, message, source, layout, app_version
   from nocta_feedback order by created_at desc;
@@ -139,7 +139,7 @@ Code: `src/screens/FeedbackSheet.jsx`, `src/components/FeedbackPrompt.jsx`,
 ## Shared data (research)
 
 Code: `src/lib/research.js`. Migrations: `…_nocta_research_nights.sql`,
-`…_nocta_research_full.sql` (both applied to General).
+`…_nocta_research_full.sql` (both applied to Nocta).
 
 - **Who:** accounts only, **on by default**. Guests and the sample year never share.
   Disclosed at sign-up (AuthScreen `LegalNote`) and in the Privacy Policy ("Sharing your
